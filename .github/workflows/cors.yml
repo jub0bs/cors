@@ -1,0 +1,64 @@
+name: build
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.22]
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+      - name: Display Go version
+        run: go version
+      - name: Test
+        run: go test -v -coverprofile=cover.out ./...
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: jub0bs/cors
+  benchmark:
+    needs: test
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        go-version: [1.22]
+    name: Benchmark comparison ${{ matrix.os }} @ Go ${{ matrix.go-version }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Code (previous)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: previous
+      - name: Checkout Code (new)
+        uses: actions/checkout@v4
+        with:
+          path: new
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Install benchstat
+        run: go install golang.org/x/perf/cmd/benchstat@latest
+      - name: Run Benchmark (previous)
+        run: |
+          cd previous
+          go test -run=^$ -bench=. -count=10 . -benchtime 10000x > benchmark.txt
+      - name: Run Benchmark (new)
+        run: |
+          cd new
+          go test -run=^$ -bench=. -count=10 . -benchtime 10000x > benchmark.txt
+      - name: Run benchstat
+        # Mostly to compare allocations;
+        # measurements of execution speed in GitHub Actions are unreliable.
+        run: |
+          benchstat previous/benchmark.txt new/benchmark.txt

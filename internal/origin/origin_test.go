@@ -1,0 +1,251 @@
+package origin
+
+import (
+	"math"
+	"testing"
+)
+
+var parseCases = []struct {
+	desc    string
+	input   string
+	want    Origin
+	failure bool
+}{
+	{
+		desc:    "null origin",
+		input:   "null",
+		failure: true,
+	}, {
+		desc:  "domain without port",
+		input: "https://example.com",
+		want: Origin{
+			Scheme: "https",
+			Host: Host{
+				Value: "example.com",
+			},
+		},
+	}, {
+		desc:    "prohibited scheme",
+		input:   "foo://example.com:",
+		failure: true,
+	}, {
+		desc:    "prohibited scheme starting with supported scheme",
+		input:   "httpsfoo://example.com:",
+		failure: true,
+	}, {
+		desc:  "brackets containing non-IPv6 chars",
+		input: "http://[example]:90",
+		want: Origin{
+			Scheme: "http",
+			Host: Host{
+				Value:    "example",
+				AssumeIP: true,
+			},
+			Port: 90,
+		},
+	}, {
+		desc:    "unmatched left bracket",
+		input:   "http://[::1:90",
+		failure: true,
+	}, {
+		desc:  "brackets containing non-IPv6 chars",
+		input: "http://[::1:]",
+		want: Origin{
+			Scheme: "http",
+			Host: Host{
+				Value:    "::1:",
+				AssumeIP: true,
+			},
+		},
+	}, {
+		desc:  "brackets containing non-IPv6 chars",
+		input: "http://[::]",
+		want: Origin{
+			Scheme: "http",
+			Host: Host{
+				Value:    "::",
+				AssumeIP: true,
+			},
+		},
+	}, {
+		desc:  "valid compressed IPv6",
+		input: "http://[::1]:90",
+		want: Origin{
+			Scheme: "http",
+			Host: Host{
+				Value:    "::1",
+				AssumeIP: true,
+			},
+			Port: 90,
+		},
+	}, {
+		desc:    "valid compressed IPv6 followed by a trailing full stop",
+		input:   "http://[::1].:90",
+		failure: true,
+	}, {
+		desc:    "domain with colon but no port",
+		input:   "https://example.com:",
+		failure: true,
+	}, {
+		desc:    "domain with 0 port",
+		input:   "https://example.com:0",
+		failure: true,
+	}, {
+		desc:    "domain with a leading full stop",
+		input:   "https://.example.com",
+		failure: true,
+	}, {
+		desc:    "domain with illegal char after host",
+		input:   "https://example.com^8080",
+		failure: true,
+	}, {
+		desc:    "domain followed by character other than colon",
+		input:   "https://example.com?",
+		failure: true,
+	}, {
+		desc:    "domain with colon but with non-numeric port",
+		input:   "https://example.com:abcd",
+		failure: true,
+	}, {
+		desc:    "domain with colon but with non-numeric port starting with digits",
+		input:   "https://example.com:123ab",
+		failure: true,
+	}, {
+		desc:  "domain port",
+		input: "https://example.com:6060",
+		want: Origin{
+			Scheme: "https",
+			Host:   Host{Value: "example.com"},
+			Port:   6060,
+		},
+	}, {
+		desc:    "IP host with colon but no port",
+		input:   "http://127.0.0.1:",
+		failure: true,
+	}, {
+		desc:    "IP host with 0 port",
+		input:   "http://127.0.0.1:0",
+		failure: true,
+	}, {
+		desc:  "ipv4 port",
+		input: "http://127.0.0.1:6060",
+		want: Origin{
+			Scheme: "http",
+			Host:   Host{Value: "127.0.0.1", AssumeIP: true},
+			Port:   6060,
+		},
+	}, {
+		desc:  "single-digit host",
+		input: "http://1:6060",
+		want: Origin{
+			Scheme: "http",
+			Host:   Host{Value: "1", AssumeIP: true},
+			Port:   6060,
+		},
+	}, {
+		desc:  "ipv4 with trailing full stop",
+		input: "http://127.0.0.1.",
+		want: Origin{
+			Scheme: "http",
+			Host:   Host{Value: "127.0.0.1.", AssumeIP: true},
+		},
+	}, {
+		desc:  "malformed ipv4 with one too many octets",
+		input: "http://127.0.0.1.1",
+		want: Origin{
+			Scheme: "http",
+			Host:   Host{Value: "127.0.0.1.1", AssumeIP: true},
+		},
+	}, {
+		desc:  "ipv4 with overflowing octet",
+		input: "http://256.0.0.1",
+		want: Origin{
+			Scheme: "http",
+			Host:   Host{Value: "256.0.0.1", AssumeIP: true},
+		},
+	}, {
+		desc:  "ipv4 with trailing full stop and port",
+		input: "http://127.0.0.1.:6060",
+		want: Origin{
+			Scheme: "http",
+			Host:   Host{Value: "127.0.0.1.", AssumeIP: true},
+			Port:   6060,
+		},
+	}, {
+		desc:  "invalid TLD",
+		input: "http://foo.bar.255:6060",
+		want: Origin{
+			Scheme: "http",
+			Host:   Host{Value: "foo.bar.255", AssumeIP: true},
+			Port:   6060,
+		},
+	}, {
+		desc:  "longer invalid TLD",
+		input: "http://foo.bar.baz.012345678901234567890123456789:6060",
+		want: Origin{
+			Scheme: "http",
+			Host:   Host{Value: "foo.bar.baz.012345678901234567890123456789", AssumeIP: true},
+			Port:   6060,
+		},
+	}, {
+		desc:  "valid domain with all-numeric label in the middle",
+		input: "http://foo.bar.baz.012345678901234567890123456789.ab:6060",
+		want: Origin{
+			Scheme: "http",
+			Host:   Host{Value: "foo.bar.baz.012345678901234567890123456789.ab"},
+			Port:   6060,
+		},
+	}, {
+		desc:  "ipv6 with port",
+		input: "http://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:6060",
+		want: Origin{
+			Scheme: "http",
+			Host:   Host{Value: "2001:0db8:85a3:0000:0000:8a2e:0370:7334", AssumeIP: true},
+			Port:   6060,
+		},
+	}, {
+		desc: "deep_subdomain",
+		input: "http://foo.bar.baz.qux.quux.corge.grault.garply.waldo.fred." +
+			"foo.bar.baz.qux.quux.corge.grault.garply.waldo.fred." +
+			"foo.bar.baz.qux.quux.corge.grault.garply.waldo.fred." +
+			"foo.bar.baz.qux.quux.corge.grault.garply.waldo.fred." +
+			"foo.bar.baz.qux.quux.corge.grault.garply.waldo.fred." +
+			"foo.bar.baz.qux.quux.corge.grault.garply.waldo.fred." +
+			"foo.bar.baz.qux.quux.corge.grault.garply.waldo.fred." +
+			"foo.bar.baz.qux.quux.corge.grault.garply.waldo.fred." +
+			"example.com:6060",
+		failure: true,
+	},
+}
+
+func TestParse(t *testing.T) {
+	for _, c := range parseCases {
+		f := func(t *testing.T) {
+			o, ok := Parse(c.input)
+			if ok == c.failure || ok && o != c.want {
+				t.Errorf("%q: got %v, %t; want %v, %t", c.input, o, ok, c.want, !c.failure)
+			}
+		}
+		t.Run(c.desc, f)
+	}
+}
+
+func BenchmarkParse(b *testing.B) {
+	for _, c := range parseCases {
+		f := func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				Parse(c.input)
+			}
+		}
+		b.Run(c.desc, f)
+	}
+}
+
+func TestMaxUint16(t *testing.T) {
+	if maxUint16 != math.MaxUint16 {
+		const tmpl = "incorrect maxUint16 value: got %d; want %d"
+		t.Errorf(tmpl, maxUint16, math.MaxUint16)
+	}
+}
