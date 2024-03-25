@@ -17,7 +17,7 @@ and the ultimate handler. Follow the rules listed below:
     middleware.
     Otherwise, preflight requests will not get properly handled
     and browser-based clients will likely experience CORS-related errors.
-    The testable examples associated with the *Middleware.Wrap method
+    The testable examples associated with the [*Middleware.Wrap] method
     provide more guidance about avoiding such pitfalls when you rely
     on Go 1.22's enhanced routing features.
   - Because [CORS-preflight requests are not authenticated], authentication
