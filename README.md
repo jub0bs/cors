@@ -34,7 +34,7 @@ jub0bs/cors requires Go 1.22 or above.
 
 The following program demonstrates how to create a CORS middleware that
 
-- allows anonymous requests from Web origin `https://example.com`,
+- allows anonymous access from Web origin `https://example.com`,
 - with any HTTP method among `GET`, `POST`, `PUT`, or `DELETE`, and
 - (optionally) with request header `Authorization`,
 
