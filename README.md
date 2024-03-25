@@ -121,6 +121,9 @@ for CORS as desired.
 
 The documentation is available on [pkg.go.dev][pkgsite].
 
+Moreover, guidance on how to use jub0bs/cors with popular third-party routers
+can be found in [jub0bs/cors-examples][cors-examples].
+
 ## Code coverage
 
 ![coverage](https://codecov.io/gh/jub0bs/cors/branch/main/graphs/sunburst.svg?token=N208BHWQTM)
@@ -137,6 +140,7 @@ All source code is covered by the [MIT License][license].
 (GopherCon Europe 2023)][funcopts] (video)
 - [github.com/jub0bs/fcors][fcors] (this library's predecessor)
 
+[cors-examples]: https://github.com/jub0bs/cors-examples
 [fcors]: https://github.com/jub0bs/fcors
 [fearless-cors]: https://jub0bs.com/posts/2023-02-08-fearless-cors/
 [funcopts]: https://www.youtube.com/watch?v=5uM6z7RnReE
