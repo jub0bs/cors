@@ -128,6 +128,11 @@ can be found in [jub0bs/cors-examples][cors-examples].
 
 ![coverage](https://codecov.io/gh/jub0bs/cors/branch/main/graphs/sunburst.svg?token=N208BHWQTM)
 
+## Benchmarks
+
+Some benchmarks pitting jub0bs/cors against [rs/cors][rs-cors]
+are available in [jub0bs/cors-benchmarks][cors-benchmarks].
+
 ## License
 
 All source code is covered by the [MIT License][license].
@@ -140,6 +145,7 @@ All source code is covered by the [MIT License][license].
 (GopherCon Europe 2023)][funcopts] (video)
 - [github.com/jub0bs/fcors][fcors] (this library's predecessor)
 
+[cors-benchmarks]: https://github.com/jub0bs/cors-benchmarks
 [cors-examples]: https://github.com/jub0bs/cors-examples
 [fcors]: https://github.com/jub0bs/fcors
 [fearless-cors]: https://jub0bs.com/posts/2023-02-08-fearless-cors/
@@ -150,3 +156,4 @@ All source code is covered by the [MIT License][license].
 [mdn-sop]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 [net-http]: https://pkg.go.dev/net/http
 [pkgsite]: https://pkg.go.dev/github.com/jub0bs/cors
+[rs-cors]: https://github.com/rs/cors
