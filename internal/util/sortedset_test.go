@@ -9,17 +9,17 @@ import (
 
 func TestSortedSet(t *testing.T) {
 	cases := []struct {
-		desc       string
-		elems      []string
-		combined   string
-		subsets    []string
-		notSubsets []string
-		wantSize   int
+		desc     string
+		elems    []string
+		combined string
+		subs     []string
+		notSubs  []string
+		wantSize int
 	}{
 		{
 			desc:     "empty set",
 			combined: "",
-			notSubsets: []string{
+			notSubs: []string{
 				"bar",
 				"bar,foo",
 			},
@@ -28,11 +28,11 @@ func TestSortedSet(t *testing.T) {
 			desc:     "singleton set",
 			elems:    []string{"foo"},
 			combined: "foo",
-			subsets: []string{
+			subs: []string{
 				"",
 				"foo",
 			},
-			notSubsets: []string{
+			notSubs: []string{
 				"bar",
 				"bar,foo",
 			},
@@ -41,7 +41,7 @@ func TestSortedSet(t *testing.T) {
 			desc:     "no dupes",
 			elems:    []string{"foo", "bar", "baz"},
 			combined: "bar,baz,foo",
-			subsets: []string{
+			subs: []string{
 				"",
 				"bar",
 				"baz",
@@ -51,7 +51,7 @@ func TestSortedSet(t *testing.T) {
 				"baz,foo",
 				"bar,baz,foo",
 			},
-			notSubsets: []string{
+			notSubs: []string{
 				"qux",
 				"bar,baz,baz",
 				"qux,baz",
@@ -63,13 +63,13 @@ func TestSortedSet(t *testing.T) {
 			desc:     "some dupes",
 			elems:    []string{"foo", "bar", "foo"},
 			combined: "bar,foo",
-			subsets: []string{
+			subs: []string{
 				"",
 				"bar",
 				"foo",
 				"bar,foo",
 			},
-			notSubsets: []string{
+			notSubs: []string{
 				"qux",
 				"qux,bar",
 				"qux,foo",
@@ -92,16 +92,16 @@ func TestSortedSet(t *testing.T) {
 				const tmpl = "NewSortedSet(%#v...).String(): got %q; want %q"
 				t.Errorf(tmpl, elems, combined, tc.combined)
 			}
-			for _, sub := range tc.subsets {
+			for _, sub := range tc.subs {
 				if !s.Subsumes(sub) {
-					const tmpl = "%q is not a subset of %q, but should be"
-					t.Errorf(tmpl, sub, s)
+					const tmpl = "%q does not subsume %q, but should"
+					t.Errorf(tmpl, s, sub)
 				}
 			}
-			for _, notSub := range tc.notSubsets {
+			for _, notSub := range tc.notSubs {
 				if s.Subsumes(notSub) {
-					const tmpl = "%q is a subset of %q, but should not be"
-					t.Errorf(tmpl, notSub, s)
+					const tmpl = "%q subsumes %q, but should not"
+					t.Errorf(tmpl, s, notSub)
 				}
 			}
 		}
