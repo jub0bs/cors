@@ -57,20 +57,13 @@ func (set SortedSet) Subsumes(csv string) bool {
 		return true
 	}
 	posOfLastNameSeen := -1
-	chunkSize := set.maxLen + 1 // (to accommodate for at least one comma)
+	chunkSize := set.maxLen + 1 // to accommodate for at least one comma
 	for {
 		// As a defense against maliciously long names in csv,
-		// we only process at most chunkSize bytes per iteration.
-		end := min(len(csv), chunkSize)
-		comma := strings.IndexByte(csv[:end], ',')
-		var name string
-		if comma == -1 {
-			name = csv
-		} else {
-			name = csv[:comma]
-		}
-		pos, found := set.m[name]
-		if !found {
+		// we process at most chunkSize of csv's leading bytes per iteration.
+		name, rest, commaFound := cutAtComma(csv, chunkSize)
+		pos, ok := set.m[name]
+		if !ok {
 			return false
 		}
 		// The names in csv are expected to be sorted in lexicographical order
@@ -82,10 +75,22 @@ func (set SortedSet) Subsumes(csv string) bool {
 			return false
 		}
 		posOfLastNameSeen = pos
-		if comma < 0 { // We've now processed all the names in csv.
-			break
+		if !commaFound { // We have now exhausted the names in csv.
+			return true
 		}
-		csv = csv[comma+1:]
+		csv = rest
 	}
-	return true
+}
+
+// cutAtComma slices s around the first comma that appears among (up to) the
+// first n bytes of s, returning the parts of s before and after the comma.
+// The found result reports whether a comma appears in that portion of s.
+// If no comma appears in that portion of s, cutAtComma returns s, "", false.
+func cutAtComma(s string, n int) (before, after string, found bool) {
+	// Note: this implementation draws inspiration from strings.Cut's.
+	end := min(len(s), n)
+	if i := strings.IndexByte(s[:end], ','); i >= 0 {
+		return s[:i], s[i+1:], true
+	}
+	return s, "", false
 }
