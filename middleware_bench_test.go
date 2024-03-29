@@ -75,7 +75,7 @@ func BenchmarkMiddleware(b *testing.B) {
 					reqHeaders: Headers{
 						headerOrigin: "https://example.com",
 						headerACRM:   http.MethodGet,
-						headerACRH:   strings.Repeat("a", http.DefaultMaxHeaderBytes),
+						headerACRH:   strings.Repeat("a,", 1024),
 					},
 				},
 			},
@@ -219,7 +219,7 @@ func BenchmarkMiddleware(b *testing.B) {
 					reqHeaders: Headers{
 						headerOrigin: "https://example.com",
 						headerACRM:   http.MethodGet,
-						headerACRH:   strings.Repeat("a", http.DefaultMaxHeaderBytes),
+						headerACRH:   strings.Repeat("a,", 1024),
 					},
 				}, {
 					desc:      "actual",
@@ -274,7 +274,7 @@ func BenchmarkMiddleware(b *testing.B) {
 					reqHeaders: Headers{
 						headerOrigin: "https://example.com",
 						headerACRM:   http.MethodGet,
-						headerACRH:   strings.Repeat("a", http.DefaultMaxHeaderBytes),
+						headerACRH:   strings.Repeat("a,", 1024),
 					},
 				}, {
 					desc:      "actual",
