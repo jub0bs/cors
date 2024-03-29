@@ -110,7 +110,7 @@ func NewMiddleware(c Config) (*Middleware, error) {
 func (cfg *config) handleNonCORS(resHdrs http.Header, options bool) {
 	if options {
 		// see the implementation comment in handleCORSPreflight
-		headers.FastAdd(resHdrs, headers.Vary, headers.PreflightVarySgl)
+		headers.FastAdd(resHdrs, headers.Vary, headers.ValueVaryOptions, headers.PreflightVarySgl)
 	}
 	if cfg.privateNetworkAccessNoCors {
 		return
@@ -122,7 +122,7 @@ func (cfg *config) handleNonCORS(resHdrs http.Header, options bool) {
 		// because doing so is simpler to implement and unlikely to be
 		// detrimental to Web caches.
 		if !options {
-			headers.FastAdd(resHdrs, headers.Vary, headers.OriginSgl)
+			headers.FastAdd(resHdrs, headers.Vary, headers.Origin, headers.OriginSgl)
 		}
 		// nothing to do: at this stage, we've already added a Vary header
 		return
@@ -154,7 +154,7 @@ func (cfg *config) handleCORSPreflight(
 	//   - Access-Control-Request-Methods
 	//   - Access-Control-Request-Private-Network
 	//   - Origin
-	headers.FastAdd(resHdrs, headers.Vary, headers.PreflightVarySgl)
+	headers.FastAdd(resHdrs, headers.Vary, headers.ValueVaryOptions, headers.PreflightVarySgl)
 
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
@@ -272,17 +272,17 @@ func (cfg *config) handleNonPreflightCORS(
 	if cfg.privateNetworkAccessNoCors {
 		if options {
 			// see the implementation comment in handleCORSPreflight
-			headers.FastAdd(resHdrs, headers.Vary, headers.PreflightVarySgl)
+			headers.FastAdd(resHdrs, headers.Vary, headers.ValueVaryOptions, headers.PreflightVarySgl)
 		}
 		return
 	}
 	switch {
 	case options:
 		// see the implementation comment in handleCORSPreflight
-		headers.FastAdd(resHdrs, headers.Vary, headers.PreflightVarySgl)
+		headers.FastAdd(resHdrs, headers.Vary, headers.ValueVaryOptions, headers.PreflightVarySgl)
 	case !cfg.allowAnyOrigin:
 		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
-		headers.FastAdd(resHdrs, headers.Vary, headers.OriginSgl)
+		headers.FastAdd(resHdrs, headers.Vary, headers.Origin, headers.OriginSgl)
 	}
 	if !cfg.credentialed && cfg.allowAnyOrigin {
 		// See the last paragraph in

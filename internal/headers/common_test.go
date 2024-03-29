@@ -69,14 +69,14 @@ func TestFastAdd(t *testing.T) {
 		desc  string
 		h     http.Header
 		key   string
-		value []string
+		value string
 		want  http.Header
 	}{
 		{
 			desc:  "empty http.Header",
 			h:     http.Header{},
 			key:   "Foo",
-			value: []string{"bar"},
+			value: "bar",
 			want:  http.Header{"Foo": []string{"bar"}},
 		}, {
 			desc: "single value",
@@ -84,7 +84,7 @@ func TestFastAdd(t *testing.T) {
 				"Authorization": []string{"Bearer xxx"},
 			},
 			key:   "Authorization",
-			value: []string{"Basic dXNlcjpwYXNz"},
+			value: "Basic dXNlcjpwYXNz",
 			want: http.Header{
 				"Authorization": []string{
 					"Bearer xxx",
@@ -95,7 +95,7 @@ func TestFastAdd(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			FastAdd(tc.h, tc.key, tc.value)
+			FastAdd(tc.h, tc.key, tc.value, []string{tc.value})
 			if !maps.EqualFunc(tc.h, tc.want, slices.Equal) {
 				t.Errorf("got %q; want %q", tc.h, tc.want)
 			}

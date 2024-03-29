@@ -35,14 +35,15 @@ const (
 const Authorization = "authorization" // note: byte-lowercase
 
 const (
-	ValueTrue     = "true"
-	ValueWildcard = "*"
+	ValueTrue        = "true"
+	ValueWildcard    = "*"
+	ValueVaryOptions = ACRH + ", " + ACRM + ", " + ACRPN + ", " + Origin
 )
 
 const ValueSep = ","
 
 var ( // each of them an effective constant wrapped in a (singleton) slice
-	PreflightVarySgl = []string{ACRH + ", " + ACRM + ", " + ACRPN + ", " + Origin}
+	PreflightVarySgl = []string{ValueVaryOptions}
 	TrueSgl          = []string{ValueTrue}
 	OriginSgl        = []string{Origin}
 	WildcardSgl      = []string{ValueWildcard}
@@ -57,21 +58,27 @@ func IsValid(name string) bool {
 	return util.IsToken(name)
 }
 
-// FastAdd adds the key-value pair (k, v[0]) in hdrs.
-// FastAdd is useful because, contrary to [http.Header.Add],
-// it incurs no heap allocation when k is absent from hdrs.
+// FastAdd adds the key-value pair (k, v) in hdrs if k is present in hdrs;
+// otherwise, it assigns sgl to hdrs[k].
 // Preconditions:
 //   - hdrs is non-nil;
-//   - k is in canonical format (see [http.CanonicalHeaderKey]);
-//   - v is a singleton slice.
-func FastAdd(hdrs http.Header, k string, v []string) {
+//   - k is in canonical format (see [http.CanonicalHeaderKey]).
+//
+// Moreover, correct usage requires sgl be non-empty and sgl[0] equal v.
+//
+// FastAdd is useful because
+//   - contrary to [http.Header.Add], it incurs no heap allocation when k is
+//     absent from hdrs;
+//   - it accepts the value both as a scalar and as a singleton slice,
+//     which saves a bounds check.
+func FastAdd(hdrs http.Header, k string, v string, sgl []string) {
 	old, found := hdrs[k]
 	if !found { // fast path
-		hdrs[k] = v
+		hdrs[k] = sgl
 		return
 	}
 	// slow path
-	hdrs[k] = append(old, v[0])
+	hdrs[k] = append(old, v)
 }
 
 // First, if k is present in hdrs, returns the value associated to k in hdrs,
