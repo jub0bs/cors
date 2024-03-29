@@ -70,7 +70,7 @@ func NewMiddleware(c Config) (*Middleware, error) {
 			// Fetch-compliant browsers send at most one Origin header;
 			// see https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
 			// (step 12).
-			origins, found := headers.First(r.Header, headers.Origin)
+			orig, originSgl, found := headers.First(r.Header, headers.Origin)
 			if !found {
 				// r is _not_ a CORS request.
 				cfg.handleNonCORS(w.Header(), options)
@@ -81,21 +81,21 @@ func NewMiddleware(c Config) (*Middleware, error) {
 			// see https://fetch.spec.whatwg.org/#cors-request.
 			if !options {
 				// r is a non-OPTIONS CORS request.
-				cfg.handleNonPreflightCORS(w, origins, options)
+				cfg.handleNonPreflightCORS(w, orig, originSgl, options)
 				h.ServeHTTP(w, r)
 				return
 			}
 			// Fetch-compliant browsers send at most one ACRM header;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-fetch (step 3).
-			acrm, found := headers.First(r.Header, headers.ACRM)
+			acrm, acrmSgl, found := headers.First(r.Header, headers.ACRM)
 			if found {
 				// r is a CORS-preflight request;
 				// see https://fetch.spec.whatwg.org/#cors-preflight-request.
-				cfg.handleCORSPreflight(w, r.Header, origins, acrm)
+				cfg.handleCORSPreflight(w, r.Header, orig, originSgl, acrm, acrmSgl)
 				return
 			}
 			// r is a non-preflight OPTIONS CORS request.
-			cfg.handleNonPreflightCORS(w, origins, options)
+			cfg.handleNonPreflightCORS(w, orig, originSgl, options)
 			h.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(f)
@@ -137,8 +137,10 @@ func (cfg *config) handleNonCORS(resHdrs http.Header, options bool) {
 func (cfg *config) handleCORSPreflight(
 	w http.ResponseWriter,
 	reqHdrs http.Header,
-	origins []string, // assumed non-empty
-	acrm []string, // assumed non-empty
+	orig string,
+	originSgl []string,
+	acrm string,
+	acrmSgl []string,
 ) {
 	resHdrs := w.Header()
 	// Responses to OPTIONS requests are not meant to be cached but,
@@ -156,7 +158,7 @@ func (cfg *config) handleCORSPreflight(
 
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
-	if !cfg.processOriginForPreflight(resHdrs, origins) {
+	if !cfg.processOriginForPreflight(resHdrs, orig, originSgl) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -186,7 +188,7 @@ func (cfg *config) handleCORSPreflight(
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	if !cfg.processACRM(resHdrs, acrm) {
+	if !cfg.processACRM(resHdrs, acrm, acrmSgl) {
 		if debug {
 			w.WriteHeader(cfg.preflightStatus)
 			return
@@ -217,10 +219,10 @@ func (cfg *config) handleCORSPreflight(
 
 func (cfg *config) processOriginForPreflight(
 	resHdrs http.Header,
-	origins []string, // assumed non-empty
+	orig string,
+	originSgl []string,
 ) bool {
-	rawOrigin := origins[0]
-	o, ok := origin.Parse(rawOrigin)
+	o, ok := origin.Parse(orig)
 	if !ok {
 		return false
 	}
@@ -231,7 +233,7 @@ func (cfg *config) processOriginForPreflight(
 	if !cfg.corpus.Contains(&o) {
 		return false
 	}
-	resHdrs[headers.ACAO] = origins
+	resHdrs[headers.ACAO] = originSgl
 	if cfg.credentialed {
 		// We make no attempt to infer whether the request is credentialed,
 		// simply because preflight requests don't carry credentials;
@@ -247,8 +249,8 @@ func (cfg *config) processACRPN(resHdrs, reqHdrs http.Header) bool {
 	// PNA-compliant browsers send at most one ACRPN header;
 	// see https://wicg.github.io/private-network-access/#fetching
 	// (step 10.2.1.1).
-	acrpn, found := headers.First(reqHdrs, headers.ACRPN)
-	if !found || acrpn[0] != headers.ValueTrue { // no request for PNA
+	acrpn, _, found := headers.First(reqHdrs, headers.ACRPN)
+	if !found || acrpn != headers.ValueTrue { // no request for PNA
 		return true
 	}
 	if cfg.privateNetworkAccess || cfg.privateNetworkAccessNoCors {
@@ -261,7 +263,8 @@ func (cfg *config) processACRPN(resHdrs, reqHdrs http.Header) bool {
 // Note: only for _non-preflight_ CORS requests
 func (cfg *config) handleNonPreflightCORS(
 	w http.ResponseWriter,
-	origins []string, // assumed non-empty
+	orig string,
+	originSgl []string,
 	options bool,
 ) {
 	resHdrs := w.Header()
@@ -295,11 +298,11 @@ func (cfg *config) handleNonPreflightCORS(
 		}
 		return
 	}
-	o, ok := origin.Parse(origins[0])
+	o, ok := origin.Parse(orig)
 	if !ok || !cfg.corpus.Contains(&o) {
 		return
 	}
-	resHdrs[headers.ACAO] = origins
+	resHdrs[headers.ACAO] = originSgl
 	if cfg.credentialed {
 		// We make no attempt to infer whether the request is credentialed;
 		// in fact, a request’s credentials mode is not necessarily observable
@@ -316,9 +319,10 @@ func (cfg *config) handleNonPreflightCORS(
 
 func (cfg *config) processACRM(
 	hdrs http.Header,
-	acrm []string, // assumed non-empty
+	acrm string,
+	acrmSgl []string,
 ) bool {
-	if methods.IsSafelisted(acrm[0], struct{}{}) {
+	if methods.IsSafelisted(acrm, struct{}{}) {
 		// CORS-safelisted methods get a free pass; see
 		// https://fetch.spec.whatwg.org/#ref-for-cors-safelisted-method%E2%91%A2.
 		// Therefore, no need to set the ACAM header in this case.
@@ -328,8 +332,8 @@ func (cfg *config) processACRM(
 		hdrs[headers.ACAM] = headers.WildcardSgl
 		return true
 	}
-	if cfg.allowAnyMethod || cfg.allowedMethods.Contains(acrm[0]) {
-		hdrs[headers.ACAM] = acrm
+	if cfg.allowAnyMethod || cfg.allowedMethods.Contains(acrm) {
+		hdrs[headers.ACAM] = acrmSgl
 		return true
 	}
 	return false
@@ -338,7 +342,7 @@ func (cfg *config) processACRM(
 func (cfg *config) processACRH(resHdrs, reqHdrs http.Header, debug bool) bool {
 	// Fetch-compliant browsers send at most one ACRH header;
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0 (step 5).
-	acrh, found := headers.First(reqHdrs, headers.ACRH)
+	acrh, acrhSgl, found := headers.First(reqHdrs, headers.ACRH)
 	if !found {
 		return true
 	}
@@ -404,17 +408,17 @@ func (cfg *config) processACRH(resHdrs, reqHdrs http.Header, debug bool) bool {
 		// e.g. by cutting ACRH around "authorization" and
 		// echoing the results in up to two ACAH header(s);
 		// but the whole alternative approach is not worth the trouble anyway.
-		resHdrs[headers.ACAH] = acrh
+		resHdrs[headers.ACAH] = acrhSgl
 		return true
 	}
 	if !debug {
 		if cfg.allowedReqHdrs.Size() == 0 {
 			return false
 		}
-		if !cfg.allowedReqHdrs.Subsumes(acrh[0]) {
+		if !cfg.allowedReqHdrs.Subsumes(acrh) {
 			return false
 		}
-		resHdrs[headers.ACAH] = acrh
+		resHdrs[headers.ACAH] = acrhSgl
 		return true
 	}
 	if cfg.acah != nil {

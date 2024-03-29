@@ -109,14 +109,14 @@ func TestFirst(t *testing.T) {
 		desc string
 		h    http.Header
 		key  string
-		want []string
+		want string
 		ok   bool
 	}{
 		{
 			desc: "nil http.Header",
 			h:    nil,
 			key:  "Foo",
-			want: nil,
+			want: "",
 			ok:   false,
 		}, {
 			desc: "single value",
@@ -124,7 +124,7 @@ func TestFirst(t *testing.T) {
 				"Authorization": []string{"Bearer xxx"},
 			},
 			key:  "Authorization",
-			want: []string{"Bearer xxx"},
+			want: "Bearer xxx",
 			ok:   true,
 		}, {
 			desc: "multiple values",
@@ -132,15 +132,16 @@ func TestFirst(t *testing.T) {
 				"Authorization": []string{"Bearer xxx", "Basic dXNlcjpwYXNz"},
 			},
 			key:  "Authorization",
-			want: []string{"Bearer xxx"},
+			want: "Bearer xxx",
 			ok:   true,
 		},
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			got, ok := First(tc.h, tc.key)
-			if ok != tc.ok || !slices.Equal(got, tc.want) {
-				t.Errorf("got %q, %t; want %q, %t", got, ok, tc.want, tc.ok)
+			v, s, ok := First(tc.h, tc.key)
+			if ok != tc.ok || v != tc.want || len(s) > 1 || len(s) == 1 && s[0] != v {
+				const tmpl = "got %s, %q, %t; want %s, %q, %t"
+				t.Errorf(tmpl, v, s, ok, tc.want, []string{tc.want}, tc.ok)
 			}
 		}
 		t.Run(tc.desc, f)

@@ -74,16 +74,20 @@ func FastAdd(hdrs http.Header, k string, v []string) {
 	hdrs[k] = append(old, v[0])
 }
 
-// First, if k is present in hdrs, returns a singleton slice containing
-// the first value (if any) associated with k in hdrs and true.
-// Otherwise, First returns nil and false.
-// First is useful because, contrary to [http.Header.Get],
-// it returns a slice that can be reused, which avoids a heap allocation.
+// First, if k is present in hdrs, returns the value associated to k in hdrs,
+// a singleton slice containing that value, and true;
+// otherwise, First returns "", nil, false.
 // Precondition: k is in canonical format (see [http.CanonicalHeaderKey]).
-func First(hdrs http.Header, k string) ([]string, bool) {
+//
+// First is useful because
+//   - contrary to [http.Header.Get], it returns a slice that can be reused,
+//     which saves a heap allocation in client code;
+//   - it returns the value both as a scalar and as a singleton slice,
+//     which saves a bounds check in client code.
+func First(hdrs http.Header, k string) (string, []string, bool) {
 	v, found := hdrs[k]
 	if !found || len(v) == 0 {
-		return nil, false
+		return "", nil, false
 	}
-	return v[:1], true
+	return v[0], v[:1], true
 }
