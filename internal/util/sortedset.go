@@ -90,7 +90,8 @@ func cutAtComma(s string, n int) (before, after string, found bool) {
 	// Note: this implementation draws inspiration from strings.Cut's.
 	end := min(len(s), n)
 	if i := strings.IndexByte(s[:end], ','); i >= 0 {
-		return s[:i], s[i+1:], true
+		after = s[i+1:] // deal with this first to save one bounds check
+		return s[:i], after, true
 	}
 	return s, "", false
 }
