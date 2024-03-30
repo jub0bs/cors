@@ -186,7 +186,9 @@ func parsePort(str string) (int, string, bool) {
 	}
 	port := intFromDigit(str[0])
 	i++
-	for end := min(len(str), maxPortLen); i < end; i++ {
+	end := min(len(str), maxPortLen)
+	_ = str[i:end] // bounds check
+	for ; i < end; i++ {
 		if !isDigit(str[i]) {
 			break
 		}
