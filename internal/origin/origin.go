@@ -180,14 +180,13 @@ func isASCIILabelByte(b byte) bool {
 // part of the input string, and a bool that indicates success of failure.
 func parsePort(str string) (int, string, bool) {
 	const base = 10
-	var i int
 	if len(str) == 0 || !isNonZeroDigit(str[0]) {
 		return 0, str, false
 	}
 	port := intFromDigit(str[0])
-	i++
+	i := 1
 	end := min(len(str), maxPortLen)
-	_ = str[i:end] // bounds check
+	_ = str[i:end] // hoist bounds checks out of the loop
 	for ; i < end; i++ {
 		if !isDigit(str[i]) {
 			break
