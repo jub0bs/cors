@@ -167,15 +167,17 @@ func (n *node) insertEdge(label byte, child *node) {
 
 type edges = map[byte]*node
 
-func lengthOfCommonSuffix(s1, s2 string) int {
-	l1 := len(s1) - 1
-	l2 := len(s2) - 1
-	l := min(l1, l2)
+func lengthOfCommonSuffix(a, b string) int {
+	if len(b) < len(a) {
+		a, b = b, a
+	}
+	b = b[len(b)-len(a):]
+	_ = b[:len(a)] // hoist bounds check on b out of the loop
 	var i int
-	for ; i <= l; i++ {
-		if s1[l1-i] != s2[l2-i] {
+	for i = len(a) - 1; 0 <= i; i-- {
+		if a[i] != b[i] {
 			break
 		}
 	}
-	return i
+	return len(a) - 1 - i
 }
