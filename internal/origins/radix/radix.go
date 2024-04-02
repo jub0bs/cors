@@ -123,13 +123,17 @@ func lastByte(str string) (byte, bool) {
 	return str[len(str)-1], true
 }
 
-func trimCommonSuffix(s1, s2 string) (a, b, suf string) {
-	a, b = s1, s2
-	if len(s2) < len(s1) {
+// trimCommonSuffix computes the longest suffix common to s1 and s2 and returns
+// a version of s1 trimmed of that common suffix,
+// a version of s2 trimmed of that common suffix,
+// and the common suffix.
+func trimCommonSuffix(s1, s2 string) (string, string, string) {
+	a, b := s1, s2
+	if len(b) < len(a) {
 		a, b = b, a
 	}
 	b = b[len(b)-len(a):]
-	_ = b[:len(a)] // hoist bounds check on b out of the loop
+	_ = b[:len(a)] // hoist bounds checks on b out of the loop
 	i := len(a) - 1
 	for ; 0 <= i && a[i] == b[i]; i-- {
 		// deliberately empty body
