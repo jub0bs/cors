@@ -50,7 +50,7 @@ func (set SortedSet) String() string {
 
 // Subsumes reports whether csv is a sequence of comma-separated names that are
 //   - all elements of set,
-//   - sorted in lexicographically order,
+//   - sorted in lexicographical order,
 //   - unique.
 func (set SortedSet) Subsumes(csv string) bool {
 	if csv == "" {
