@@ -123,24 +123,19 @@ func lastByte(str string) (byte, bool) {
 	return str[len(str)-1], true
 }
 
-func trimCommonSuffix(a, b string) (prea, preb, suf string) {
-	lsuf := lengthOfCommonSuffix(a, b)
-	return a[:len(a)-lsuf], b[:len(b)-lsuf], a[len(a)-lsuf:]
-}
-
-func lengthOfCommonSuffix(a, b string) int {
-	if len(b) < len(a) {
+func trimCommonSuffix(s1, s2 string) (a, b, suf string) {
+	a, b = s1, s2
+	if len(s2) < len(s1) {
 		a, b = b, a
 	}
 	b = b[len(b)-len(a):]
 	_ = b[:len(a)] // hoist bounds check on b out of the loop
 	i := len(a) - 1
-	for ; 0 <= i; i-- {
-		if a[i] != b[i] {
-			break
-		}
+	for ; 0 <= i && a[i] == b[i]; i-- {
+		// deliberately empty body
 	}
-	return len(a) - 1 - i
+	i++
+	return s1[:len(s1)-len(a)+i], s2[:len(s2)-len(a)+i], a[i:]
 }
 
 // WildcardElem is a sentinel value that subsumes all others.
