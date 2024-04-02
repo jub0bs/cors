@@ -17,10 +17,10 @@ type Tree struct {
 // A non-leading * has no special meaning and is treated as any other byte.
 // Sentinel value -1 represents a wildcard value that subsumes all others.
 func (t *Tree) Insert(keyPattern string, v int) {
-	var wildcardPattern bool
+	var hasLeadingAsterisk bool
 	// check for a leading asterisk
 	if b, rest, ok := splitAfterFirstByte(keyPattern); ok && b == '*' {
-		wildcardPattern = true
+		hasLeadingAsterisk = true
 		keyPattern = rest
 	}
 	var parent *node
@@ -30,7 +30,7 @@ func (t *Tree) Insert(keyPattern string, v int) {
 	for {
 		label, ok := lastByte(search)
 		if !ok {
-			n.add(v, wildcardPattern)
+			n.add(v, hasLeadingAsterisk)
 			return
 		}
 		if n.wildcardSet.Contains(v) {
@@ -40,7 +40,7 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		n = n.edges[label]
 		if n == nil { // no matching edge found; create one
 			child := &node{suf: search}
-			child.add(v, wildcardPattern)
+			child.add(v, hasLeadingAsterisk)
 			parent.insertEdge(label, child)
 			return
 		}
@@ -61,9 +61,10 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		child.insertEdge(byteBeforeSuffix, n)
 		if len(suf) == len(search) { // search is a suffix of n.suf
 			n.suf = prefixOfNSuf
-			child.add(v, wildcardPattern)
+			child.add(v, hasLeadingAsterisk)
 			return
 		}
+
 		// search is NOT a suffix of n.suf
 		n.suf = prefixOfNSuf
 		// At this stage, we've established that
@@ -73,7 +74,7 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		label, _ = lastByte(searchPrefix)
 		search = searchPrefix
 		grandChild := &node{suf: search}
-		grandChild.add(v, wildcardPattern)
+		grandChild.add(v, hasLeadingAsterisk)
 		child.insertEdge(label, grandChild)
 	}
 }
@@ -145,9 +146,9 @@ type node struct {
 	wildcardSet util.Set[int]
 }
 
-func (n *node) add(elem int, wildcardPattern bool) {
+func (n *node) add(elem int, toWildcardSet bool) {
 	var set *util.Set[int]
-	if wildcardPattern {
+	if toWildcardSet {
 		set = &n.wildcardSet
 	} else {
 		set = &n.set
