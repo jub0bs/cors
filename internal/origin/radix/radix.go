@@ -3,11 +3,7 @@
 // https://github.com/armon/go-radix.
 package radix
 
-import (
-	"strings"
-
-	"github.com/jub0bs/cors/internal/util"
-)
+import "github.com/jub0bs/cors/internal/util"
 
 // A Tree is radix tree whose edges are each labeled by a byte,
 // and whose conceptual leaf nodes each contain a set of ints.
@@ -17,62 +13,68 @@ type Tree struct {
 }
 
 // Insert inserts v in the tree according to keyPattern.
-// The key pattern is processed from right to left.
 // A leading * byte (0x2a) denotes a wildcard for any non-empty byte sequence.
 // A non-leading * has no special meaning and is treated as any other byte.
 // Sentinel value -1 represents a wildcard value that subsumes all others.
 func (t *Tree) Insert(keyPattern string, v int) {
 	var wildcardPattern bool
-	if strings.HasPrefix(keyPattern, "*") {
+	// check for a leading asterisk
+	if b, rest, ok := splitAfterFirstByte(keyPattern); ok && b == '*' {
 		wildcardPattern = true
-		keyPattern = keyPattern[1:]
+		keyPattern = rest
 	}
 	var parent *node
 	n := &t.root
+	// The key pattern is processed from right to left.
 	search := keyPattern
 	for {
-		if len(search) == 0 {
+		label, ok := lastByte(search)
+		if !ok {
 			n.add(v, wildcardPattern)
 			return
 		}
-		if n.wildcardSet.Contains(v) { // nothing more to do
+		if n.wildcardSet.Contains(v) {
 			return
 		}
 		parent = n
-		n = n.edges[lastByteIn(search)]
+		n = n.edges[label]
 		if n == nil { // no matching edge found; create one
-			child := &node{suffix: search}
+			child := &node{suf: search}
 			child.add(v, wildcardPattern)
-			parent.insertEdge(lastByteIn(search), child)
+			parent.insertEdge(label, child)
 			return
 		}
 
 		// matching edge found
-		suffixLen := lengthOfCommonSuffix(search, n.suffix)
-		if suffixLen == len(n.suffix) { // n.suffix is a suffix of search
-			search, _ = splitRight(search, suffixLen)
+		searchPrefix, prefixOfNSuf, suf := trimCommonSuffix(search, n.suf)
+		if len(suf) == len(n.suf) { // n.suf is a suffix of search
+			search = searchPrefix
 			continue
 		}
 
-		// n.suffix is NOT a suffix of search; split the node
-		child := new(node)
-		_, child.suffix = splitRight(search, suffixLen)
-		parent.insertEdge(lastByteIn(search), child)
+		// n.suf is NOT a suffix of search; split the node
+		child := &node{suf: suf}
+		parent.insertEdge(label, child)
 
 		// restore the existing node
-		byteBeforeSuffix := n.suffix[len(n.suffix)-1-suffixLen]
+		byteBeforeSuffix := n.suf[len(n.suf)-1-len(suf)]
 		child.insertEdge(byteBeforeSuffix, n)
-		if len(search) == suffixLen { // search is a suffix of n.suffix
-			n.suffix, _ = splitRight(n.suffix, suffixLen)
+		if len(suf) == len(search) { // search is a suffix of n.suf
+			n.suf = prefixOfNSuf
 			child.add(v, wildcardPattern)
 			return
 		}
-		// search is NOT a suffix of n.suffix
-		n.suffix, _ = splitRight(n.suffix, suffixLen)
-		search, _ = splitRight(search, suffixLen)
-		grandChild := &node{suffix: search}
+		// search is NOT a suffix of n.suf
+		n.suf = prefixOfNSuf
+		// At this stage, we've established that
+		// n.suf is NOT a suffix of search and
+		// search is NOT a suffix of n.suf;
+		// therefore, searchPrefix is necessarily non-empty.
+		label, _ = lastByte(searchPrefix)
+		search = searchPrefix
+		grandChild := &node{suf: search}
 		grandChild.add(v, wildcardPattern)
-		child.insertEdge(lastByteIn(search), grandChild)
+		child.insertEdge(label, grandChild)
 	}
 }
 
@@ -81,39 +83,48 @@ func (t *Tree) Contains(k string, v int) bool {
 	n := &t.root
 	search := k
 	for {
-		if len(search) == 0 {
-			return n.set.Contains(v) ||
-				n.set.Contains(WildcardElem)
+		label, ok := lastByte(search)
+		if !ok {
+			return n.set.Contains(v) || n.set.Contains(WildcardElem)
 		}
 
 		// search is not empty; check wildcard edge
-		if n.wildcardSet.Contains(v) ||
-			n.wildcardSet.Contains(WildcardElem) { // nothing more to check
+		if n.wildcardSet.Contains(v) || n.wildcardSet.Contains(WildcardElem) {
 			return true
 		}
 
 		// try regular edges
-		n = n.edges[lastByteIn(search)]
+		n = n.edges[label]
 		if n == nil {
 			return false
 		}
 
-		if !strings.HasSuffix(search, n.suffix) {
+		searchPrefix, _, suf := trimCommonSuffix(search, n.suf)
+		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of search
 			return false
 		}
-		search, _ = splitRight(search, len(n.suffix))
+		// n.suf is a suffix of search
+		search = searchPrefix
 	}
 }
 
-// assumes s is non-empty
-func lastByteIn(str string) byte {
-	return str[len(str)-1]
+func splitAfterFirstByte(str string) (byte, string, bool) {
+	if len(str) == 0 {
+		return 0, str, false
+	}
+	return str[0], str[1:], true
 }
 
-// assumes len(s) >= length
-func splitRight(str string, length int) (start, end string) {
-	j := len(str) - length
-	return str[:j], str[j:]
+func lastByte(str string) (byte, bool) {
+	if len(str) == 0 {
+		return 0, false
+	}
+	return str[len(str)-1], true
+}
+
+func trimCommonSuffix(a, b string) (prea, preb, suf string) {
+	lsuf := lengthOfCommonSuffix(a, b)
+	return a[:len(a)-lsuf], b[:len(b)-lsuf], a[len(a)-lsuf:]
 }
 
 // WildcardElem is a sentinel value that subsumes all others.
@@ -123,8 +134,8 @@ const WildcardElem = -1
 // (i.e. a node that does not stem from a wildcard edge)
 // of a Tree.
 type node struct {
-	// suffix of this node (not restricted to ASCII or even valid UTF-8)
-	suffix string
+	// suf of this node (not restricted to ASCII or even valid UTF-8)
+	suf string
 	// edges to children of this node
 	edges edges
 	// values in this node
@@ -173,8 +184,8 @@ func lengthOfCommonSuffix(a, b string) int {
 	}
 	b = b[len(b)-len(a):]
 	_ = b[:len(a)] // hoist bounds check on b out of the loop
-	var i int
-	for i = len(a) - 1; 0 <= i; i-- {
+	i := len(a) - 1
+	for ; 0 <= i; i-- {
 		if a[i] != b[i] {
 			break
 		}
