@@ -70,7 +70,7 @@ func NewMiddleware(c Config) (*Middleware, error) {
 			// Fetch-compliant browsers send at most one Origin header;
 			// see https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
 			// (step 12).
-			orig, originSgl, found := headers.First(r.Header, headers.Origin)
+			origin, originSgl, found := headers.First(r.Header, headers.Origin)
 			if !found {
 				// r is _not_ a CORS request.
 				cfg.handleNonCORS(w.Header(), options)
@@ -81,7 +81,7 @@ func NewMiddleware(c Config) (*Middleware, error) {
 			// see https://fetch.spec.whatwg.org/#cors-request.
 			if !options {
 				// r is a non-OPTIONS CORS request.
-				cfg.handleNonPreflightCORS(w, orig, originSgl, options)
+				cfg.handleNonPreflightCORS(w, origin, originSgl, options)
 				h.ServeHTTP(w, r)
 				return
 			}
@@ -91,11 +91,11 @@ func NewMiddleware(c Config) (*Middleware, error) {
 			if found {
 				// r is a CORS-preflight request;
 				// see https://fetch.spec.whatwg.org/#cors-preflight-request.
-				cfg.handleCORSPreflight(w, r.Header, orig, originSgl, acrm, acrmSgl)
+				cfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl)
 				return
 			}
 			// r is a non-preflight OPTIONS CORS request.
-			cfg.handleNonPreflightCORS(w, orig, originSgl, options)
+			cfg.handleNonPreflightCORS(w, origin, originSgl, options)
 			h.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(f)
@@ -137,7 +137,7 @@ func (cfg *config) handleNonCORS(resHdrs http.Header, options bool) {
 func (cfg *config) handleCORSPreflight(
 	w http.ResponseWriter,
 	reqHdrs http.Header,
-	orig string,
+	origin string,
 	originSgl []string,
 	acrm string,
 	acrmSgl []string,
@@ -158,7 +158,7 @@ func (cfg *config) handleCORSPreflight(
 
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
-	if !cfg.processOriginForPreflight(resHdrs, orig, originSgl) {
+	if !cfg.processOriginForPreflight(resHdrs, origin, originSgl) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -219,10 +219,10 @@ func (cfg *config) handleCORSPreflight(
 
 func (cfg *config) processOriginForPreflight(
 	resHdrs http.Header,
-	orig string,
+	origin string,
 	originSgl []string,
 ) bool {
-	o, ok := origins.Parse(orig)
+	o, ok := origins.Parse(origin)
 	if !ok {
 		return false
 	}
@@ -263,7 +263,7 @@ func (cfg *config) processACRPN(resHdrs, reqHdrs http.Header) bool {
 // Note: only for _non-preflight_ CORS requests
 func (cfg *config) handleNonPreflightCORS(
 	w http.ResponseWriter,
-	orig string,
+	origin string,
 	originSgl []string,
 	options bool,
 ) {
@@ -298,7 +298,7 @@ func (cfg *config) handleNonPreflightCORS(
 		}
 		return
 	}
-	o, ok := origins.Parse(orig)
+	o, ok := origins.Parse(origin)
 	if !ok || !cfg.corpus.Contains(&o) {
 		return
 	}

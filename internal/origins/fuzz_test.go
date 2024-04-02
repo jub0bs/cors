@@ -61,32 +61,32 @@ func FuzzCorpus(f *testing.F) {
 	for _, c := range parseCases {
 		f.Add(c.input, c.input)
 	}
-	f.Fuzz(func(t *testing.T, raw, orig string) {
+	f.Fuzz(func(t *testing.T, raw, origin string) {
 		pattern, err := ParsePattern(raw)
 		if err != nil {
 			t.Skip()
 		}
 		corpus := make(Corpus)
 		corpus.Add(pattern)
-		o, ok := Parse(orig)
+		o, ok := Parse(origin)
 		if !ok || !corpus.Contains(&o) {
 			t.Skip()
 		}
 		const tmpl = "corpus built with pattern %q contains origin %q"
 		if pattern.Kind == PatternKindSubdomains {
-			if !strings.HasPrefix(longestCommonSuffix(raw, orig), ".") {
-				t.Errorf(tmpl, raw, orig)
+			if !strings.HasPrefix(longestCommonSuffix(raw, origin), ".") {
+				t.Errorf(tmpl, raw, origin)
 			}
 			return
 		}
 		if pattern.Port == anyPort {
-			if !strings.HasSuffix(longestCommonPrefix(raw, orig), ":") {
-				t.Errorf(tmpl, raw, orig)
+			if !strings.HasSuffix(longestCommonPrefix(raw, origin), ":") {
+				t.Errorf(tmpl, raw, origin)
 			}
 			return
 		}
-		if orig != raw {
-			t.Errorf(tmpl, raw, orig)
+		if origin != raw {
+			t.Errorf(tmpl, raw, origin)
 		}
 	})
 }
