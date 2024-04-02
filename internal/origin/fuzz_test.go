@@ -91,22 +91,31 @@ func FuzzCorpus(f *testing.F) {
 	})
 }
 
-func longestCommonPrefix(a, b string) (out string) {
-	for i, j := 0, 0; i < len(a) && j < len(b); i, j = i+1, j+1 {
-		if a[i] != b[j] {
-			out = a[:i+1]
+func longestCommonPrefix(a, b string) string {
+	if len(b) < len(a) {
+		a, b = b, a
+	}
+	b = b[:len(a)] // hoist bounds check on b out of the loop
+	var i int
+	for ; i < len(a); i++ {
+		if a[i] != b[i] {
 			break
 		}
 	}
-	return
+	return a[:i]
 }
 
-func longestCommonSuffix(a, b string) (out string) {
-	for i, j := len(a)-1, len(b)-1; 0 <= i && 0 <= j; i, j = i-1, j-1 {
-		if a[i] != b[j] {
-			out = a[i+1:]
+func longestCommonSuffix(a, b string) string {
+	if len(b) < len(a) {
+		a, b = b, a
+	}
+	b = b[len(b)-len(a):]
+	_ = b[:len(a)] // hoist bounds check on b out of the loop
+	i := len(a) - 1
+	for ; 0 <= i; i-- {
+		if a[i] != b[i] {
 			break
 		}
 	}
-	return
+	return a[i+1:]
 }
