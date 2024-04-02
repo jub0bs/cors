@@ -1,6 +1,6 @@
-package origin
+package origins
 
-import "github.com/jub0bs/cors/internal/origin/radix"
+import "github.com/jub0bs/cors/internal/origins/radix"
 
 // A Corpus represents a set of allowed (tuple) [Web origins].
 // The keys in this map correspond to origin schemes.

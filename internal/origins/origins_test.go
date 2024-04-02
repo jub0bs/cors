@@ -1,4 +1,4 @@
-package origin
+package origins
 
 import (
 	"math"

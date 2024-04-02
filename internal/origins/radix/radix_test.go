@@ -3,7 +3,7 @@ package radix_test
 import (
 	"testing"
 
-	"github.com/jub0bs/cors/internal/origin/radix"
+	"github.com/jub0bs/cors/internal/origins/radix"
 )
 
 type TestCase struct {

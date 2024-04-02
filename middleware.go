@@ -6,7 +6,7 @@ import (
 
 	"github.com/jub0bs/cors/internal/headers"
 	"github.com/jub0bs/cors/internal/methods"
-	"github.com/jub0bs/cors/internal/origin"
+	"github.com/jub0bs/cors/internal/origins"
 )
 
 // A Middleware is a CORS middleware.
@@ -222,7 +222,7 @@ func (cfg *config) processOriginForPreflight(
 	orig string,
 	originSgl []string,
 ) bool {
-	o, ok := origin.Parse(orig)
+	o, ok := origins.Parse(orig)
 	if !ok {
 		return false
 	}
@@ -298,7 +298,7 @@ func (cfg *config) handleNonPreflightCORS(
 		}
 		return
 	}
-	o, ok := origin.Parse(orig)
+	o, ok := origins.Parse(orig)
 	if !ok || !cfg.corpus.Contains(&o) {
 		return
 	}

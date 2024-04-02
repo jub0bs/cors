@@ -1,10 +1,10 @@
-package origin
+package origins
 
 import (
 	"net/netip"
 	"strings"
 
-	"github.com/jub0bs/cors/internal/origin/radix"
+	"github.com/jub0bs/cors/internal/origins/radix"
 	"github.com/jub0bs/cors/internal/util"
 	"golang.org/x/net/idna"
 	"golang.org/x/net/publicsuffix"

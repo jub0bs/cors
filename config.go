@@ -11,7 +11,7 @@ import (
 
 	"github.com/jub0bs/cors/internal/headers"
 	"github.com/jub0bs/cors/internal/methods"
-	"github.com/jub0bs/cors/internal/origin"
+	"github.com/jub0bs/cors/internal/origins"
 	"github.com/jub0bs/cors/internal/util"
 )
 
@@ -451,7 +451,7 @@ type ExtraConfig struct {
 // internal config
 type config struct {
 	// origins
-	corpus         origin.Corpus
+	corpus         origins.Corpus
 	allowAnyOrigin bool
 
 	// credentialed
@@ -560,7 +560,7 @@ func (cfg *config) validateOrigins(patterns []string) error {
 		return util.NewError(msg)
 	}
 	var (
-		originPatterns         = make([]origin.Pattern, 0, len(patterns))
+		originPatterns         = make([]origins.Pattern, 0, len(patterns))
 		publicSuffixes         []string
 		insecureOriginPatterns []string
 		discreteOrigin         string
@@ -571,7 +571,7 @@ func (cfg *config) validateOrigins(patterns []string) error {
 			cfg.allowAnyOrigin = true
 			continue
 		}
-		pattern, err := origin.ParsePattern(raw)
+		pattern, err := origins.ParsePattern(raw)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -579,10 +579,10 @@ func (cfg *config) validateOrigins(patterns []string) error {
 		if pattern.IsDeemedInsecure() {
 			insecureOriginPatterns = append(insecureOriginPatterns, raw)
 		}
-		if pattern.Kind != origin.PatternKindSubdomains && discreteOrigin == "" {
+		if pattern.Kind != origins.PatternKindSubdomains && discreteOrigin == "" {
 			discreteOrigin = raw
 		}
-		if pattern.Kind == origin.PatternKindSubdomains {
+		if pattern.Kind == origins.PatternKindSubdomains {
 			if _, isEffectiveTLD := pattern.HostIsEffectiveTLD(); isEffectiveTLD {
 				publicSuffixes = append(publicSuffixes, raw)
 			}
@@ -602,7 +602,7 @@ func (cfg *config) validateOrigins(patterns []string) error {
 	if cfg.allowAnyOrigin {
 		return nil
 	}
-	corpus := make(origin.Corpus)
+	corpus := make(origins.Corpus)
 	for _, pattern := range originPatterns {
 		corpus.Add(&pattern)
 	}
