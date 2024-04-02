@@ -128,6 +128,21 @@ func trimCommonSuffix(a, b string) (prea, preb, suf string) {
 	return a[:len(a)-lsuf], b[:len(b)-lsuf], a[len(a)-lsuf:]
 }
 
+func lengthOfCommonSuffix(a, b string) int {
+	if len(b) < len(a) {
+		a, b = b, a
+	}
+	b = b[len(b)-len(a):]
+	_ = b[:len(a)] // hoist bounds check on b out of the loop
+	i := len(a) - 1
+	for ; 0 <= i; i-- {
+		if a[i] != b[i] {
+			break
+		}
+	}
+	return len(a) - 1 - i
+}
+
 // WildcardElem is a sentinel value that subsumes all others.
 const WildcardElem = -1
 
@@ -178,18 +193,3 @@ func (n *node) insertEdge(label byte, child *node) {
 }
 
 type edges = map[byte]*node
-
-func lengthOfCommonSuffix(a, b string) int {
-	if len(b) < len(a) {
-		a, b = b, a
-	}
-	b = b[len(b)-len(a):]
-	_ = b[:len(a)] // hoist bounds check on b out of the loop
-	i := len(a) - 1
-	for ; 0 <= i; i-- {
-		if a[i] != b[i] {
-			break
-		}
-	}
-	return len(a) - 1 - i
-}
