@@ -33,7 +33,7 @@ func (t *Tree) Insert(keyPattern string, v int) {
 			n.add(v, hasLeadingAsterisk)
 			return
 		}
-		if n.wildcardSet.Contains(v) {
+		if n.wSet.Contains(v) {
 			return
 		}
 		parent = n
@@ -90,7 +90,7 @@ func (t *Tree) Contains(k string, v int) bool {
 		}
 
 		// search is not empty; check wildcard edge
-		if n.wildcardSet.Contains(v) || n.wildcardSet.Contains(WildcardElem) {
+		if n.wSet.Contains(v) || n.wSet.Contains(WildcardElem) {
 			return true
 		}
 
@@ -158,13 +158,13 @@ type node struct {
 	set util.Set[int]
 	// values in the "conceptual" child node down the wildcard edge
 	// that stems from this node
-	wildcardSet util.Set[int]
+	wSet util.Set[int]
 }
 
 func (n *node) add(elem int, toWildcardSet bool) {
 	var set *util.Set[int]
 	if toWildcardSet {
-		set = &n.wildcardSet
+		set = &n.wSet
 	} else {
 		set = &n.set
 	}
