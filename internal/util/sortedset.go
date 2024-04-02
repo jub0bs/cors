@@ -56,18 +56,21 @@ func (set SortedSet) Subsumes(csv string) bool {
 	if csv == "" {
 		return true
 	}
-	posOfLastNameSeen := -1
-	chunkSize := set.maxLen + 1 // to accommodate for at least one comma
+	var (
+		posOfLastNameSeen = -1
+		name              string
+		commaFound        bool
+	)
 	for {
 		// As a defense against maliciously long names in csv,
-		// we process at most chunkSize of csv's leading bytes per iteration.
-		name, rest, commaFound := cutAtComma(csv, chunkSize)
+		// we process only a small number of csv's leading bytes per iteration.
+		name, csv, commaFound = cutAtComma(csv, set.maxLen+1) // +1 for comma
 		pos, ok := set.m[name]
 		if !ok {
 			return false
 		}
 		// The names in csv are expected to be sorted in lexicographical order
-		// and appear at most once in csv.
+		// and to each appear at most once.
 		// Therefore, the positions (in set) of the names that
 		// appear in csv should form a strictly increasing sequence.
 		// If that's not actually the case, bail out.
@@ -78,7 +81,6 @@ func (set SortedSet) Subsumes(csv string) bool {
 		if !commaFound { // We have now exhausted the names in csv.
 			return true
 		}
-		csv = rest
 	}
 }
 
