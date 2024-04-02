@@ -156,18 +156,9 @@ func (cfg *config) handleCORSPreflight(
 	//   - Origin
 	headers.FastAdd(resHdrs, headers.Vary, headers.ValueVaryOptions, headers.PreflightVarySgl)
 
-	// For details about the order in which we perform the following checks,
-	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
-	if !cfg.processOriginForPreflight(resHdrs, origin, originSgl) {
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
+	var pairs [5]headerPair // enough to hold ACAO, ACAC, ACAPN, ACAM, and ACAH
+	buf := pairs[:0]
 
-	// At this stage, browsers fail the CORS-preflight check
-	// (see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7)
-	// if the response status is not an ok status
-	// (see https://fetch.spec.whatwg.org/#ok-status).
-	//
 	// When debug is on and a preflight step fails,
 	// we omit the remaining CORS response headers
 	// and let the browser fail the CORS-preflight fetch,
@@ -176,74 +167,111 @@ func (cfg *config) handleCORSPreflight(
 	//
 	// When debug is off and preflight fails,
 	// we omit all CORS headers from the preflight response.
-
 	debug := cfg.debug.Load() // debug mode adopted for this preflight
-	if !cfg.processACRPN(resHdrs, reqHdrs) {
+
+	// For details about the order in which we perform the following checks,
+	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
+	buf, ok := cfg.processOriginForPreflight(buf, origin, originSgl)
+	if !ok {
 		if debug {
-			w.WriteHeader(cfg.preflightStatus)
-			return
+			flush(w.Header(), buf)
 		}
-		delete(resHdrs, headers.ACAO)
-		delete(resHdrs, headers.ACAC)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	if !cfg.processACRM(resHdrs, acrm, acrmSgl) {
+
+	// At this stage, browsers fail the CORS-preflight check
+	// (see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7)
+	// if the response status is not an ok status
+	// (see https://fetch.spec.whatwg.org/#ok-status).
+	buf, ok = cfg.processACRPN(buf, reqHdrs)
+	if !ok {
 		if debug {
+			flush(w.Header(), buf)
 			w.WriteHeader(cfg.preflightStatus)
 			return
 		}
-		delete(resHdrs, headers.ACAO)
-		delete(resHdrs, headers.ACAC)
-		delete(resHdrs, headers.ACAPN)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	if !cfg.processACRH(resHdrs, reqHdrs, debug) {
+
+	buf, ok = cfg.processACRM(buf, acrm, acrmSgl)
+	if !ok {
 		if debug {
+			flush(w.Header(), buf)
 			w.WriteHeader(cfg.preflightStatus)
 			return
 		}
-		delete(resHdrs, headers.ACAO)
-		delete(resHdrs, headers.ACAC)
-		delete(resHdrs, headers.ACAPN)
-		delete(resHdrs, headers.ACAM)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
+	buf, ok = cfg.processACRH(buf, reqHdrs, debug)
+	if !ok {
+		if debug {
+			flush(w.Header(), buf)
+			w.WriteHeader(cfg.preflightStatus)
+			return
+		}
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	flush(w.Header(), buf)
 	if cfg.acma != nil {
 		resHdrs[headers.ACMA] = cfg.acma
 	}
 	w.WriteHeader(cfg.preflightStatus)
 }
 
+type headerPair struct {
+	k string // assumed in canonical format
+	v []string
+}
+
+func flush(hdrs http.Header, pairs []headerPair) {
+	for _, pair := range pairs {
+		hdrs[pair.k] = pair.v
+	}
+}
+
 func (cfg *config) processOriginForPreflight(
-	resHdrs http.Header,
+	buf []headerPair,
 	origin string,
 	originSgl []string,
-) bool {
+) ([]headerPair, bool) {
 	o, ok := origins.Parse(origin)
 	if !ok {
-		return false
+		return buf, false
 	}
 	if !cfg.credentialed && cfg.allowAnyOrigin {
-		resHdrs[headers.ACAO] = headers.WildcardSgl
-		return true
+		pair := headerPair{
+			k: headers.ACAO,
+			v: headers.WildcardSgl,
+		}
+		buf = append(buf, pair)
+		return buf, true
 	}
 	if !cfg.corpus.Contains(&o) {
-		return false
+		return buf, false
 	}
-	resHdrs[headers.ACAO] = originSgl
+	pair := headerPair{
+		k: headers.ACAO,
+		v: originSgl,
+	}
+	buf = append(buf, pair)
 	if cfg.credentialed {
 		// We make no attempt to infer whether the request is credentialed,
 		// simply because preflight requests don't carry credentials;
 		// see https://fetch.spec.whatwg.org/#example-xhr-credentials.
-		resHdrs[headers.ACAC] = headers.TrueSgl
+		pair := headerPair{
+			k: headers.ACAC,
+			v: headers.TrueSgl,
+		}
+		buf = append(buf, pair)
 	}
-	return true
+	return buf, true
 }
 
-func (cfg *config) processACRPN(resHdrs, reqHdrs http.Header) bool {
+func (cfg *config) processACRPN(buf []headerPair, reqHdrs http.Header) ([]headerPair, bool) {
 	// See https://wicg.github.io/private-network-access/#cors-preflight.
 	//
 	// PNA-compliant browsers send at most one ACRPN header;
@@ -251,13 +279,17 @@ func (cfg *config) processACRPN(resHdrs, reqHdrs http.Header) bool {
 	// (step 10.2.1.1).
 	acrpn, _, found := headers.First(reqHdrs, headers.ACRPN)
 	if !found || acrpn != headers.ValueTrue { // no request for PNA
-		return true
+		return buf, true
 	}
 	if cfg.privateNetworkAccess || cfg.privateNetworkAccessNoCors {
-		resHdrs[headers.ACAPN] = headers.TrueSgl
-		return true
+		pair := headerPair{
+			k: headers.ACAPN,
+			v: headers.TrueSgl,
+		}
+		buf = append(buf, pair)
+		return buf, true
 	}
-	return false
+	return buf, false
 }
 
 // Note: only for _non-preflight_ CORS requests
@@ -318,33 +350,45 @@ func (cfg *config) handleNonPreflightCORS(
 }
 
 func (cfg *config) processACRM(
-	hdrs http.Header,
+	buf []headerPair,
 	acrm string,
 	acrmSgl []string,
-) bool {
+) ([]headerPair, bool) {
 	if methods.IsSafelisted(acrm, struct{}{}) {
 		// CORS-safelisted methods get a free pass; see
 		// https://fetch.spec.whatwg.org/#ref-for-cors-safelisted-method%E2%91%A2.
 		// Therefore, no need to set the ACAM header in this case.
-		return true
+		return buf, true
 	}
 	if cfg.allowAnyMethod && !cfg.credentialed {
-		hdrs[headers.ACAM] = headers.WildcardSgl
-		return true
+		pair := headerPair{
+			k: headers.ACAM,
+			v: headers.WildcardSgl,
+		}
+		buf = append(buf, pair)
+		return buf, true
 	}
 	if cfg.allowAnyMethod || cfg.allowedMethods.Contains(acrm) {
-		hdrs[headers.ACAM] = acrmSgl
-		return true
+		pair := headerPair{
+			k: headers.ACAM,
+			v: acrmSgl,
+		}
+		buf = append(buf, pair)
+		return buf, true
 	}
-	return false
+	return buf, false
 }
 
-func (cfg *config) processACRH(resHdrs, reqHdrs http.Header, debug bool) bool {
+func (cfg *config) processACRH(
+	buf []headerPair,
+	reqHdrs http.Header,
+	debug bool,
+) ([]headerPair, bool) {
 	// Fetch-compliant browsers send at most one ACRH header;
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0 (step 5).
 	acrh, acrhSgl, found := headers.First(reqHdrs, headers.ACRH)
 	if !found {
-		return true
+		return buf, true
 	}
 	if cfg.asteriskReqHdrs && !cfg.credentialed {
 		if cfg.allowAuthorization {
@@ -371,11 +415,19 @@ func (cfg *config) processACRH(resHdrs, reqHdrs http.Header, debug bool) bool {
 			// containing a maliciously long ACRH header in order to exercise
 			// this costly execution path and thereby generate undue load
 			// on the server.
-			resHdrs[headers.ACAH] = headers.WildcardAuthSgl
+			pair := headerPair{
+				k: headers.ACAH,
+				v: headers.WildcardAuthSgl,
+			}
+			buf = append(buf, pair)
 		} else {
-			resHdrs[headers.ACAH] = headers.WildcardSgl
+			pair := headerPair{
+				k: headers.ACAH,
+				v: headers.WildcardSgl,
+			}
+			buf = append(buf, pair)
 		}
-		return true
+		return buf, true
 	}
 	if cfg.asteriskReqHdrs && cfg.credentialed {
 		// If credentialed access is enabled,
@@ -408,22 +460,34 @@ func (cfg *config) processACRH(resHdrs, reqHdrs http.Header, debug bool) bool {
 		// e.g. by cutting ACRH around "authorization" and
 		// echoing the results in up to two ACAH header(s);
 		// but the whole alternative approach is not worth the trouble anyway.
-		resHdrs[headers.ACAH] = acrhSgl
-		return true
+		pair := headerPair{
+			k: headers.ACAH,
+			v: acrhSgl,
+		}
+		buf = append(buf, pair)
+		return buf, true
 	}
 	if !debug {
 		if cfg.allowedReqHdrs.Size() == 0 {
-			return false
+			return buf, false
 		}
 		if !cfg.allowedReqHdrs.Subsumes(acrh) {
-			return false
+			return buf, false
 		}
-		resHdrs[headers.ACAH] = acrhSgl
-		return true
+		pair := headerPair{
+			k: headers.ACAH,
+			v: acrhSgl,
+		}
+		buf = append(buf, pair)
+		return buf, true
 	}
 	if cfg.acah != nil {
-		resHdrs[headers.ACAH] = cfg.acah
-		return true
+		pair := headerPair{
+			k: headers.ACAH,
+			v: cfg.acah,
+		}
+		buf = append(buf, pair)
+		return buf, true
 	}
-	return false
+	return buf, false
 }
