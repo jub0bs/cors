@@ -471,7 +471,7 @@ type config struct {
 	acma []string
 
 	// response headers
-	aceh             []string
+	aceh             string
 	exposeAllResHdrs bool
 
 	// misc
@@ -542,10 +542,9 @@ func newConfig(c *Config) (*config, error) {
 	// precompute ACEH
 	switch {
 	case cfg.exposeAllResHdrs:
-		cfg.aceh = headers.WildcardSgl
+		cfg.aceh = headers.ValueWildcard
 	case len(cfg.tmp.exposedResHdrs) != 0:
-		aceh := strings.Join(cfg.tmp.exposedResHdrs, headers.ValueSep)
-		cfg.aceh = []string{aceh}
+		cfg.aceh = strings.Join(cfg.tmp.exposedResHdrs, headers.ValueSep)
 	}
 
 	// tmp is no longer needed; let's make it eligible to GC

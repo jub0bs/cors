@@ -193,3 +193,21 @@ func deleteHeaderValue(h http.Header, key, value string) bool {
 	h[key] = append(vs[:i], vs[i+1:]...)
 	return true
 }
+
+func newMutatingHandler() http.Handler {
+	f := func(w http.ResponseWriter, r *http.Request) {
+		resHdrs := w.Header()
+		keys := []string{
+			headerACAO,
+			headerACAC,
+			headerACEH,
+			headerVary,
+		}
+		for _, k := range keys {
+			if v, ok := resHdrs[k]; ok && len(v) > 0 {
+				v[0] = "mutated!"
+			}
+		}
+	}
+	return http.HandlerFunc(f)
+}

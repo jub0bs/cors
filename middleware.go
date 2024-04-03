@@ -106,7 +106,7 @@ func NewMiddleware(c Config) (*Middleware, error) {
 func (cfg *config) handleNonCORS(resHdrs http.Header, options bool) {
 	if options {
 		// see the implementation comment in handleCORSPreflight
-		headers.AddVary(resHdrs, headers.ValueVaryOptions, headers.PreflightVarySgl)
+		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
 	}
 	if cfg.privateNetworkAccessNoCors {
 		return
@@ -118,15 +118,15 @@ func (cfg *config) handleNonCORS(resHdrs http.Header, options bool) {
 		// because doing so is simpler to implement and unlikely to be
 		// detrimental to Web caches.
 		if !options {
-			headers.AddVary(resHdrs, headers.Origin, headers.OriginSgl)
+			resHdrs.Add(headers.Vary, headers.Origin)
 		}
 		// nothing to do: at this stage, we've already added a Vary header
 		return
 	}
-	resHdrs[headers.ACAO] = headers.WildcardSgl
-	if cfg.aceh != nil {
+	resHdrs.Set(headers.ACAO, headers.ValueWildcard)
+	if cfg.aceh != "" {
 		// see https://github.com/whatwg/fetch/issues/1601
-		resHdrs[headers.ACEH] = cfg.aceh
+		resHdrs.Set(headers.ACEH, cfg.aceh)
 	}
 }
 
@@ -300,17 +300,17 @@ func (cfg *config) handleCORSActual(
 	if cfg.privateNetworkAccessNoCors {
 		if options {
 			// see the implementation comment in handleCORSPreflight
-			headers.AddVary(resHdrs, headers.ValueVaryOptions, headers.PreflightVarySgl)
+			resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
 		}
 		return
 	}
 	switch {
 	case options:
 		// see the implementation comment in handleCORSPreflight
-		headers.AddVary(resHdrs, headers.ValueVaryOptions, headers.PreflightVarySgl)
+		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
 	case !cfg.allowAnyOrigin:
 		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
-		headers.AddVary(resHdrs, headers.Origin, headers.OriginSgl)
+		resHdrs.Add(headers.Vary, headers.Origin)
 	}
 	if !cfg.credentialed && cfg.allowAnyOrigin {
 		// See the last paragraph in
@@ -319,10 +319,10 @@ func (cfg *config) handleCORSActual(
 		// to actual requests even in cases where a single origin is allowed,
 		// because doing so is simpler to implement and unlikely to be
 		// detrimental to Web caches.
-		resHdrs[headers.ACAO] = headers.WildcardSgl
-		if cfg.aceh != nil {
+		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
+		if cfg.aceh != "" {
 			// see https://github.com/whatwg/fetch/issues/1601
-			resHdrs[headers.ACEH] = cfg.aceh
+			resHdrs.Set(headers.ACEH, cfg.aceh)
 		}
 		return
 	}
@@ -338,10 +338,10 @@ func (cfg *config) handleCORSActual(
 		// Instead, we systematically include "ACAC: true" if credentialed
 		// access is enabled and request's origin is allowed.
 		// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
-		resHdrs[headers.ACAC] = headers.TrueSgl
+		resHdrs.Set(headers.ACAC, headers.ValueTrue)
 	}
-	if cfg.aceh != nil {
-		resHdrs[headers.ACEH] = cfg.aceh
+	if cfg.aceh != "" {
+		resHdrs.Set(headers.ACEH, cfg.aceh)
 	}
 }
 
