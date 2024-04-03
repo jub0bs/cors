@@ -201,6 +201,7 @@ func (cfg *config) handleCORSPreflight(
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
+
 	buf, ok = cfg.processACRH(buf, reqHdrs, debug)
 	if !ok {
 		if debug {
@@ -211,6 +212,8 @@ func (cfg *config) handleCORSPreflight(
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
+	// Preflight was successful.
+
 	flush(w.Header(), buf)
 	if cfg.acma != nil {
 		resHdrs[headers.ACMA] = cfg.acma
