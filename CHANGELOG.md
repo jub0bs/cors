@@ -28,5 +28,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] (2024-03-23)
 
-[0.1.1]: https://github.com/jub0bs/cors/releases/tag/v0.1.0...v0.1.1
+[0.1.1]: https://github.com/jub0bs/cors/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/jub0bs/cors/releases/tag/v0.1.0
