@@ -90,8 +90,8 @@ func NewMiddleware(c Config) (*Middleware, error) {
 				cfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl)
 				return
 			}
-			// r is a non-preflight CORS request.
-			cfg.handleNonPreflightCORS(w, origin, originSgl, options)
+			// r is an "actual" (i.e. non-preflight) CORS request.
+			cfg.handleCORSActual(w, origin, originSgl, options)
 			h.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(f)
@@ -289,7 +289,7 @@ func (cfg *config) processACRPN(buf []headerPair, reqHdrs http.Header) ([]header
 }
 
 // Note: only for _non-preflight_ CORS requests
-func (cfg *config) handleNonPreflightCORS(
+func (cfg *config) handleCORSActual(
 	w http.ResponseWriter,
 	origin string,
 	originSgl []string,
