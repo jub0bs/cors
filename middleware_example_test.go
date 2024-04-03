@@ -14,13 +14,8 @@ func ExampleMiddleware_Wrap() {
 
 	// create CORS middleware
 	corsMw, err := cors.NewMiddleware(cors.Config{
-		Origins: []string{"https://example.com"},
-		Methods: []string{
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodDelete,
-		},
+		Origins:        []string{"https://example.com"},
+		Methods:        []string{http.MethodGet, http.MethodPost},
 		RequestHeaders: []string{"Authorization"},
 	})
 	if err != nil {
@@ -28,11 +23,9 @@ func ExampleMiddleware_Wrap() {
 	}
 
 	api := http.NewServeMux()
-	mux.Handle("/api/", corsMw.Wrap(api)) // note: method-less pattern here
-	api.HandleFunc("GET /api/users", handleUsersGet)
-	api.HandleFunc("POST /api/users", handleUsersPost)
-	api.HandleFunc("PUT /api/users", handleUsersPut)
-	api.HandleFunc("DELETE /api/users", handleUsersDelete)
+	mux.Handle("/api/", http.StripPrefix("/api", corsMw.Wrap(api))) // note: method-less pattern here
+	api.HandleFunc("GET /users", handleUsersGet)
+	api.HandleFunc("POST /users", handleUsersPost)
 
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
@@ -46,13 +39,5 @@ func handleUsersGet(w http.ResponseWriter, _ *http.Request) {
 }
 
 func handleUsersPost(w http.ResponseWriter, _ *http.Request) {
-	// omitted
-}
-
-func handleUsersPut(w http.ResponseWriter, _ *http.Request) {
-	// omitted
-}
-
-func handleUsersDelete(w http.ResponseWriter, _ *http.Request) {
 	// omitted
 }
