@@ -46,7 +46,7 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		}
 
 		// matching edge found
-		searchPrefix, prefixOfNSuf, suf := trimCommonSuffix(search, n.suf)
+		searchPrefix, prefixOfNSuf, suf := splitAtCommonSuffix(search, n.suf)
 		if len(suf) == len(n.suf) { // n.suf is a suffix of search
 			search = searchPrefix
 			continue
@@ -100,7 +100,7 @@ func (t *Tree) Contains(k string, v int) bool {
 			return false
 		}
 
-		searchPrefix, _, suf := trimCommonSuffix(search, n.suf)
+		searchPrefix, _, suf := splitAtCommonSuffix(search, n.suf)
 		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of search
 			return false
 		}
@@ -123,23 +123,21 @@ func lastByte(str string) (byte, bool) {
 	return str[len(str)-1], true
 }
 
-// trimCommonSuffix computes the longest suffix common to s1 and s2 and returns
-// a version of s1 trimmed of that common suffix,
-// a version of s2 trimmed of that common suffix,
-// and the common suffix.
-func trimCommonSuffix(s1, s2 string) (string, string, string) {
-	a, b := s1, s2
-	if len(b) < len(a) {
-		a, b = b, a
+// splitAtCommonSuffix finds the longest suffix common to a and b and returns
+// a and b both trimmed of that suffix along with the suffix itself.
+func splitAtCommonSuffix(a, b string) (string, string, string) {
+	s, l := a, b // s for short, l for long
+	if len(l) < len(s) {
+		s, l = l, s
 	}
-	b = b[len(b)-len(a):]
-	_ = b[:len(a)] // hoist bounds checks on b out of the loop
-	i := len(a) - 1
-	for ; 0 <= i && a[i] == b[i]; i-- {
+	l = l[len(l)-len(s):]
+	_ = l[:len(s)] // hoist bounds checks on d out of the loop
+	i := len(s) - 1
+	for ; 0 <= i && s[i] == l[i]; i-- {
 		// deliberately empty body
 	}
 	i++
-	return s1[:len(s1)-len(a)+i], s2[:len(s2)-len(a)+i], a[i:]
+	return a[:len(a)-len(s)+i], b[:len(b)-len(s)+i], s[i:]
 }
 
 // WildcardElem is a sentinel value that subsumes all others.
