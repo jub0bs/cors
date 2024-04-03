@@ -150,7 +150,12 @@ func (cfg *config) handleCORSPreflight(
 	//   - Access-Control-Request-Methods
 	//   - Access-Control-Request-Private-Network
 	//   - Origin
-	headers.AddVary(resHdrs, headers.ValueVaryOptions, headers.PreflightVarySgl)
+	vary, found := resHdrs[headers.Vary]
+	if !found { // fast path
+		resHdrs[headers.Vary] = headers.PreflightVarySgl
+	} else { // slow path
+		resHdrs[headers.Vary] = append(vary, headers.ValueVaryOptions)
+	}
 
 	var pairs [5]headerPair // enough to hold ACAO, ACAC, ACAPN, ACAM, and ACAH
 	buf := pairs[:0]

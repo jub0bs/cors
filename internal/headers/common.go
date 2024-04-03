@@ -58,27 +58,6 @@ func IsValid(name string) bool {
 	return util.IsToken(name)
 }
 
-// AddVary adds the key-value pair (Vary, v) to hdrs;
-// as a micro-optimisation, if k is present in hdrs, it assigns sgl to hdrs[k].
-// Preconditions: hdrs is non-nil.
-//
-// Correct usage requires sgl be non-empty and sgl[0] equal v.
-//
-// AddVary is useful because
-//   - contrary to [http.Header.Add], it incurs no heap allocation when k is
-//     absent from hdrs;
-//   - it accepts the value both as a scalar and as a singleton slice,
-//     which saves a bounds check.
-func AddVary(hdrs http.Header, v string, sgl []string) {
-	old, found := hdrs[Vary]
-	if !found { // fast path
-		hdrs[Vary] = sgl
-		return
-	}
-	// slow path
-	hdrs[Vary] = append(old, v)
-}
-
 // First, if k is present in hdrs, returns the value associated to k in hdrs,
 // a singleton slice containing that value, and true;
 // otherwise, First returns "", nil, false.

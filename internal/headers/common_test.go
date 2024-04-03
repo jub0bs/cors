@@ -1,9 +1,7 @@
 package headers
 
 import (
-	"maps"
 	"net/http"
-	"slices"
 	"testing"
 
 	"github.com/jub0bs/cors/internal/util"
@@ -61,40 +59,6 @@ func TestIsValid(t *testing.T) {
 			}
 		}
 		t.Run(tc.name, f)
-	}
-}
-
-func TestAddVary(t *testing.T) {
-	cases := []struct {
-		desc  string
-		h     http.Header
-		value string
-		want  http.Header
-	}{
-		{
-			desc:  "empty http.Header",
-			h:     http.Header{},
-			value: "foo",
-			want:  http.Header{"Vary": []string{"foo"}},
-		}, {
-			desc: "single value",
-			h: http.Header{
-				"Vary": []string{"foo"},
-			},
-			value: "bar",
-			want: http.Header{
-				"Vary": []string{"foo", "bar"},
-			},
-		},
-	}
-	for _, tc := range cases {
-		f := func(t *testing.T) {
-			AddVary(tc.h, tc.value, []string{tc.value})
-			if !maps.EqualFunc(tc.h, tc.want, slices.Equal) {
-				t.Errorf("got %q; want %q", tc.h, tc.want)
-			}
-		}
-		t.Run(tc.desc, f)
 	}
 }
 
