@@ -72,29 +72,25 @@ func NewMiddleware(c Config) (*Middleware, error) {
 			// (step 12).
 			origin, originSgl, found := headers.First(r.Header, headers.Origin)
 			if !found {
-				// r is _not_ a CORS request.
+				// r is NOT a CORS request;
+				// see https://fetch.spec.whatwg.org/#cors-request.
 				cfg.handleNonCORS(w.Header(), options)
 				h.ServeHTTP(w, r)
 				return
 			}
 			// r is a CORS request (and possibly a CORS-preflight request);
 			// see https://fetch.spec.whatwg.org/#cors-request.
-			if !options {
-				// r is a non-OPTIONS CORS request.
-				cfg.handleNonPreflightCORS(w, origin, originSgl, options)
-				h.ServeHTTP(w, r)
-				return
-			}
+
 			// Fetch-compliant browsers send at most one ACRM header;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-fetch (step 3).
 			acrm, acrmSgl, found := headers.First(r.Header, headers.ACRM)
-			if found {
+			if options && found {
 				// r is a CORS-preflight request;
 				// see https://fetch.spec.whatwg.org/#cors-preflight-request.
 				cfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl)
 				return
 			}
-			// r is a non-preflight OPTIONS CORS request.
+			// r is a non-preflight CORS request.
 			cfg.handleNonPreflightCORS(w, origin, originSgl, options)
 			h.ServeHTTP(w, r)
 		}
