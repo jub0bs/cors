@@ -58,27 +58,25 @@ func IsValid(name string) bool {
 	return util.IsToken(name)
 }
 
-// FastAdd adds the key-value pair (k, v) in hdrs if k is present in hdrs;
-// otherwise, it assigns sgl to hdrs[k].
-// Preconditions:
-//   - hdrs is non-nil;
-//   - k is in canonical format (see [http.CanonicalHeaderKey]).
+// AddVary adds the key-value pair (Vary, v) to hdrs;
+// as a micro-optimisation, if k is present in hdrs, it assigns sgl to hdrs[k].
+// Preconditions: hdrs is non-nil.
 //
-// Moreover, correct usage requires sgl be non-empty and sgl[0] equal v.
+// Correct usage requires sgl be non-empty and sgl[0] equal v.
 //
-// FastAdd is useful because
+// AddVary is useful because
 //   - contrary to [http.Header.Add], it incurs no heap allocation when k is
 //     absent from hdrs;
 //   - it accepts the value both as a scalar and as a singleton slice,
 //     which saves a bounds check.
-func FastAdd(hdrs http.Header, k string, v string, sgl []string) {
-	old, found := hdrs[k]
+func AddVary(hdrs http.Header, v string, sgl []string) {
+	old, found := hdrs[Vary]
 	if !found { // fast path
-		hdrs[k] = sgl
+		hdrs[Vary] = sgl
 		return
 	}
 	// slow path
-	hdrs[k] = append(old, v)
+	hdrs[Vary] = append(old, v)
 }
 
 // First, if k is present in hdrs, returns the value associated to k in hdrs,

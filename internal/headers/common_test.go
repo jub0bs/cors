@@ -64,38 +64,32 @@ func TestIsValid(t *testing.T) {
 	}
 }
 
-func TestFastAdd(t *testing.T) {
+func TestAddVary(t *testing.T) {
 	cases := []struct {
 		desc  string
 		h     http.Header
-		key   string
 		value string
 		want  http.Header
 	}{
 		{
 			desc:  "empty http.Header",
 			h:     http.Header{},
-			key:   "Foo",
-			value: "bar",
-			want:  http.Header{"Foo": []string{"bar"}},
+			value: "foo",
+			want:  http.Header{"Vary": []string{"foo"}},
 		}, {
 			desc: "single value",
 			h: http.Header{
-				"Authorization": []string{"Bearer xxx"},
+				"Vary": []string{"foo"},
 			},
-			key:   "Authorization",
-			value: "Basic dXNlcjpwYXNz",
+			value: "bar",
 			want: http.Header{
-				"Authorization": []string{
-					"Bearer xxx",
-					"Basic dXNlcjpwYXNz",
-				},
+				"Vary": []string{"foo", "bar"},
 			},
 		},
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			FastAdd(tc.h, tc.key, tc.value, []string{tc.value})
+			AddVary(tc.h, tc.value, []string{tc.value})
 			if !maps.EqualFunc(tc.h, tc.want, slices.Equal) {
 				t.Errorf("got %q; want %q", tc.h, tc.want)
 			}
