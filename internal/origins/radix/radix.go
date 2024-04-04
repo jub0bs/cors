@@ -56,8 +56,10 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		child := &node{suf: suf}
 		parent.insertEdge(label, child)
 
-		// restore the existing node
-		byteBeforeSuffix := n.suf[len(n.suf)-1-len(suf)]
+		// Restore the existing node.
+		// Because n.suf is not a suffix of search,
+		// prefixOfNSuf is necessarily non-empty.
+		byteBeforeSuffix, _ := lastByte(prefixOfNSuf)
 		child.insertEdge(byteBeforeSuffix, n)
 		if len(suf) == len(search) { // search is a suffix of n.suf
 			n.suf = prefixOfNSuf
@@ -67,10 +69,8 @@ func (t *Tree) Insert(keyPattern string, v int) {
 
 		// search is NOT a suffix of n.suf
 		n.suf = prefixOfNSuf
-		// At this stage, we've established that
-		// n.suf is NOT a suffix of search and
-		// search is NOT a suffix of n.suf;
-		// therefore, searchPrefix is necessarily non-empty.
+		// Because search is NOT a suffix of n.suf,
+		// searchPrefix is necessarily non-empty.
 		label, _ = lastByte(searchPrefix)
 		search = searchPrefix
 		grandChild := &node{suf: search}
