@@ -131,7 +131,7 @@ func splitAtCommonSuffix(a, b string) (string, string, string) {
 		s, l = l, s
 	}
 	l = l[len(l)-len(s):]
-	_ = l[:len(s)] // hoist bounds checks on d out of the loop
+	_ = l[:len(s)] // hoist bounds checks on l out of the loop
 	i := len(s) - 1
 	for ; 0 <= i && s[i] == l[i]; i-- {
 		// deliberately empty body
