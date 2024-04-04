@@ -21,22 +21,3 @@ func TestByteLowercase(t *testing.T) {
 		}
 	}
 }
-
-func TestIsToken(t *testing.T) {
-	cases := []struct {
-		str  string
-		want bool
-	}{
-		{"", false},
-		{"1", true},
-		{"*", true},
-		{"Authorization", true},
-		{"<Authorization>", false},
-	}
-	for _, tc := range cases {
-		got := util.IsToken(tc.str)
-		if got != tc.want {
-			t.Errorf("%q: got %t; want %t", tc.str, got, tc.want)
-		}
-	}
-}

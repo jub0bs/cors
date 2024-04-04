@@ -4,13 +4,15 @@ import (
 	"net/http"
 
 	"github.com/jub0bs/cors/internal/util"
+	"golang.org/x/net/http/httpguts"
 )
 
 // IsValid reports whether name is a valid method, [per the Fetch standard].
 //
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#concept-method
 func IsValid(name string) bool {
-	return util.IsToken(name)
+	// Note: the production is identical to that of header names.
+	return httpguts.ValidHeaderFieldName(name)
 }
 
 // IsForbidden reports whether name is a forbidden method,

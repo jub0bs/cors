@@ -3,7 +3,7 @@ package headers
 import (
 	"net/http"
 
-	"github.com/jub0bs/cors/internal/util"
+	"golang.org/x/net/http/httpguts"
 )
 
 // header names in canonical format
@@ -55,7 +55,7 @@ var ( // each of them an effective constant wrapped in a (singleton) slice
 //
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#header-name
 func IsValid(name string) bool {
-	return util.IsToken(name)
+	return httpguts.ValidHeaderFieldName(name)
 }
 
 // First, if k is present in hdrs, returns the value associated to k in hdrs,
