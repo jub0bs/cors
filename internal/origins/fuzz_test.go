@@ -67,7 +67,7 @@ func FuzzCorpus(f *testing.F) {
 			t.Skip()
 		}
 		corpus := make(Corpus)
-		corpus.Add(pattern)
+		corpus.Add(&pattern)
 		o, ok := Parse(origin)
 		if !ok || !corpus.Contains(&o) {
 			t.Skip()

@@ -82,55 +82,57 @@ func (p *Pattern) HostIsEffectiveTLD() (string, bool) {
 }
 
 // ParsePattern parses str into a [Pattern] structure.
-func ParsePattern(str string) (*Pattern, error) {
+func ParsePattern(str string) (Pattern, error) {
 	if str == "*" || str == "null" {
-		return nil, util.Errorf(`prohibited origin pattern %q`, str)
+		return zeroPattern, util.Errorf(`prohibited origin pattern %q`, str)
 	}
 	full := str
 	scheme, str, ok := scanHttpScheme(str)
 	if !ok {
-		return nil, util.InvalidOriginPatternErr(full)
+		return zeroPattern, util.InvalidOriginPatternErr(full)
 	}
 	str, ok = consume(schemeHostSep, str)
 	if !ok {
-		return nil, util.InvalidOriginPatternErr(full)
+		return zeroPattern, util.InvalidOriginPatternErr(full)
 	}
 	hp, str, err := parseHostPattern(str, full)
 	if err != nil {
-		return nil, err
+		return zeroPattern, err
 	}
 	if hp.IsIP() && scheme == schemeHTTPS {
 		const tmpl = `scheme "https" is incompatible with an IP address: %q`
-		return nil, util.Errorf(tmpl, full)
+		return zeroPattern, util.Errorf(tmpl, full)
 	}
 	var port int // assume no port
 	if len(str) > 0 {
 		str, ok = consume(string(hostPortSep), str)
 		if !ok {
-			return nil, util.InvalidOriginPatternErr(full)
+			return zeroPattern, util.InvalidOriginPatternErr(full)
 		}
 		port, str, ok = parsePortPattern(str)
 		if !ok || str != "" {
-			return nil, util.InvalidOriginPatternErr(full)
+			return zeroPattern, util.InvalidOriginPatternErr(full)
 		}
 		if port == anyPort && hp.Kind == PatternKindSubdomains {
 			const tmpl = "specifying both arbitrary subdomains " +
 				"and arbitrary ports is prohibited: %q"
-			return nil, util.Errorf(tmpl, full)
+			return zeroPattern, util.Errorf(tmpl, full)
 		}
 		if isDefaultPortForScheme(scheme, port) {
 			const tmpl = "default port %d for %q scheme " +
 				"needlessly specified: %q"
-			return nil, util.Errorf(tmpl, port, scheme, full)
+			return zeroPattern, util.Errorf(tmpl, port, scheme, full)
 		}
 	}
 	p := Pattern{
-		HostPattern: *hp,
+		HostPattern: hp,
 		Scheme:      scheme,
 		Port:        port,
 	}
-	return &p, nil
+	return p, nil
 }
+
+var zeroPattern Pattern
 
 // A HostPattern represents a host pattern.
 type HostPattern struct {
@@ -141,24 +143,24 @@ type HostPattern struct {
 // parseHostPattern parses a raw host pattern into an [HostPattern] structure.
 // It returns the parsed host pattern, the unconsumed part of the input string,
 // and an error.
-func parseHostPattern(str, full string) (*HostPattern, string, error) {
+func parseHostPattern(str, full string) (HostPattern, string, error) {
 	pattern := HostPattern{
 		Value: str, // temporary value, to be trimmed later
 		Kind:  peekKind(str),
 	}
 	host, str, ok := fastParseHost(pattern.hostOnly())
 	if !ok {
-		return nil, str, util.InvalidOriginPatternErr(full)
+		return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
 	}
 	if pattern.Kind == PatternKindSubdomains {
 		// At least two bytes (e.g. "a.") are required for the part
 		// corresponding to the wildcard character sequence in a valid origin,
 		// hence the subtraction in the following expression.
 		if len(host.Value) > maxHostLen-2 {
-			return nil, str, util.InvalidOriginPatternErr(full)
+			return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
 		}
 		if host.AssumeIP {
-			return nil, str, util.InvalidOriginPatternErr(full)
+			return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
 		}
 	}
 	// trim accordingly
@@ -170,19 +172,19 @@ func parseHostPattern(str, full string) (*HostPattern, string, error) {
 	if host.AssumeIP {
 		ip, err := netip.ParseAddr(host.Value)
 		if err != nil {
-			return nil, str, util.InvalidOriginPatternErr(full)
+			return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
 		}
 		if ip.Zone() != "" {
-			return nil, str, util.InvalidOriginPatternErr(full)
+			return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
 		}
 		if ip.Is4In6() {
 			const tmpl = "prohibited IPv4-mapped IPv6 address: %q"
-			return nil, str, util.Errorf(tmpl, full)
+			return zeroHostPattern, str, util.Errorf(tmpl, full)
 		}
 		var ipStr = ip.String()
 		if ipStr != host.Value {
 			const tmpl = "IP address in uncompressed form: %q"
-			return nil, str, util.Errorf(tmpl, full)
+			return zeroHostPattern, str, util.Errorf(tmpl, full)
 		}
 
 		if ip.IsLoopback() {
@@ -191,15 +193,17 @@ func parseHostPattern(str, full string) (*HostPattern, string, error) {
 			pattern.Kind = PatternKindNonLoopbackIP
 		}
 		pattern.Value = ipStr
-		return &pattern, str, nil
+		return pattern, str, nil
 	}
 	_, err := profile.ToASCII(host.Value)
 	if err != nil {
 		const tmpl = "host not in ASCII form: %q"
-		return nil, str, util.Errorf(tmpl, full)
+		return zeroHostPattern, str, util.Errorf(tmpl, full)
 	}
-	return &pattern, str, nil
+	return pattern, str, nil
 }
+
+var zeroHostPattern HostPattern
 
 // IsIP reports whether the host of p is an IP address
 // (as opposed to a domain).

@@ -586,7 +586,7 @@ func (cfg *config) validateOrigins(patterns []string) error {
 				publicSuffixes = append(publicSuffixes, raw)
 			}
 		}
-		originPatterns = append(originPatterns, *pattern)
+		originPatterns = append(originPatterns, pattern)
 	}
 	if cfg.allowAnyOrigin && len(originPatterns) > 0 {
 		// discard the errors accumulated in errs and return a single error

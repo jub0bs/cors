@@ -349,8 +349,8 @@ func TestParseSpec(t *testing.T) {
 				t.Errorf("%q: got nil error; want non-nil error", c.input)
 				return
 			}
-			if err == nil && *o != c.want {
-				t.Errorf("%q: got  %+v; want %+v", c.input, *o, c.want)
+			if err == nil && o != c.want {
+				t.Errorf("%q: got  %+v; want %+v", c.input, o, c.want)
 				return
 			}
 		}
