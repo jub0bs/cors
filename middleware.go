@@ -410,7 +410,7 @@ func (cfg *config) processACRH(
 			//
 			// An alternative approach would consist in replying
 			// with "*,authorization" when ACRH contains "authorization",
-			// and with "*"" when ACRH does not contain "authorization".
+			// and with "*" when ACRH does not contain "authorization".
 			// However, such an approach would require us to scan the entire
 			// ACRH header in search of "authorization",
 			// which, in the event of a long ACRH header, would be costly
