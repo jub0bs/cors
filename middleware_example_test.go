@@ -23,9 +23,9 @@ func ExampleMiddleware_Wrap() {
 	}
 
 	api := http.NewServeMux()
-	mux.Handle("/api/", http.StripPrefix("/api", corsMw.Wrap(api))) // note: method-less pattern here
 	api.HandleFunc("GET /users", handleUsersGet)
 	api.HandleFunc("POST /users", handleUsersPost)
+	mux.Handle("/api/", http.StripPrefix("/api", corsMw.Wrap(api))) // note: method-less pattern here
 
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
