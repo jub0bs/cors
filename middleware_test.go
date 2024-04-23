@@ -1138,7 +1138,7 @@ func TestMiddleware(t *testing.T) {
 						t.Error("wrapped handler wasn't called, but it should have been")
 					}
 					if res.StatusCode != spy.statusCode {
-						const tmpl = "got status code %d; want %d; "
+						const tmpl = "got status code %d; want %d"
 						t.Errorf(tmpl, res.StatusCode, spy.statusCode)
 					}
 					assertResponseHeaders(t, res.Header, spy.respHeaders)
