@@ -1123,7 +1123,7 @@ func TestMiddleware(t *testing.T) {
 					}
 					if tc.preflight { // preflight request
 						if spy.called.Load() {
-							t.Error("wrapped handler was called, but it should not have not been")
+							t.Error("wrapped handler was called, but it should not have been")
 						}
 						assertPreflightStatus(t, res.StatusCode, &mwtc, &tc)
 						assertResponseHeaders(t, res.Header, tc.respHeaders)
