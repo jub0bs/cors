@@ -190,7 +190,7 @@ func deleteHeaderValue(h http.Header, key, value string) bool {
 	if i == -1 {
 		return false
 	}
-	h[key] = append(vs[:i], vs[i+1:]...)
+	h[key] = slices.Delete(vs, i, i+1)
 	return true
 }
 
