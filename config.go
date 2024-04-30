@@ -448,8 +448,7 @@ type ExtraConfig struct {
 	DangerouslyTolerateSubdomainsOfPublicSuffixes bool
 }
 
-// internal config
-type config struct {
+type internalConfig struct {
 	// origins
 	corpus         origins.Corpus
 	allowAnyOrigin bool
@@ -490,41 +489,41 @@ type tmpConfig struct {
 	insecureOrigins        bool
 }
 
-func newConfig(c *Config) (*config, error) {
-	cfg := config{
+func newInternalConfig(cfg *Config) (*internalConfig, error) {
+	icfg := internalConfig{
 		tmp: new(tmpConfig),
 	}
 	var errs []error
 
 	// base config
-	if err := cfg.validateOrigins(c.Origins); err != nil {
+	if err := icfg.validateOrigins(cfg.Origins); err != nil {
 		errs = append(errs, err)
 	}
-	cfg.credentialed = c.Credentialed
-	if err := cfg.validateMethods(c.Methods); err != nil {
+	icfg.credentialed = cfg.Credentialed
+	if err := icfg.validateMethods(cfg.Methods); err != nil {
 		errs = append(errs, err)
 	}
-	if err := cfg.validateRequestHeaders(c.RequestHeaders); err != nil {
+	if err := icfg.validateRequestHeaders(cfg.RequestHeaders); err != nil {
 		errs = append(errs, err)
 	}
-	if err := cfg.validateMaxAge(c.MaxAgeInSeconds); err != nil {
+	if err := icfg.validateMaxAge(cfg.MaxAgeInSeconds); err != nil {
 		errs = append(errs, err)
 	}
-	if err := cfg.validateResponseHeaders(c.ResponseHeaders); err != nil {
+	if err := icfg.validateResponseHeaders(cfg.ResponseHeaders); err != nil {
 		errs = append(errs, err)
 	}
 
 	// extra config
-	if err := cfg.validatePreflightStatus(c.PreflightSuccessStatus); err != nil {
+	if err := icfg.validatePreflightStatus(cfg.PreflightSuccessStatus); err != nil {
 		errs = append(errs, err)
 	}
-	cfg.privateNetworkAccess = c.PrivateNetworkAccess
-	cfg.privateNetworkAccessNoCors = c.PrivateNetworkAccessInNoCORSModeOnly
-	cfg.tmp.insecureOrigins = c.DangerouslyTolerateInsecureOrigins
-	cfg.tmp.subsOfPublicSuffixes = c.DangerouslyTolerateSubdomainsOfPublicSuffixes
+	icfg.privateNetworkAccess = cfg.PrivateNetworkAccess
+	icfg.privateNetworkAccessNoCors = cfg.PrivateNetworkAccessInNoCORSModeOnly
+	icfg.tmp.insecureOrigins = cfg.DangerouslyTolerateInsecureOrigins
+	icfg.tmp.subsOfPublicSuffixes = cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes
 
 	// validate config as a whole
-	if err := cfg.validate(); err != nil {
+	if err := icfg.validate(); err != nil {
 		errs = append(errs, err)
 	}
 	if len(errs) != 0 {
@@ -532,28 +531,28 @@ func newConfig(c *Config) (*config, error) {
 	}
 
 	// precompute ACAH if discrete request headers are allowed (without *)
-	if cfg.allowedReqHdrs.Size() != 0 {
+	if icfg.allowedReqHdrs.Size() != 0 {
 		// The elements of a header-field value may be separated simply by commas;
 		// since whitespace is optional, let's not use any.
 		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
-		cfg.acah = []string{cfg.allowedReqHdrs.String()}
+		icfg.acah = []string{icfg.allowedReqHdrs.String()}
 	}
 
 	// precompute ACEH
 	switch {
-	case cfg.exposeAllResHdrs:
-		cfg.aceh = headers.ValueWildcard
-	case len(cfg.tmp.exposedResHdrs) != 0:
-		cfg.aceh = strings.Join(cfg.tmp.exposedResHdrs, headers.ValueSep)
+	case icfg.exposeAllResHdrs:
+		icfg.aceh = headers.ValueWildcard
+	case len(icfg.tmp.exposedResHdrs) != 0:
+		icfg.aceh = strings.Join(icfg.tmp.exposedResHdrs, headers.ValueSep)
 	}
 
 	// tmp is no longer needed; let's make it eligible to GC
-	cfg.tmp = nil
+	icfg.tmp = nil
 
-	return &cfg, nil
+	return &icfg, nil
 }
 
-func (cfg *config) validateOrigins(patterns []string) error {
+func (icfg *internalConfig) validateOrigins(patterns []string) error {
 	if len(patterns) == 0 {
 		const msg = "at least one origin pattern must be specified"
 		return util.NewError(msg)
@@ -567,7 +566,7 @@ func (cfg *config) validateOrigins(patterns []string) error {
 	var errs []error
 	for _, raw := range patterns {
 		if raw == headers.ValueWildcard {
-			cfg.allowAnyOrigin = true
+			icfg.allowAnyOrigin = true
 			continue
 		}
 		pattern, err := origins.ParsePattern(raw)
@@ -588,28 +587,28 @@ func (cfg *config) validateOrigins(patterns []string) error {
 		}
 		originPatterns = append(originPatterns, pattern)
 	}
-	if cfg.allowAnyOrigin && len(originPatterns) > 0 {
+	if icfg.allowAnyOrigin && len(originPatterns) > 0 {
 		// discard the errors accumulated in errs and return a single error
 		const msg = "specifying origin patterns in addition to * is prohibited"
 		return util.NewError(msg)
 	}
-	cfg.tmp.insecureOriginPatterns = insecureOriginPatterns
-	cfg.tmp.publicSuffixes = publicSuffixes
+	icfg.tmp.insecureOriginPatterns = insecureOriginPatterns
+	icfg.tmp.publicSuffixes = publicSuffixes
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
-	if cfg.allowAnyOrigin {
+	if icfg.allowAnyOrigin {
 		return nil
 	}
 	corpus := make(origins.Corpus)
 	for _, pattern := range originPatterns {
 		corpus.Add(&pattern)
 	}
-	cfg.corpus = corpus
+	icfg.corpus = corpus
 	return nil
 }
 
-func (cfg *config) validateMethods(names []string) error {
+func (icfg *internalConfig) validateMethods(names []string) error {
 	if len(names) == 0 {
 		return nil
 	}
@@ -618,7 +617,7 @@ func (cfg *config) validateMethods(names []string) error {
 	var errs []error
 	for _, name := range names {
 		if name == headers.ValueWildcard {
-			cfg.allowAnyMethod = true
+			icfg.allowAnyMethod = true
 			continue
 		}
 		if !methods.IsValid(name) {
@@ -633,7 +632,7 @@ func (cfg *config) validateMethods(names []string) error {
 		}
 		allowedMethods.Add(name)
 	}
-	if cfg.allowAnyMethod && len(allowedMethods) > 0 {
+	if icfg.allowAnyMethod && len(allowedMethods) > 0 {
 		// discard the errors accumulated in errs and return a single error
 		const msg = "specifying methods in addition to * is prohibited"
 		return util.NewError(msg)
@@ -645,14 +644,14 @@ func (cfg *config) validateMethods(names []string) error {
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
-	if cfg.allowAnyMethod {
+	if icfg.allowAnyMethod {
 		return nil
 	}
-	cfg.allowedMethods = allowedMethods
+	icfg.allowedMethods = allowedMethods
 	return nil
 }
 
-func (cfg *config) validateRequestHeaders(names []string) error {
+func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 	if len(names) == 0 {
 		return nil
 	}
@@ -661,7 +660,7 @@ func (cfg *config) validateRequestHeaders(names []string) error {
 	var errs []error
 	for _, name := range names {
 		if name == headers.ValueWildcard {
-			cfg.asteriskReqHdrs = true
+			icfg.asteriskReqHdrs = true
 			continue
 		}
 		if !headers.IsValid(name) {
@@ -687,13 +686,13 @@ func (cfg *config) validateRequestHeaders(names []string) error {
 		maxLength = max(maxLength, len(normalized))
 		allowedHeaders = append(allowedHeaders, normalized)
 		if normalized == headers.Authorization {
-			cfg.allowAuthorization = true
+			icfg.allowAuthorization = true
 		}
 	}
 	sortedSet := headers.NewSortedSet(allowedHeaders...)
 
-	if size := sortedSet.Size(); cfg.asteriskReqHdrs &&
-		(size > 1 || !cfg.allowAuthorization && size > 0) {
+	if size := sortedSet.Size(); icfg.asteriskReqHdrs &&
+		(size > 1 || !icfg.allowAuthorization && size > 0) {
 		// discard the errors accumulated in errs and return a single error
 		const msg = "specifying request-header names " +
 			"(other than Authorization) in addition to * is prohibited"
@@ -702,21 +701,21 @@ func (cfg *config) validateRequestHeaders(names []string) error {
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
-	if cfg.asteriskReqHdrs {
+	if icfg.asteriskReqHdrs {
 		return nil
 	}
-	cfg.allowedReqHdrs = sortedSet
+	icfg.allowedReqHdrs = sortedSet
 	return nil
 }
 
-func (cfg *config) validateMaxAge(delta int) error {
+func (icfg *internalConfig) validateMaxAge(delta int) error {
 	const noPreflightCaching = -1 // sentinel value
 	if delta < noPreflightCaching {
 		const tmpl = "specified max-age value %d is invalid"
 		return util.Errorf(tmpl, delta)
 	}
 	if delta == noPreflightCaching {
-		cfg.acma = []string{"0"}
+		icfg.acma = []string{"0"}
 		return nil
 	}
 	if delta == 0 { // leave cfg.ACMA at nil
@@ -732,11 +731,11 @@ func (cfg *config) validateMaxAge(delta int) error {
 		const tmpl = "specified max-age value %d exceeds upper bound %d"
 		return util.Errorf(tmpl, delta, upperBound)
 	}
-	cfg.acma = []string{strconv.Itoa(delta)}
+	icfg.acma = []string{strconv.Itoa(delta)}
 	return nil
 }
 
-func (cfg *config) validateResponseHeaders(names []string) error {
+func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 	if len(names) == 0 {
 		return nil
 	}
@@ -744,7 +743,7 @@ func (cfg *config) validateResponseHeaders(names []string) error {
 	var errs []error
 	for _, name := range names {
 		if name == headers.ValueWildcard {
-			cfg.exposeAllResHdrs = true
+			icfg.exposeAllResHdrs = true
 			continue
 		}
 		if !headers.IsValid(name) {
@@ -773,7 +772,7 @@ func (cfg *config) validateResponseHeaders(names []string) error {
 	}
 	slices.Sort(exposedHeaders)
 	exposedHeaders = slices.Compact(exposedHeaders)
-	if cfg.exposeAllResHdrs && len(exposedHeaders) > 0 {
+	if icfg.exposeAllResHdrs && len(exposedHeaders) > 0 {
 		// discard the errors accumulated in errs and return a single error
 		const msg = "specifying response-header names in addition to * is prohibited"
 		return util.NewError(msg)
@@ -781,13 +780,13 @@ func (cfg *config) validateResponseHeaders(names []string) error {
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
-	cfg.tmp.exposedResHdrs = exposedHeaders
+	icfg.tmp.exposedResHdrs = exposedHeaders
 	return nil
 }
 
-func (cfg *config) validatePreflightStatus(status int) error {
+func (icfg *internalConfig) validatePreflightStatus(status int) error {
 	if status == 0 {
-		cfg.preflightStatus = http.StatusNoContent
+		icfg.preflightStatus = http.StatusNoContent
 		return nil
 	}
 	// see https://fetch.spec.whatwg.org/#ok-status
@@ -795,15 +794,15 @@ func (cfg *config) validatePreflightStatus(status int) error {
 		const tmpl = "specified status %d lies outside the 2xx range"
 		return util.Errorf(tmpl, status)
 	}
-	cfg.preflightStatus = status
+	icfg.preflightStatus = status
 	return nil
 }
 
-func (cfg *config) validate() error {
+func (icfg *internalConfig) validate() error {
 	var errs []error
-	pna := cfg.privateNetworkAccess || cfg.privateNetworkAccessNoCors
-	if cfg.allowAnyOrigin {
-		if cfg.credentialed {
+	pna := icfg.privateNetworkAccess || icfg.privateNetworkAccessNoCors
+	if icfg.allowAnyOrigin {
+		if icfg.credentialed {
 			const msg = "for security reasons, you cannot both allow all " +
 				"origins and enable credentialed access"
 			errs = append(errs, util.NewError(msg))
@@ -816,9 +815,9 @@ func (cfg *config) validate() error {
 			errs = append(errs, util.NewError(msg))
 		}
 	}
-	if len(cfg.tmp.insecureOriginPatterns) > 0 &&
-		!cfg.tmp.insecureOrigins &&
-		(cfg.credentialed || pna) {
+	if len(icfg.tmp.insecureOriginPatterns) > 0 &&
+		!icfg.tmp.insecureOrigins &&
+		(icfg.credentialed || pna) {
 		// We don't require ExtraConfig.DangerouslyTolerateInsecureOrigins to
 		// be set when users specify one or more insecure origin patterns in
 		// anonymous-only mode and without some form of PNA;
@@ -826,15 +825,15 @@ func (cfg *config) validate() error {
 		// no less insecure than * is, which itself doesn't require
 		// ExtraConfig.DangerouslyTolerateInsecureOrigins to be set.
 		var errorMsg strings.Builder
-		var patterns = cfg.tmp.insecureOriginPatterns
+		var patterns = icfg.tmp.insecureOriginPatterns
 		errorMsg.WriteString(`for security reasons, insecure origin patterns like `)
 		util.Join(&errorMsg, patterns)
 		errorMsg.WriteString(` are by default prohibited when `)
-		if cfg.credentialed {
+		if icfg.credentialed {
 			errorMsg.WriteString("credentialed access is enabled")
 		}
 		if pna {
-			if cfg.credentialed {
+			if icfg.credentialed {
 				errorMsg.WriteString(" and/or ")
 			}
 			errorMsg.WriteString("Private-Network Access is enabled")
@@ -842,21 +841,21 @@ func (cfg *config) validate() error {
 		err := util.NewError(errorMsg.String())
 		errs = append(errs, err)
 	}
-	if len(cfg.tmp.publicSuffixes) > 0 &&
-		!cfg.tmp.subsOfPublicSuffixes {
+	if len(icfg.tmp.publicSuffixes) > 0 &&
+		!icfg.tmp.subsOfPublicSuffixes {
 		var errorMsg strings.Builder
 		errorMsg.WriteString(`for security reasons, origin patterns like `)
-		util.Join(&errorMsg, cfg.tmp.publicSuffixes)
+		util.Join(&errorMsg, icfg.tmp.publicSuffixes)
 		errorMsg.WriteString(` that encompass subdomains of a public suffix`)
 		errorMsg.WriteString(" are by default prohibited")
 		err := util.NewError(errorMsg.String())
 		errs = append(errs, err)
 	}
-	if cfg.privateNetworkAccess && cfg.privateNetworkAccessNoCors {
+	if icfg.privateNetworkAccess && icfg.privateNetworkAccessNoCors {
 		const msg = "at most one form of Private-Network Access can be enabled"
 		errs = append(errs, util.NewError(msg))
 	}
-	if cfg.exposeAllResHdrs && cfg.credentialed {
+	if icfg.exposeAllResHdrs && icfg.credentialed {
 		const msg = "you cannot both expose all response headers and enable " +
 			"credentialed access"
 		errs = append(errs, util.NewError(msg))

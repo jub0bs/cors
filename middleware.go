@@ -59,8 +59,8 @@ func (m *Middleware) SetDebug(b bool) {
 // The resulting CORS middleware is immutable;
 // more specifically, mutating the fields of a [Config] value that was used to
 // create a Middleware does not alter the latter's configuration or behavior.
-func NewMiddleware(c Config) (*Middleware, error) {
-	cfg, err := newConfig(&c)
+func NewMiddleware(cfg Config) (*Middleware, error) {
+	icfg, err := newInternalConfig(&cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func NewMiddleware(c Config) (*Middleware, error) {
 			if !found {
 				// r is NOT a CORS request;
 				// see https://fetch.spec.whatwg.org/#cors-request.
-				cfg.handleNonCORS(w.Header(), options)
+				icfg.handleNonCORS(w.Header(), options)
 				h.ServeHTTP(w, r)
 				return
 			}
@@ -87,31 +87,31 @@ func NewMiddleware(c Config) (*Middleware, error) {
 			if options && found {
 				// r is a CORS-preflight request;
 				// see https://fetch.spec.whatwg.org/#cors-preflight-request.
-				cfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl)
+				icfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl)
 				return
 			}
 			// r is an "actual" (i.e. non-preflight) CORS request.
-			cfg.handleCORSActual(w, origin, originSgl, options)
+			icfg.handleCORSActual(w, origin, originSgl, options)
 			h.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(f)
 	}
 	m := Middleware{
-		debugMode: &cfg.debug,
+		debugMode: &icfg.debug,
 		f:         middlewareFunc,
 	}
 	return &m, nil
 }
 
-func (cfg *config) handleNonCORS(resHdrs http.Header, options bool) {
+func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, options bool) {
 	if options {
 		// see the implementation comment in handleCORSPreflight
 		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
 	}
-	if cfg.privateNetworkAccessNoCors {
+	if icfg.privateNetworkAccessNoCors {
 		return
 	}
-	if !cfg.allowAnyOrigin {
+	if !icfg.allowAnyOrigin {
 		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
 		// Note that we deliberately list "Origin" in the Vary header of responses
 		// to actual requests even in cases where a single origin is allowed,
@@ -124,13 +124,13 @@ func (cfg *config) handleNonCORS(resHdrs http.Header, options bool) {
 		return
 	}
 	resHdrs.Set(headers.ACAO, headers.ValueWildcard)
-	if cfg.aceh != "" {
+	if icfg.aceh != "" {
 		// see https://github.com/whatwg/fetch/issues/1601
-		resHdrs.Set(headers.ACEH, cfg.aceh)
+		resHdrs.Set(headers.ACEH, icfg.aceh)
 	}
 }
 
-func (cfg *config) handleCORSPreflight(
+func (icfg *internalConfig) handleCORSPreflight(
 	w http.ResponseWriter,
 	reqHdrs http.Header,
 	origin string,
@@ -168,11 +168,11 @@ func (cfg *config) handleCORSPreflight(
 	//
 	// When debug is off and preflight fails,
 	// we omit all CORS headers from the preflight response.
-	debug := cfg.debug.Load() // debug mode adopted for this preflight
+	debug := icfg.debug.Load() // debug mode adopted for this preflight
 
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
-	buf, ok := cfg.processOriginForPreflight(buf, origin, originSgl)
+	buf, ok := icfg.processOriginForPreflight(buf, origin, originSgl)
 	if !ok {
 		if debug {
 			flush(w.Header(), buf)
@@ -185,33 +185,33 @@ func (cfg *config) handleCORSPreflight(
 	// (see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7)
 	// if the response status is not an ok status
 	// (see https://fetch.spec.whatwg.org/#ok-status).
-	buf, ok = cfg.processACRPN(buf, reqHdrs)
+	buf, ok = icfg.processACRPN(buf, reqHdrs)
 	if !ok {
 		if debug {
 			flush(w.Header(), buf)
-			w.WriteHeader(cfg.preflightStatus)
+			w.WriteHeader(icfg.preflightStatus)
 			return
 		}
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
-	buf, ok = cfg.processACRM(buf, acrm, acrmSgl)
+	buf, ok = icfg.processACRM(buf, acrm, acrmSgl)
 	if !ok {
 		if debug {
 			flush(w.Header(), buf)
-			w.WriteHeader(cfg.preflightStatus)
+			w.WriteHeader(icfg.preflightStatus)
 			return
 		}
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
-	buf, ok = cfg.processACRH(buf, reqHdrs, debug)
+	buf, ok = icfg.processACRH(buf, reqHdrs, debug)
 	if !ok {
 		if debug {
 			flush(w.Header(), buf)
-			w.WriteHeader(cfg.preflightStatus)
+			w.WriteHeader(icfg.preflightStatus)
 			return
 		}
 		w.WriteHeader(http.StatusForbidden)
@@ -220,10 +220,10 @@ func (cfg *config) handleCORSPreflight(
 	// Preflight was successful.
 
 	flush(w.Header(), buf)
-	if cfg.acma != nil {
-		resHdrs[headers.ACMA] = cfg.acma
+	if icfg.acma != nil {
+		resHdrs[headers.ACMA] = icfg.acma
 	}
-	w.WriteHeader(cfg.preflightStatus)
+	w.WriteHeader(icfg.preflightStatus)
 }
 
 type headerPair struct {
@@ -237,7 +237,7 @@ func flush(hdrs http.Header, pairs []headerPair) {
 	}
 }
 
-func (cfg *config) processOriginForPreflight(
+func (icfg *internalConfig) processOriginForPreflight(
 	buf []headerPair,
 	origin string,
 	originSgl []string,
@@ -246,7 +246,7 @@ func (cfg *config) processOriginForPreflight(
 	if !ok {
 		return buf, false
 	}
-	if !cfg.credentialed && cfg.allowAnyOrigin {
+	if !icfg.credentialed && icfg.allowAnyOrigin {
 		pair := headerPair{
 			k: headers.ACAO,
 			v: headers.WildcardSgl,
@@ -254,7 +254,7 @@ func (cfg *config) processOriginForPreflight(
 		buf = append(buf, pair)
 		return buf, true
 	}
-	if !cfg.corpus.Contains(&o) {
+	if !icfg.corpus.Contains(&o) {
 		return buf, false
 	}
 	pair := headerPair{
@@ -262,7 +262,7 @@ func (cfg *config) processOriginForPreflight(
 		v: originSgl,
 	}
 	buf = append(buf, pair)
-	if cfg.credentialed {
+	if icfg.credentialed {
 		// We make no attempt to infer whether the request is credentialed,
 		// simply because preflight requests don't carry credentials;
 		// see https://fetch.spec.whatwg.org/#example-xhr-credentials.
@@ -275,7 +275,7 @@ func (cfg *config) processOriginForPreflight(
 	return buf, true
 }
 
-func (cfg *config) processACRPN(buf []headerPair, reqHdrs http.Header) ([]headerPair, bool) {
+func (icfg *internalConfig) processACRPN(buf []headerPair, reqHdrs http.Header) ([]headerPair, bool) {
 	// See https://wicg.github.io/private-network-access/#cors-preflight.
 	//
 	// PNA-compliant browsers send at most one ACRPN header;
@@ -285,7 +285,7 @@ func (cfg *config) processACRPN(buf []headerPair, reqHdrs http.Header) ([]header
 	if !found || acrpn != headers.ValueTrue { // no request for PNA
 		return buf, true
 	}
-	if cfg.privateNetworkAccess || cfg.privateNetworkAccessNoCors {
+	if icfg.privateNetworkAccess || icfg.privateNetworkAccessNoCors {
 		pair := headerPair{
 			k: headers.ACAPN,
 			v: headers.TrueSgl,
@@ -297,7 +297,7 @@ func (cfg *config) processACRPN(buf []headerPair, reqHdrs http.Header) ([]header
 }
 
 // Note: only for _non-preflight_ CORS requests
-func (cfg *config) handleCORSActual(
+func (icfg *internalConfig) handleCORSActual(
 	w http.ResponseWriter,
 	origin string,
 	originSgl []string,
@@ -305,7 +305,7 @@ func (cfg *config) handleCORSActual(
 ) {
 	resHdrs := w.Header()
 	// see https://wicg.github.io/private-network-access/#shortlinks
-	if cfg.privateNetworkAccessNoCors {
+	if icfg.privateNetworkAccessNoCors {
 		if options {
 			// see the implementation comment in handleCORSPreflight
 			resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
@@ -316,11 +316,11 @@ func (cfg *config) handleCORSActual(
 	case options:
 		// see the implementation comment in handleCORSPreflight
 		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
-	case !cfg.allowAnyOrigin:
+	case !icfg.allowAnyOrigin:
 		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
 		resHdrs.Add(headers.Vary, headers.Origin)
 	}
-	if !cfg.credentialed && cfg.allowAnyOrigin {
+	if !icfg.credentialed && icfg.allowAnyOrigin {
 		// See the last paragraph in
 		// https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
 		// Note that we deliberately list "Origin" in the Vary header of responses
@@ -328,18 +328,18 @@ func (cfg *config) handleCORSActual(
 		// because doing so is simpler to implement and unlikely to be
 		// detrimental to Web caches.
 		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
-		if cfg.aceh != "" {
+		if icfg.aceh != "" {
 			// see https://github.com/whatwg/fetch/issues/1601
-			resHdrs.Set(headers.ACEH, cfg.aceh)
+			resHdrs.Set(headers.ACEH, icfg.aceh)
 		}
 		return
 	}
 	o, ok := origins.Parse(origin)
-	if !ok || !cfg.corpus.Contains(&o) {
+	if !ok || !icfg.corpus.Contains(&o) {
 		return
 	}
 	resHdrs[headers.ACAO] = originSgl
-	if cfg.credentialed {
+	if icfg.credentialed {
 		// We make no attempt to infer whether the request is credentialed;
 		// in fact, a request’s credentials mode is not necessarily observable
 		// on the server.
@@ -348,12 +348,12 @@ func (cfg *config) handleCORSActual(
 		// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
 		resHdrs.Set(headers.ACAC, headers.ValueTrue)
 	}
-	if cfg.aceh != "" {
-		resHdrs.Set(headers.ACEH, cfg.aceh)
+	if icfg.aceh != "" {
+		resHdrs.Set(headers.ACEH, icfg.aceh)
 	}
 }
 
-func (cfg *config) processACRM(
+func (icfg *internalConfig) processACRM(
 	buf []headerPair,
 	acrm string,
 	acrmSgl []string,
@@ -364,7 +364,7 @@ func (cfg *config) processACRM(
 		// Therefore, no need to set the ACAM header in this case.
 		return buf, true
 	}
-	if cfg.allowAnyMethod && !cfg.credentialed {
+	if icfg.allowAnyMethod && !icfg.credentialed {
 		pair := headerPair{
 			k: headers.ACAM,
 			v: headers.WildcardSgl,
@@ -372,7 +372,7 @@ func (cfg *config) processACRM(
 		buf = append(buf, pair)
 		return buf, true
 	}
-	if cfg.allowAnyMethod || cfg.allowedMethods.Contains(acrm) {
+	if icfg.allowAnyMethod || icfg.allowedMethods.Contains(acrm) {
 		pair := headerPair{
 			k: headers.ACAM,
 			v: acrmSgl,
@@ -383,7 +383,7 @@ func (cfg *config) processACRM(
 	return buf, false
 }
 
-func (cfg *config) processACRH(
+func (icfg *internalConfig) processACRH(
 	buf []headerPair,
 	reqHdrs http.Header,
 	debug bool,
@@ -394,8 +394,8 @@ func (cfg *config) processACRH(
 	if !found {
 		return buf, true
 	}
-	if cfg.asteriskReqHdrs && !cfg.credentialed {
-		if cfg.allowAuthorization {
+	if icfg.asteriskReqHdrs && !icfg.credentialed {
+		if icfg.allowAuthorization {
 			// According to the Fetch standard, the wildcard does not cover
 			// request-header name Authorization; see
 			// https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name
@@ -433,7 +433,7 @@ func (cfg *config) processACRH(
 		}
 		return buf, true
 	}
-	if cfg.asteriskReqHdrs && cfg.credentialed {
+	if icfg.asteriskReqHdrs && icfg.credentialed {
 		// If credentialed access is enabled,
 		// the single-asterisk pattern denotes all request-header names,
 		// including Authorization.
@@ -472,10 +472,10 @@ func (cfg *config) processACRH(
 		return buf, true
 	}
 	if !debug {
-		if cfg.allowedReqHdrs.Size() == 0 {
+		if icfg.allowedReqHdrs.Size() == 0 {
 			return buf, false
 		}
-		if !cfg.allowedReqHdrs.Subsumes(acrh) {
+		if !icfg.allowedReqHdrs.Subsumes(acrh) {
 			return buf, false
 		}
 		pair := headerPair{
@@ -485,10 +485,10 @@ func (cfg *config) processACRH(
 		buf = append(buf, pair)
 		return buf, true
 	}
-	if cfg.acah != nil {
+	if icfg.acah != nil {
 		pair := headerPair{
 			k: headers.ACAH,
-			v: cfg.acah,
+			v: icfg.acah,
 		}
 		buf = append(buf, pair)
 		return buf, true
