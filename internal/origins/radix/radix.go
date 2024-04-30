@@ -23,12 +23,11 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		hasLeadingAsterisk = true
 		keyPattern = rest
 	}
-	var parent *node
 	n := &t.root
 	// The key pattern is processed from right to left.
-	search := keyPattern
+	s := keyPattern
 	for {
-		label, ok := lastByte(search)
+		label, ok := lastByte(s)
 		if !ok {
 			n.add(v, hasLeadingAsterisk)
 			return
@@ -36,60 +35,71 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		if n.wSet.Contains(v) {
 			return
 		}
-		parent = n
-		n = n.edges[label]
-		if n == nil { // no matching edge found; create one
-			child := &node{suf: search}
+		child := n.edges[label]
+		if child == nil { // No matching edge found; create one.
+			child = &node{suf: s}
 			child.add(v, hasLeadingAsterisk)
-			parent.insertEdge(label, child)
+			n.insertEdge(label, child)
 			return
 		}
 
-		// matching edge found
-		searchPrefix, prefixOfNSuf, suf := splitAtCommonSuffix(search, n.suf)
-		if len(suf) == len(n.suf) { // n.suf is a suffix of search
-			search = searchPrefix
+		sPrefix, prefixOfChildSuf, suf := splitAtCommonSuffix(s, child.suf)
+		if len(prefixOfChildSuf) == 0 { // child.suf is a suffix of s
+			s = sPrefix
+			n = child
 			continue
 		}
 
-		// n.suf is NOT a suffix of search; split the node
-		child := &node{suf: suf}
-		parent.insertEdge(label, child)
+		// child.suf is NOT a suffix of s; we need to split child.
+		//
+		// Before splitting:
+		//
+		//  child
+		//
+		// After splitting:
+		//
+		//  child' -- grandChild1
+		//
+		// or perhaps
+		//
+		//  child' -- grandChild1
+		//     \
+		//      grandChild2
 
-		// Restore the existing node.
-		// Because n.suf is not a suffix of search,
-		// prefixOfNSuf is necessarily non-empty.
-		byteBeforeSuffix, _ := lastByte(prefixOfNSuf)
-		child.insertEdge(byteBeforeSuffix, n)
-		if len(suf) == len(search) { // search is a suffix of n.suf
-			n.suf = prefixOfNSuf
+		// Create the first grandchild on the basis of the current child.
+		grandChild1 := child
+		grandChild1.suf = prefixOfChildSuf
+
+		// Replace child in n.
+		child = &node{suf: suf}
+		n.insertEdge(label, child)
+
+		// Add the first grandchild in child.
+		label, _ = lastByte(prefixOfChildSuf)
+		child.insertEdge(label, grandChild1)
+		if len(sPrefix) == 0 {
 			child.add(v, hasLeadingAsterisk)
 			return
 		}
 
-		// search is NOT a suffix of n.suf
-		n.suf = prefixOfNSuf
-		// Because search is NOT a suffix of n.suf,
-		// searchPrefix is necessarily non-empty.
-		label, _ = lastByte(searchPrefix)
-		search = searchPrefix
-		grandChild := &node{suf: search}
-		grandChild.add(v, hasLeadingAsterisk)
-		child.insertEdge(label, grandChild)
+		// Add a second grandchild in child.
+		label, _ = lastByte(sPrefix)
+		grandChild2 := &node{suf: sPrefix}
+		grandChild2.add(v, hasLeadingAsterisk)
+		child.insertEdge(label, grandChild2)
 	}
 }
 
 // Contains reports whether t contains key-value pair (k,v).
 func (t *Tree) Contains(k string, v int) bool {
 	n := &t.root
-	search := k
 	for {
-		label, ok := lastByte(search)
+		label, ok := lastByte(k)
 		if !ok {
 			return n.set.Contains(v) || n.set.Contains(WildcardElem)
 		}
 
-		// search is not empty; check wildcard edge
+		// k is not empty; check wildcard edge
 		if n.wSet.Contains(v) || n.wSet.Contains(WildcardElem) {
 			return true
 		}
@@ -100,12 +110,12 @@ func (t *Tree) Contains(k string, v int) bool {
 			return false
 		}
 
-		searchPrefix, _, suf := splitAtCommonSuffix(search, n.suf)
-		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of search
+		kPrefix, _, suf := splitAtCommonSuffix(k, n.suf)
+		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of k
 			return false
 		}
-		// n.suf is a suffix of search
-		search = searchPrefix
+		// n.suf is a suffix of k
+		k = kPrefix
 	}
 }
 

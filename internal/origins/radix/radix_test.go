@@ -78,6 +78,9 @@ func TestRadix(t *testing.T) {
 				{"string_concat", 0},
 				{"akin", 0},
 				{"bespin", 0},
+				// regression tests for GHSA-vhxv-fg4m-p2w8
+				{"pkin", 0},
+				{"kpin", 0},
 			},
 		}, {
 			desc: "duplicate patterns",
@@ -119,6 +122,9 @@ func TestRadix(t *testing.T) {
 				{"string_concat", 0},
 				{"akin", 0},
 				{"bespin", 0},
+				// regression tests for GHSA-vhxv-fg4m-p2w8
+				{"pkin", 0},
+				{"kpin", 0},
 			},
 		}, {
 			desc: "wildcard-free patterns with multiple values",
@@ -176,6 +182,11 @@ func TestRadix(t *testing.T) {
 				{"string_concat", 1},
 				{"akin", 1},
 				{"bespin", 1},
+				// regression tests for GHSA-vhxv-fg4m-p2w8
+				{"pkin", 0},
+				{"kpin", 0},
+				{"pkin", 1},
+				{"kpin", 1},
 			},
 		}, {
 			desc: "wildcard-free patterns in reverse insertion order",
@@ -213,6 +224,9 @@ func TestRadix(t *testing.T) {
 				{"string_concat", 0},
 				{"akin", 0},
 				{"bespin", 0},
+				// regression tests for GHSA-vhxv-fg4m-p2w8
+				{"kpin", 0},
+				{"pkin", 0},
 			},
 		}, {
 			desc: "some wildcard-full patterns",
@@ -312,6 +326,9 @@ func TestRadix(t *testing.T) {
 				{"string_concat", 0},
 				{"akin", 0},
 				{"bespin", 0},
+				// regression tests for GHSA-vhxv-fg4m-p2w8
+				{"pkin", 0},
+				{"kpin", 0},
 			},
 		}, {
 			desc: "some wildcard-full patterns and wildcard value",

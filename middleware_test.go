@@ -1089,6 +1089,172 @@ func TestMiddleware(t *testing.T) {
 					},
 				},
 			},
+		}, {
+			desc:       "regression tests for GHSA-vhxv-fg4m-p2w8",
+			newHandler: newSpyHandler(200, Headers{headerVary: "foo"}, "bar"),
+			cfg: &cors.Config{
+				Origins: []string{
+					"https://foo.com",
+					"https://bar.com",
+				},
+			},
+			cases: []ReqTestCase{
+				{
+					desc:      "actual GET from disallowed",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "https://barfoo.com",
+					},
+					respHeaders: Headers{
+						headerVary: headerOrigin,
+					},
+				}, {
+					desc:      "actual GET from disallowed 2",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "https://foobar.com",
+					},
+					respHeaders: Headers{
+						headerVary: headerOrigin,
+					},
+				}, {
+					desc:      "actual OPTIONS from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://barfoo.com",
+					},
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "actual OPTIONS from disallowed 2",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://foobar.com",
+					},
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with GET from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://barfoo.com",
+						headerACRM:   "GET",
+					},
+					preflight: true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with GET from disallowed 2",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://foobar.com",
+						headerACRM:   "GET",
+					},
+					preflight: true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with PUT from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://barfoo.com",
+						headerACRM:   "PUT",
+					},
+					preflight: true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with PUT from disallowed 2",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://foobar.com",
+						headerACRM:   "PUT",
+					},
+					preflight: true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with GET and headers from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://barfoo.com",
+						headerACRM:   "GET",
+						headerACRH:   "bar,baz,foo",
+					},
+					preflight: true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with GET and headers from disallowed 2",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://foobar.com",
+						headerACRM:   "GET",
+						headerACRH:   "bar,baz,foo",
+					},
+					preflight: true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with GET and ACRPN from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://barfoo.com",
+						headerACRPN:  "true",
+						headerACRM:   "GET",
+					},
+					preflight: true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with GET and ACRPN from disallowed 2",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://foobar.com",
+						headerACRPN:  "true",
+						headerACRM:   "GET",
+					},
+					preflight: true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with PUT and ACRPN and headers from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://barfoo.com",
+						headerACRPN:  "true",
+						headerACRM:   "PUT",
+						headerACRH:   "bar,baz,foo",
+					},
+					preflight: true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with PUT and ACRPN and headers from disallowed 2",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://foobar.com",
+						headerACRPN:  "true",
+						headerACRM:   "PUT",
+						headerACRH:   "bar,baz,foo",
+					},
+					preflight: true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				},
+			},
 		},
 	}
 	for _, mwtc := range cases {
