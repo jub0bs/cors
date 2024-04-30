@@ -1,10 +1,10 @@
-package util_test
+package headers_test
 
 import (
 	"slices"
 	"testing"
 
-	"github.com/jub0bs/cors/internal/util"
+	"github.com/jub0bs/cors/internal/headers"
 )
 
 func TestSortedSet(t *testing.T) {
@@ -81,7 +81,7 @@ func TestSortedSet(t *testing.T) {
 	for _, tc := range cases {
 		f := func(t *testing.T) {
 			elems := slices.Clone(tc.elems)
-			s := util.NewSortedSet(tc.elems...)
+			s := headers.NewSortedSet(tc.elems...)
 			size := s.Size()
 			if s.Size() != tc.wantSize {
 				const tmpl = "NewSortedSet(%#v...).Size(): got %d; want %d"

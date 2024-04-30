@@ -463,7 +463,7 @@ type config struct {
 
 	// request headers
 	acah               []string
-	allowedReqHdrs     util.SortedSet
+	allowedReqHdrs     headers.SortedSet
 	asteriskReqHdrs    bool
 	allowAuthorization bool
 
@@ -690,7 +690,7 @@ func (cfg *config) validateRequestHeaders(names []string) error {
 			cfg.allowAuthorization = true
 		}
 	}
-	sortedSet := util.NewSortedSet(allowedHeaders...)
+	sortedSet := headers.NewSortedSet(allowedHeaders...)
 
 	if size := sortedSet.Size(); cfg.asteriskReqHdrs &&
 		(size > 1 || !cfg.allowAuthorization && size > 0) {
