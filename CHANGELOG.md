@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] (2024-05-02)
+
+### Fixed
+
+- **Vulnerability**: Some CORS middleware (more specifically those created by
+  specifying two or more origin patterns whose hosts share a proper suffix)
+  incorrectly allowed some untrusted origins, thereby opening the door to
+  cross-origin attacks from the untrusted origins in question.
+  For example, specifying origin patterns `https://foo.com` and
+  `https://bar.com` (in that order) would yield a middleware that would
+  incorrectly allow untrusted origin `https://barfoo.com`.
+  See https://github.com/jub0bs/cors/security/advisories/GHSA-vhxv-fg4m-p2w8.
+
+### Changed
+
+- **Performance**: reduce heap allocations at initialization
+- **Dependencies**: update to golang.org/x/net v0.24.0
+- **Documentation**: clarify examples
+- **Tests**: improve failure messages
+
 ## [0.1.2] (2024-04-04)
 
 ### Changed
@@ -35,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] (2024-03-23)
 
+[0.1.3]: https://github.com/jub0bs/cors/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/jub0bs/cors/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/jub0bs/cors/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/jub0bs/cors/releases/tag/v0.1.0
