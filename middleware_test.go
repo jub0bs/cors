@@ -12,6 +12,149 @@ import (
 func TestMiddleware(t *testing.T) {
 	cases := []MiddlewareTestCase{
 		{
+			desc:       "passthrough",
+			newHandler: newSpyHandler(200, Headers{headerVary: "foo"}, "bar"),
+			cfg:        nil,
+			cases: []ReqTestCase{
+				{
+					desc:      "non-CORS GET",
+					reqMethod: "GET",
+				}, {
+					desc:      "non-CORS OPTIONS",
+					reqMethod: "OPTIONS",
+				}, {
+					desc:      "actual GET from allowed",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+					},
+				}, {
+					desc:      "actual GET from disallowed",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+					},
+				}, {
+					desc:      "actual GET from invalid",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com/index.html",
+					},
+				}, {
+					desc:      "actual OPTIONS from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+					},
+				}, {
+					desc:      "actual OPTIONS from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+					},
+				}, {
+					desc:      "preflight with GET from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "GET",
+					},
+				}, {
+					desc:      "preflight with PURGE from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "PURGE",
+					},
+				}, {
+					desc:      "preflight with PURGE and Content-Type from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "PURGE",
+						headerACRH:   "content-type",
+					},
+				}, {
+					desc:      "preflight with GET from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRM:   "GET",
+					},
+				}, {
+					desc:      "preflight with GET from invalid",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com/index.html",
+						headerACRM:   "GET",
+					},
+				}, {
+					desc:      "preflight with PUT from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "PUT",
+					},
+				}, {
+					desc:      "preflight with PUT from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRM:   "PUT",
+					},
+				}, {
+					desc:      "preflight with GET and headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "GET",
+						headerACRH:   "bar,baz,foo",
+					},
+				}, {
+					desc:      "preflight with GET and headers from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.org",
+						headerACRM:   "GET",
+						headerACRH:   "bar,baz,foo",
+					},
+				}, {
+					desc:      "preflight with GET and ACRPN from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRPN:  "true",
+						headerACRM:   "GET",
+					},
+				}, {
+					desc:      "preflight with PUT and ACRPN headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRPN:  "true",
+						headerACRM:   "PUT",
+						headerACRH:   "bar,baz,foo",
+					},
+				}, {
+					desc:      "preflight with GET and ACRPN from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRPN:  "true",
+						headerACRM:   "GET",
+					},
+				}, {
+					desc:      "preflight with PUT and ACRPN and headers from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRPN:  "true",
+						headerACRM:   "PUT",
+						headerACRH:   "bar,baz,foo",
+					},
+				},
+			},
+		}, {
 			desc:       "credentialed",
 			newHandler: newSpyHandler(200, Headers{headerVary: "foo"}, "bar"),
 			cfg: &cors.Config{
@@ -1260,9 +1403,17 @@ func TestMiddleware(t *testing.T) {
 	for _, mwtc := range cases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			mw, err := cors.NewMiddleware(*mwtc.cfg)
-			if err != nil {
-				t.Fatalf("failure to build CORS middleware: %v", err)
+			var (
+				mw  *cors.Middleware
+				err error
+			)
+			if mwtc.cfg == nil {
+				mw = new(cors.Middleware)
+			} else {
+				mw, err = cors.NewMiddleware(*mwtc.cfg)
+				if err != nil {
+					t.Fatalf("failure to build CORS middleware: %v", err)
+				}
 			}
 			if mwtc.debug {
 				mw.SetDebug(true)
@@ -1404,9 +1555,17 @@ func TestWrappedHandlerCannotMutatePackageLevelSlices(t *testing.T) {
 	for _, mwtc := range cases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			mw, err := cors.NewMiddleware(*mwtc.cfg)
-			if err != nil {
-				t.Fatalf("failure to build CORS middleware: %v", err)
+			var (
+				mw  *cors.Middleware
+				err error
+			)
+			if mwtc.cfg == nil {
+				mw = new(cors.Middleware)
+			} else {
+				mw, err = cors.NewMiddleware(*mwtc.cfg)
+				if err != nil {
+					t.Fatalf("failure to build CORS middleware: %v", err)
+				}
 			}
 			for _, tc := range mwtc.cases {
 				f := func(t *testing.T) {

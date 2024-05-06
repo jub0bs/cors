@@ -2,7 +2,7 @@ package cors
 
 import (
 	"net/http"
-	"sync/atomic"
+	"sync"
 
 	"github.com/jub0bs/cors/internal/headers"
 	"github.com/jub0bs/cors/internal/methods"
@@ -10,97 +10,95 @@ import (
 )
 
 // A Middleware is a CORS middleware.
-// It is safe for concurrent use by multiple goroutines.
-type Middleware struct {
-	debugMode *atomic.Bool
-	f         func(h http.Handler) http.Handler
-}
-
-// Wrap applies the CORS middleware to the specified handler.
-func (m *Middleware) Wrap(h http.Handler) http.Handler {
-	return m.f(h)
-}
-
-// SetDebug turns debug mode on (if b is true) or off (otherwise),
-// its default state.
+// Call its [*Middleware.Wrap] method to apply it to a [http.Handler].
 //
-// You should activate debug mode when you're struggling to troubleshoot
-// some CORS issue.
+// The zero value is ready to use but is a mere "passthrough" middleware,
+// i.e. a middleware that simply delegates to the handler(s) it wraps.
+// To obtain a proper CORS middleware, you should call [NewMiddleware]
+// and pass it a valid [Config].
 //
+// Middleware have a debug mode,
+// which can be toggled by calling their [*Middleware.SetDebug] method.
+// You should turn debug mode on whenever you're struggling to troubleshoot
+// some [CORS-preflight] issue.
 // When debug mode is off, the information that the middleware includes in
-// preflight responses is minimal, for efficiency and confidentiality reasons.
-// However, if preflight fails, the browser lacks enough contextual information
-// about the failure to produce a helpful CORS error message.
-// As a result, troubleshooting CORS issues can prove [difficult].
-//
+// preflight responses is minimal, for efficiency and confidentiality reasons;
+// however, when preflight fails, the browser then lacks enough contextual
+// information about the failure to produce a helpful CORS error message.
 // In contrast, when debug mode is on and preflight fails,
 // the middleware includes just enough contextual information about the
 // preflight failure in the response for browsers to produce
 // a helpful CORS error message.
-// Therefore, debug mode eases troubleshooting of CORS issues.
+// The debug mode of a passthrough middleware is invariably off.
 //
-// Note that, because this method is concurrency-safe
-// (it can be safely called even when the middleware is processing requests),
-// calling it doesn't require a server restart;
-// you may even want to expose it on some internal or authenticated endpoint,
-// so that you can toggle debug mode in production.
+// Middleware are safe for concurrent use by multiple goroutines.
+// Therefore, you are free to expose some or all of their methods
+// so you can call them without having to restart your server;
+// however, if you do expose those methods, you should only do so on some
+// internal or authorized endpoints, for security reasons.
 //
-// [difficult]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#9-ease-troubleshooting-by-eschewing-shortcuts-during-preflight
-func (m *Middleware) SetDebug(b bool) {
-	m.debugMode.Store(b)
+// [CORS-preflight]: https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
+type Middleware struct {
+	icfg *internalConfig
+	mu   sync.RWMutex
 }
 
-// NewMiddleware creates a CORS middleware that behaves in accordance with
-// the specified configuration. If its [Config] argument is invalid,
-// this function returns a nil [*Middleware] and some non-nil error.
-// Otherwise, it returns a pointer to a functioning [Middleware]
-// and a nil error.
+// NewMiddleware creates a CORS middleware that behaves in accordance with cfg.
+// If cfg is invalid, it returns a nil [*Middleware] and some non-nil error.
+// Otherwise, it returns a pointer to a CORS [Middleware] and a nil error.
 //
-// The resulting CORS middleware is immutable;
-// more specifically, mutating the fields of a [Config] value that was used to
-// create a Middleware does not alter the latter's configuration or behavior.
+// The debug mode of the resulting middleware is off.
+//
+// Mutating the fields of cfg after NewMiddleware has returned a functioning
+// middleware does not alter the latter's behavior.
 func NewMiddleware(cfg Config) (*Middleware, error) {
+	var m Middleware
 	icfg, err := newInternalConfig(&cfg)
 	if err != nil {
 		return nil, err
 	}
-	middlewareFunc := func(h http.Handler) http.Handler {
-		f := func(w http.ResponseWriter, r *http.Request) {
-			isOptionsReq := r.Method == http.MethodOptions
-			// Fetch-compliant browsers send at most one Origin header;
-			// see https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
-			// (step 12).
-			origin, originSgl, found := headers.First(r.Header, headers.Origin)
-			if !found {
-				// r is NOT a CORS request;
-				// see https://fetch.spec.whatwg.org/#cors-request.
-				icfg.handleNonCORS(w.Header(), isOptionsReq)
-				h.ServeHTTP(w, r)
-				return
-			}
-			// r is a CORS request (and possibly a CORS-preflight request);
-			// see https://fetch.spec.whatwg.org/#cors-request.
-
-			// Fetch-compliant browsers send at most one ACRM header;
-			// see https://fetch.spec.whatwg.org/#cors-preflight-fetch (step 3).
-			acrm, acrmSgl, found := headers.First(r.Header, headers.ACRM)
-			if isOptionsReq && found {
-				// r is a CORS-preflight request;
-				// see https://fetch.spec.whatwg.org/#cors-preflight-request.
-				icfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl)
-				return
-			}
-			// r is an "actual" (i.e. non-preflight) CORS request.
-			icfg.handleCORSActual(w, origin, originSgl, isOptionsReq)
-			h.ServeHTTP(w, r)
-		}
-		return http.HandlerFunc(f)
-	}
-	m := Middleware{
-		debugMode: &icfg.debug,
-		f:         middlewareFunc,
-	}
+	m.icfg = icfg
 	return &m, nil
+}
+
+// Wrap applies the CORS middleware to the specified handler.
+func (m *Middleware) Wrap(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		m.mu.RLock()
+		icfg := m.icfg
+		m.mu.RUnlock()
+		if icfg == nil { // passthrough middleware
+			h.ServeHTTP(w, r)
+			return
+		}
+		isOptionsReq := r.Method == http.MethodOptions
+		// Fetch-compliant browsers send at most one Origin header;
+		// see https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
+		// (step 12).
+		origin, originSgl, found := headers.First(r.Header, headers.Origin)
+		if !found {
+			// r is NOT a CORS request;
+			// see https://fetch.spec.whatwg.org/#cors-request.
+			icfg.handleNonCORS(w.Header(), isOptionsReq)
+			h.ServeHTTP(w, r)
+			return
+		}
+		// r is a CORS request (and possibly a CORS-preflight request);
+		// see https://fetch.spec.whatwg.org/#cors-request.
+
+		// Fetch-compliant browsers send at most one ACRM header;
+		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch (step 3).
+		acrm, acrmSgl, found := headers.First(r.Header, headers.ACRM)
+		if isOptionsReq && found {
+			// r is a CORS-preflight request;
+			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
+			icfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl)
+			return
+		}
+		// r is an "actual" (i.e. non-preflight) CORS request.
+		icfg.handleCORSActual(w, origin, originSgl, isOptionsReq)
+		h.ServeHTTP(w, r)
+	})
 }
 
 func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOptionsReq bool) {
@@ -157,6 +155,8 @@ func (icfg *internalConfig) handleCORSPreflight(
 		resHdrs[headers.Vary] = append(vary, headers.ValueVaryOptions)
 	}
 
+	// Accumulating the response headers in an array rather than in a
+	// temporary map allows us to save a few heap allocations.
 	var pairs [5]headerPair // enough to hold ACAO, ACAC, ACAPN, ACAM, and ACAH
 	buf := pairs[:0]
 
@@ -168,7 +168,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	//
 	// When debug is off and preflight fails,
 	// we omit all CORS headers from the preflight response.
-	debug := icfg.debug.Load() // debug mode adopted for this preflight
+	debug := icfg.debug
 
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
@@ -494,4 +494,15 @@ func (icfg *internalConfig) processACRH(
 		return buf, true
 	}
 	return buf, false
+}
+
+// SetDebug turns debug mode on (if b is true) or off (otherwise).
+// If m happens to be a passthrough middleware,
+// its debug mode is invariably off and SetDebug is a no-op.
+func (m *Middleware) SetDebug(b bool) {
+	m.mu.Lock()
+	if m.icfg != nil {
+		m.icfg.debug = b
+	}
+	m.mu.Unlock()
 }

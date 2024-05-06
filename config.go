@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync/atomic"
 
 	"github.com/jub0bs/cors/internal/headers"
 	"github.com/jub0bs/cors/internal/methods"
@@ -474,9 +473,9 @@ type internalConfig struct {
 	exposeAllResHdrs bool
 
 	// misc
-	debug                      atomic.Bool
 	preflightStatus            int
 	tmp                        *tmpConfig
+	debug                      bool
 	privateNetworkAccess       bool
 	privateNetworkAccessNoCors bool
 }
@@ -786,7 +785,7 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 
 func (icfg *internalConfig) validatePreflightStatus(status int) error {
 	if status == 0 {
-		icfg.preflightStatus = http.StatusNoContent
+		icfg.preflightStatus = defaultPreflightStatus
 		return nil
 	}
 	// see https://fetch.spec.whatwg.org/#ok-status
@@ -797,6 +796,8 @@ func (icfg *internalConfig) validatePreflightStatus(status int) error {
 	icfg.preflightStatus = status
 	return nil
 }
+
+const defaultPreflightStatus = http.StatusNoContent
 
 func (icfg *internalConfig) validate() error {
 	var errs []error
