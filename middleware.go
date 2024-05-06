@@ -51,6 +51,8 @@ type Middleware struct {
 //
 // Mutating the fields of cfg after NewMiddleware has returned a functioning
 // middleware does not alter the latter's behavior.
+// However, you can reconfigure a [Middleware] via its
+// [*Middleware.Reconfigure] method.
 func NewMiddleware(cfg Config) (*Middleware, error) {
 	var m Middleware
 	icfg, err := newInternalConfig(&cfg)
@@ -59,6 +61,39 @@ func NewMiddleware(cfg Config) (*Middleware, error) {
 	}
 	m.icfg = icfg
 	return &m, nil
+}
+
+// Reconfigure reconfigures m in accordance with cfg.
+// If cfg is nil, it turns m into a passthrough middleware.
+// If *cfg is invalid, it leaves m unchanged and returns some non-nil error.
+// Otherwise, it successfully reconfigures m, leaves m's debug mode unchanged,
+// and returns a nil error.
+//
+//	mw := new(cors.Middleware)
+//	err := mw.Reconfigure(&cfg)
+//
+// is functionally equivalent to
+//
+//	mw, err := cors.NewMiddleware(cfg)
+//
+// You can safely reconfigure a middleware
+// even as it's concurrently processing requests.
+//
+// Mutating the fields of cfg after Reconfigure has returned does not alter
+// m's behavior.
+func (m *Middleware) Reconfigure(cfg *Config) error {
+	icfg, err := newInternalConfig(cfg)
+	if err != nil {
+		return err
+	}
+	m.mu.Lock()
+	if icfg != nil && m.icfg != nil {
+		// Retain the current debug mode.
+		icfg.debug = m.icfg.debug
+	}
+	m.icfg = icfg
+	m.mu.Unlock()
+	return nil
 }
 
 // Wrap applies the CORS middleware to the specified handler.

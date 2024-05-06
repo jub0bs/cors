@@ -489,6 +489,9 @@ type tmpConfig struct {
 }
 
 func newInternalConfig(cfg *Config) (*internalConfig, error) {
+	if cfg == nil {
+		return nil, nil
+	}
 	icfg := internalConfig{
 		tmp: new(tmpConfig),
 	}

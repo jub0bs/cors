@@ -1442,7 +1442,7 @@ func TestMiddleware(t *testing.T) {
 						if spy.called.Load() {
 							t.Error("wrapped handler was called, but it should not have been")
 						}
-						assertPreflightStatus(t, res.StatusCode, &mwtc, &tc)
+						assertPreflightStatus(t, spy.statusCode, res.StatusCode, &mwtc, &tc)
 						assertResponseHeaders(t, res.Header, tc.respHeaders)
 						if mwtc.outerMw != nil {
 							assertResponseHeaders(t, res.Header, mwtc.outerMw.hdrs)
@@ -1470,6 +1470,370 @@ func TestMiddleware(t *testing.T) {
 			}
 		}
 		t.Run(mwtc.desc, f)
+	}
+}
+
+func TestReconfigure(t *testing.T) {
+	cases := []MiddlewareTestCase{
+		{
+			desc:       "passthrough",
+			newHandler: newSpyHandler(200, Headers{headerVary: "foo"}, "bar"),
+			cfg:        nil,
+			cases: []ReqTestCase{
+				{
+					desc:      "non-CORS GET",
+					reqMethod: "GET",
+				}, {
+					desc:      "non-CORS OPTIONS",
+					reqMethod: "OPTIONS",
+				}, {
+					desc:      "actual GET from allowed",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+					},
+				}, {
+					desc:      "actual GET from disallowed",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+					},
+				}, {
+					desc:      "actual GET from invalid",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com/index.html",
+					},
+				}, {
+					desc:      "actual OPTIONS from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+					},
+				}, {
+					desc:      "actual OPTIONS from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+					},
+				}, {
+					desc:      "preflight with GET from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "GET",
+					},
+				}, {
+					desc:      "preflight with PURGE from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "PURGE",
+					},
+				}, {
+					desc:      "preflight with PURGE and Content-Type from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "PURGE",
+						headerACRH:   "content-type",
+					},
+				}, {
+					desc:      "preflight with GET from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRM:   "GET",
+					},
+				}, {
+					desc:      "preflight with GET from invalid",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com/index.html",
+						headerACRM:   "GET",
+					},
+				}, {
+					desc:      "preflight with PUT from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "PUT",
+					},
+				}, {
+					desc:      "preflight with PUT from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRM:   "PUT",
+					},
+				}, {
+					desc:      "preflight with GET and headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "GET",
+						headerACRH:   "bar,baz,foo",
+					},
+				}, {
+					desc:      "preflight with GET and headers from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.org",
+						headerACRM:   "GET",
+						headerACRH:   "bar,baz,foo",
+					},
+				}, {
+					desc:      "preflight with GET and ACRPN from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRPN:  "true",
+						headerACRM:   "GET",
+					},
+				}, {
+					desc:      "preflight with PUT and ACRPN headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRPN:  "true",
+						headerACRM:   "PUT",
+						headerACRH:   "bar,baz,foo",
+					},
+				}, {
+					desc:      "preflight with GET and ACRPN from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRPN:  "true",
+						headerACRM:   "GET",
+					},
+				}, {
+					desc:      "preflight with PUT and ACRPN and headers from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRPN:  "true",
+						headerACRM:   "PUT",
+						headerACRH:   "bar,baz,foo",
+					},
+				},
+			},
+		}, {
+			desc:       "debug credentialed no req headers",
+			newHandler: newSpyHandler(200, Headers{headerVary: "foo"}, "bar"),
+			cfg: &cors.Config{
+				Origins:         []string{"http://localhost:9090"},
+				Credentialed:    true,
+				MaxAgeInSeconds: 30,
+				ResponseHeaders: []string{"X-Foo", "X-Bar"},
+				ExtraConfig: cors.ExtraConfig{
+					PreflightSuccessStatus: 279,
+				},
+			},
+			debug: true, // to check whether the debug mode will be retained after reconfiguration
+			cases: []ReqTestCase{
+				{
+					desc:      "preflight with GET and headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "GET",
+						headerACRH:   "bar,baz,foo",
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					preflightFails:           true,
+					respHeaders: Headers{
+						headerACAO: "http://localhost:9090",
+						headerACAC: "true",
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with disallowed method",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "PUT",
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					preflightFails:           true,
+					respHeaders: Headers{
+						headerACAO: "http://localhost:9090",
+						headerACAC: "true",
+						headerVary: varyPreflightValue,
+					},
+				},
+			},
+		}, {
+			desc:       "credentialed all req headers",
+			newHandler: newSpyHandler(200, Headers{headerVary: "foo"}, "bar"),
+			cfg: &cors.Config{
+				Origins:         []string{"http://localhost:9090"},
+				Credentialed:    true,
+				RequestHeaders:  []string{"*"},
+				MaxAgeInSeconds: 30,
+				ResponseHeaders: []string{"X-Foo", "X-Bar"},
+				ExtraConfig: cors.ExtraConfig{
+					PreflightSuccessStatus: 279,
+				},
+			},
+			debug: false, // to check whether the previous debug mode was retained after reconfiguration
+			cases: []ReqTestCase{
+				{
+					desc:      "preflight with GET and headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "GET",
+						headerACRH:   "bar,baz,foo",
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					respHeaders: Headers{
+						headerACAO: "http://localhost:9090",
+						headerACAC: "true",
+						headerACAH: "bar,baz,foo",
+						headerACMA: "30",
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with PURGE and headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "PURGE",
+						headerACRH:   "bar,baz,foo,qux",
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					preflightFails:           false, // would be true if debug were false
+					respHeaders: Headers{
+						headerACAO: "http://localhost:9090", // would be absent if debug were false
+						headerACAC: "true",                  // would be absent if debug were false
+						headerVary: varyPreflightValue,
+					},
+				},
+			},
+		}, {
+			desc:       "invalid config",
+			newHandler: newSpyHandler(200, Headers{headerVary: "foo"}, "bar"),
+			cfg:        new(cors.Config), // invalid: no origin patterns specified
+			invalid:    true,
+		}, {
+			desc:       "credentialed all req headers",
+			newHandler: newSpyHandler(200, Headers{headerVary: "foo"}, "bar"),
+			cfg: &cors.Config{
+				Origins:         []string{"http://localhost:9090"},
+				Credentialed:    true,
+				RequestHeaders:  []string{"*"},
+				MaxAgeInSeconds: 30,
+				ResponseHeaders: []string{"X-Foo", "X-Bar"},
+				ExtraConfig: cors.ExtraConfig{
+					PreflightSuccessStatus: 279,
+				},
+			},
+			debug: false, // to check whether the previous debug mode was retained
+			cases: []ReqTestCase{
+				{
+					desc:      "preflight with GET and headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "GET",
+						headerACRH:   "bar,baz,foo",
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					respHeaders: Headers{
+						headerACAO: "http://localhost:9090",
+						headerACAC: "true",
+						headerACAH: "bar,baz,foo",
+						headerACMA: "30",
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with PURGE and headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "http://localhost:9090",
+						headerACRM:   "PURGE",
+						headerACRH:   "bar,baz,foo,qux",
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					preflightFails:           false, // would be true if debug were false
+					respHeaders: Headers{
+						headerACAO: "http://localhost:9090", // would be absent if debug were false
+						headerACAC: "true",                  // would be absent if debug were false
+						headerVary: varyPreflightValue,
+					},
+				},
+			},
+		},
+	}
+	var mw cors.Middleware
+	for _, mwtc := range cases {
+		err := mw.Reconfigure(mwtc.cfg)
+		if err != nil && !mwtc.invalid {
+			t.Fatalf("failure to reconfigure CORS middleware: %v", err)
+		}
+		if err == nil && mwtc.invalid {
+			t.Fatal("unexpected absence of failure to reconfigure CORS middleware")
+		}
+		if mwtc.debug {
+			mw.SetDebug(true)
+		}
+		for _, tc := range mwtc.cases {
+			f := func(t *testing.T) {
+				// --- arrange ---
+				innerHandler := mwtc.newHandler()
+				handler := mw.Wrap(innerHandler)
+				if outerMiddleware := mwtc.outerMw; outerMiddleware != nil {
+					handler = outerMiddleware.Wrap(handler)
+				}
+				req := newRequest(tc.reqMethod, tc.reqHeaders)
+				rec := httptest.NewRecorder()
+
+				// --- act ---
+				handler.ServeHTTP(rec, req)
+				res := rec.Result()
+
+				// --- assert ---
+				spy, ok := innerHandler.(*spyHandler)
+				if !ok {
+					t.Fatalf("handler is not a *spyHandler")
+				}
+				if tc.preflight { // preflight request
+					if spy.called.Load() {
+						t.Error("wrapped handler was called, but it should not have been")
+					}
+					assertPreflightStatus(t, spy.statusCode, res.StatusCode, &mwtc, &tc)
+					assertResponseHeaders(t, res.Header, tc.respHeaders)
+					if mwtc.outerMw != nil {
+						assertResponseHeaders(t, res.Header, mwtc.outerMw.hdrs)
+					}
+					assertNoMoreResponseHeaders(t, res.Header)
+					assertBody(t, res.Body, "")
+					return
+				} // non-preflight request
+				if !spy.called.Load() {
+					t.Error("wrapped handler wasn't called, but it should have been")
+				}
+				if res.StatusCode != spy.statusCode {
+					const tmpl = "got status code %d; want %d"
+					t.Errorf(tmpl, res.StatusCode, spy.statusCode)
+				}
+				assertResponseHeaders(t, res.Header, spy.respHeaders)
+				assertResponseHeaders(t, res.Header, tc.respHeaders)
+				if mwtc.outerMw != nil {
+					assertResponseHeaders(t, res.Header, mwtc.outerMw.hdrs)
+				}
+				assertNoMoreResponseHeaders(t, res.Header)
+				assertBody(t, res.Body, spy.body)
+			}
+			t.Run(tc.desc, f)
+		}
 	}
 }
 

@@ -50,6 +50,7 @@ type MiddlewareTestCase struct {
 	outerMw    *middleware
 	newHandler func() http.Handler
 	cfg        *cors.Config
+	invalid    bool
 	debug      bool
 	cases      []ReqTestCase
 }
@@ -131,10 +132,12 @@ func (m middleware) Wrap(next http.Handler) http.Handler {
 	return http.HandlerFunc(f)
 }
 
-func assertPreflightStatus(t *testing.T, gotStatus int, mwtc *MiddlewareTestCase, tc *ReqTestCase) {
+func assertPreflightStatus(t *testing.T, spyStatus, gotStatus int, mwtc *MiddlewareTestCase, tc *ReqTestCase) {
 	t.Helper()
 	var wantStatusCode int
 	switch {
+	case mwtc.cfg == nil:
+		wantStatusCode = spyStatus
 	case !tc.preflightPassesCORSCheck || !mwtc.debug && tc.preflightFails:
 		wantStatusCode = http.StatusForbidden
 	case mwtc.cfg.PreflightSuccessStatus == 0:
