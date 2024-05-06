@@ -1,6 +1,7 @@
 package radix_test
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/jub0bs/cors/internal/origins/radix"
@@ -9,6 +10,7 @@ import (
 type TestCase struct {
 	desc     string
 	patterns []Pair
+	elems    []string
 	accept   []Pair
 	reject   []Pair
 }
@@ -33,6 +35,7 @@ func TestRadix(t *testing.T) {
 			patterns: []Pair{
 				{"", 0},
 			},
+			elems: []string{""},
 			accept: []Pair{
 				{"", 0},
 			},
@@ -49,6 +52,12 @@ func TestRadix(t *testing.T) {
 				{"concat", 0},
 				{"kin", 0},
 				{"pin", 0},
+			},
+			elems: []string{
+				"cat",
+				"concat",
+				"kin",
+				"pin",
 			},
 			accept: []Pair{
 				{"cat", 0},
@@ -94,6 +103,12 @@ func TestRadix(t *testing.T) {
 				{"kin", 0},
 				{"pin", 0},
 			},
+			elems: []string{
+				"cat",
+				"concat",
+				"kin",
+				"pin",
+			},
 			accept: []Pair{
 				{"cat", 0},
 				{"concat", 0},
@@ -137,6 +152,16 @@ func TestRadix(t *testing.T) {
 				{"concat", 1},
 				{"kin", 1},
 				{"pin", 1},
+			},
+			elems: []string{
+				"cat",
+				"cat:1",
+				"concat",
+				"concat:1",
+				"kin",
+				"kin:1",
+				"pin",
+				"pin:1",
 			},
 			accept: []Pair{
 				{"cat", 0},
@@ -196,6 +221,12 @@ func TestRadix(t *testing.T) {
 				{"concat", 0},
 				{"cat", 0},
 			},
+			elems: []string{
+				"cat",
+				"concat",
+				"kin",
+				"pin",
+			},
 			accept: []Pair{
 				{"cat", 0},
 				{"concat", 0},
@@ -238,6 +269,13 @@ func TestRadix(t *testing.T) {
 				{"*kin", 1},
 				{"pin", 0},
 			},
+			elems: []string{
+				"*kin",
+				"*kin:1",
+				"cat",
+				"concat",
+				"pin",
+			},
 			accept: []Pair{
 				{"cat", 0},
 				{"concat", 0},
@@ -277,6 +315,10 @@ func TestRadix(t *testing.T) {
 				{"*k*n", 0},
 				{"pin", 0},
 			},
+			elems: []string{
+				"*k*n",
+				"pin",
+			},
 			accept: []Pair{
 				{"ak*n", 0},
 				{"napk*n", 0},
@@ -297,6 +339,12 @@ func TestRadix(t *testing.T) {
 				{"concat", -1},
 				{"kin", 0},
 				{"pin", 0},
+			},
+			elems: []string{
+				"cat:*",
+				"concat:*",
+				"kin",
+				"pin",
 			},
 			accept: []Pair{
 				{"cat", 0},
@@ -339,6 +387,12 @@ func TestRadix(t *testing.T) {
 				{"*kin", 0},
 				{"pin", 0},
 			},
+			elems: []string{
+				"*kin:*",
+				"cat",
+				"concat",
+				"pin",
+			},
 			accept: []Pair{
 				{"cat", 0},
 				{"concat", 0},
@@ -377,6 +431,10 @@ func TestRadix(t *testing.T) {
 			var tree radix.Tree
 			for _, pair := range tc.patterns {
 				tree.Insert(pair.key, pair.value)
+			}
+			elems := tree.Elems()
+			if !slices.Equal(elems, tc.elems) {
+				t.Errorf("got %q; want %q", elems, tc.elems)
 			}
 			var (
 				topHeader    bool

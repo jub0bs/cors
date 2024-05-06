@@ -1,6 +1,7 @@
 package headers
 
 import (
+	"net/http"
 	"slices"
 	"strings"
 )
@@ -96,4 +97,15 @@ func cutAtComma(s string, n int) (before, after string, found bool) {
 		return s[:i], after, true
 	}
 	return s, "", false
+}
+
+// ToSortedSlice applies http.CanonicalHeaderKey to each element of s
+// and returns a sorted slice containing the results.
+func (set SortedSet) ToSortedSlice() []string {
+	res := make([]string, 0, set.Size())
+	for elem := range set.m {
+		res = append(res, http.CanonicalHeaderKey(elem))
+	}
+	slices.Sort(res)
+	return res
 }

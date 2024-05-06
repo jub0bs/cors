@@ -1,5 +1,7 @@
 package util
 
+import "slices"
+
 // A Set represents a mathematical set of ints or strings.
 type Set[E int | string] map[E]struct{}
 
@@ -23,4 +25,14 @@ func (s Set[E]) Add(e E) {
 func (s Set[E]) Contains(e E) bool {
 	_, found := s[e]
 	return found
+}
+
+// ToSortedSlice returns a sorted slice containing the results.
+func (s Set[E]) ToSortedSlice() []E {
+	res := make([]E, 0, len(s))
+	for elem := range s {
+		res = append(res, elem)
+	}
+	slices.Sort(res)
+	return res
 }

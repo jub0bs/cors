@@ -3,7 +3,12 @@
 // https://github.com/armon/go-radix.
 package radix
 
-import "github.com/jub0bs/cors/internal/util"
+import (
+	"slices"
+	"strconv"
+
+	"github.com/jub0bs/cors/internal/util"
+)
 
 // A Tree is radix tree whose edges are each labeled by a byte,
 // and whose conceptual leaf nodes each contain a set of ints.
@@ -150,6 +155,14 @@ func splitAtCommonSuffix(a, b string) (string, string, string) {
 	return a[:len(a)-len(s)+i], b[:len(b)-len(s)+i], s[i:]
 }
 
+// Elems returns a slice containing textual representations of t's elements.
+func (t *Tree) Elems() []string {
+	var res []string
+	t.root.Elems(&res, "")
+	slices.Sort(res)
+	return res
+}
+
 // WildcardElem is a sentinel value that subsumes all others.
 const WildcardElem = -1
 
@@ -200,3 +213,36 @@ func (n *node) insertEdge(label byte, child *node) {
 }
 
 type edges = map[byte]*node
+
+// Elems adds textual representations of n's elements to dst,
+// using suf as a base suffix.
+func (n *node) Elems(dst *[]string, suf string) {
+	suf = n.suf + suf
+	for port := range n.set {
+		var s string
+		switch port {
+		case WildcardElem:
+			s = suf + ":*"
+		case 0:
+			s = suf
+		default:
+			s = suf + ":" + strconv.Itoa(port)
+		}
+		*dst = append(*dst, s)
+	}
+	for port := range n.wSet {
+		var s string
+		switch port {
+		case WildcardElem:
+			s = "*" + suf + ":*"
+		case 0:
+			s = "*" + suf
+		default:
+			s = "*" + suf + ":" + strconv.Itoa(port)
+		}
+		*dst = append(*dst, s)
+	}
+	for _, child := range n.edges {
+		child.Elems(dst, suf)
+	}
+}

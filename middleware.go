@@ -88,7 +88,9 @@ func (m *Middleware) Reconfigure(cfg *Config) error {
 	}
 	m.mu.Lock()
 	if icfg != nil && m.icfg != nil {
-		// Retain the current debug mode.
+		// Retain the current debug mode;
+		// as a result, m.Reconfigure(m.Config()) is a no-op
+		// (albeit an expensive one), which is a nice property.
 		icfg.debug = m.icfg.debug
 	}
 	m.icfg = icfg
@@ -540,4 +542,23 @@ func (m *Middleware) SetDebug(b bool) {
 		m.icfg.debug = b
 	}
 	m.mu.Unlock()
+}
+
+// Config returns a copy of m's current configuration;
+// if m is a passthrough middleware, it simply returns nil.
+// The result may differ from the [Config] with which m was created or last
+// reconfigured, but the following statement is guaranteed to be a no-op
+// (albeit a relatively expensive one):
+//
+//	m.Reconfigure(m.Config())
+//
+// Mutating the fields of the result does not alter m's behavior.
+// However, you can reconfigure a [Middleware] via its
+// [*Middleware.Reconfigure] method.
+func (m *Middleware) Config() *Config {
+	var icfg *internalConfig
+	m.mu.RLock()
+	icfg = m.icfg
+	m.mu.RUnlock()
+	return newConfig(icfg)
 }

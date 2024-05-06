@@ -14,94 +14,104 @@ func TestSortedSet(t *testing.T) {
 		combined string
 		subs     []string
 		notSubs  []string
-		wantSize int
+		// expectations
+		size  int
+		slice []string
 	}{
 		{
 			desc:     "empty set",
 			combined: "",
 			notSubs: []string{
-				"bar",
-				"bar,foo",
+				"x-bar",
+				"x-bar,x-foo",
 			},
-			wantSize: 0,
+			size: 0,
 		}, {
 			desc:     "singleton set",
-			elems:    []string{"foo"},
-			combined: "foo",
+			elems:    []string{"x-foo"},
+			combined: "x-foo",
 			subs: []string{
 				"",
-				"foo",
+				"x-foo",
 			},
 			notSubs: []string{
-				"bar",
-				"bar,foo",
+				"x-bar",
+				"x-bar,x-foo",
 			},
-			wantSize: 1,
+			size:  1,
+			slice: []string{"X-Foo"},
 		}, {
 			desc:     "no dupes",
-			elems:    []string{"foo", "bar", "baz"},
-			combined: "bar,baz,foo",
+			elems:    []string{"x-foo", "x-bar", "x-baz"},
+			combined: "x-bar,x-baz,x-foo",
 			subs: []string{
 				"",
-				"bar",
-				"baz",
-				"foo",
-				"bar,baz",
-				"bar,foo",
-				"baz,foo",
-				"bar,baz,foo",
+				"x-bar",
+				"x-baz",
+				"x-foo",
+				"x-bar,x-baz",
+				"x-bar,x-foo",
+				"x-baz,x-foo",
+				"x-bar,x-baz,x-foo",
 			},
 			notSubs: []string{
-				"qux",
-				"bar,baz,baz",
-				"qux,baz",
-				"qux,foo",
-				"quxbaz,foo",
+				"x-qux",
+				"x-bar,x-baz,x-baz",
+				"x-qux,x-baz",
+				"x-qux,x-foo",
+				"x-quxbaz,x-foo",
 			},
-			wantSize: 3,
+			size:  3,
+			slice: []string{"X-Bar", "X-Baz", "X-Foo"},
 		}, {
 			desc:     "some dupes",
-			elems:    []string{"foo", "bar", "foo"},
-			combined: "bar,foo",
+			elems:    []string{"x-foo", "x-bar", "x-foo"},
+			combined: "x-bar,x-foo",
 			subs: []string{
 				"",
-				"bar",
-				"foo",
-				"bar,foo",
+				"x-bar",
+				"x-foo",
+				"x-bar,x-foo",
 			},
 			notSubs: []string{
-				"qux",
-				"qux,bar",
-				"qux,foo",
-				"qux,baz,foo",
+				"x-qux",
+				"x-qux,x-bar",
+				"x-qux,x-foo",
+				"x-qux,x-baz,x-foo",
 			},
-			wantSize: 2,
+			size:  2,
+			slice: []string{"X-Bar", "X-Foo"},
 		},
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
 			elems := slices.Clone(tc.elems)
-			s := headers.NewSortedSet(tc.elems...)
-			size := s.Size()
-			if s.Size() != tc.wantSize {
+			set := headers.NewSortedSet(tc.elems...)
+			size := set.Size()
+			if set.Size() != tc.size {
 				const tmpl = "NewSortedSet(%#v...).Size(): got %d; want %d"
-				t.Errorf(tmpl, elems, size, tc.wantSize)
+				t.Errorf(tmpl, elems, size, tc.size)
 			}
-			combined := s.String()
+			combined := set.String()
 			if combined != tc.combined {
 				const tmpl = "NewSortedSet(%#v...).String(): got %q; want %q"
 				t.Errorf(tmpl, elems, combined, tc.combined)
 			}
+			slice := set.ToSortedSlice()
+			if !slices.Equal(slice, tc.slice) {
+				const tmpl = "NewSortedSet(%#v...).ToSortedSet(): got %q; want %q"
+				t.Errorf(tmpl, elems, slice, tc.slice)
+			}
 			for _, sub := range tc.subs {
-				if !s.Subsumes(sub) {
+				if !set.Subsumes(sub) {
 					const tmpl = "%q does not subsume %q, but should"
-					t.Errorf(tmpl, s, sub)
+					t.Errorf(tmpl, set, sub)
 				}
 			}
 			for _, notSub := range tc.notSubs {
-				if s.Subsumes(notSub) {
+				if set.Subsumes(notSub) {
 					const tmpl = "%q subsumes %q, but should not"
-					t.Errorf(tmpl, s, notSub)
+					t.Errorf(tmpl, set, notSub)
 				}
 			}
 		}

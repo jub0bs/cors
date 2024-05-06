@@ -1,6 +1,7 @@
 package util_test
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/jub0bs/cors/internal/util"
@@ -12,24 +13,24 @@ func TestSet(t *testing.T) {
 		first string
 		rest  []string
 		more  []string
-		want  string
+		want  []string
 	}{
 		{
 			desc:  "singleton set",
 			first: "foo",
-			want:  "foo",
+			want:  []string{"foo"},
 		}, {
 			desc:  "no dupes",
 			first: "foo",
 			rest:  []string{"bar", "baz"},
 			more:  []string{"qux", "quux"},
-			want:  "bar,baz,foo,quux,qux",
+			want:  []string{"bar", "baz", "foo", "quux", "qux"},
 		}, {
 			desc:  "some dupes",
 			first: "foo",
 			rest:  []string{"bar", "baz"},
 			more:  []string{"bar", "baz"},
-			want:  "bar,baz,foo",
+			want:  []string{"bar", "baz", "foo"},
 		},
 	}
 	for _, tc := range cases {
@@ -39,7 +40,7 @@ func TestSet(t *testing.T) {
 				set.Add(s)
 			}
 			if maxSize := 1 + len(tc.rest) + len(tc.more); len(set) > maxSize {
-				const tmpl = "got a set of size %d; want at most  %d"
+				const tmpl = "got a set of size %d; want at most %d"
 				t.Errorf(tmpl, len(set), maxSize)
 			}
 			all := append(tc.rest, tc.more...)
@@ -49,6 +50,10 @@ func TestSet(t *testing.T) {
 					const tmpl = "%v does not contain %q, but it should"
 					t.Errorf(tmpl, set, s)
 				}
+			}
+			slice := set.ToSortedSlice()
+			if !slices.Equal(slice, tc.want) {
+				t.Errorf("got %q; want %q", slice, tc.want)
 			}
 		}
 		t.Run(tc.desc, f)

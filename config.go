@@ -478,14 +478,14 @@ type internalConfig struct {
 	debug                      bool
 	privateNetworkAccess       bool
 	privateNetworkAccessNoCors bool
+	subsOfPublicSuffixes       bool
+	insecureOrigins            bool
 }
 
 type tmpConfig struct {
 	publicSuffixes         []string
 	insecureOriginPatterns []string
 	exposedResHdrs         []string
-	subsOfPublicSuffixes   bool
-	insecureOrigins        bool
 }
 
 func newInternalConfig(cfg *Config) (*internalConfig, error) {
@@ -521,8 +521,8 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	}
 	icfg.privateNetworkAccess = cfg.PrivateNetworkAccess
 	icfg.privateNetworkAccessNoCors = cfg.PrivateNetworkAccessInNoCORSModeOnly
-	icfg.tmp.insecureOrigins = cfg.DangerouslyTolerateInsecureOrigins
-	icfg.tmp.subsOfPublicSuffixes = cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes
+	icfg.insecureOrigins = cfg.DangerouslyTolerateInsecureOrigins
+	icfg.subsOfPublicSuffixes = cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes
 
 	// validate config as a whole
 	if err := icfg.validate(); err != nil {
@@ -820,7 +820,7 @@ func (icfg *internalConfig) validate() error {
 		}
 	}
 	if len(icfg.tmp.insecureOriginPatterns) > 0 &&
-		!icfg.tmp.insecureOrigins &&
+		!icfg.insecureOrigins &&
 		(icfg.credentialed || pna) {
 		// We don't require ExtraConfig.DangerouslyTolerateInsecureOrigins to
 		// be set when users specify one or more insecure origin patterns in
@@ -846,7 +846,7 @@ func (icfg *internalConfig) validate() error {
 		errs = append(errs, err)
 	}
 	if len(icfg.tmp.publicSuffixes) > 0 &&
-		!icfg.tmp.subsOfPublicSuffixes {
+		!icfg.subsOfPublicSuffixes {
 		var errorMsg strings.Builder
 		errorMsg.WriteString(`for security reasons, origin patterns like `)
 		util.Join(&errorMsg, icfg.tmp.publicSuffixes)
@@ -868,4 +868,73 @@ func (icfg *internalConfig) validate() error {
 		return errors.Join(errs...)
 	}
 	return nil
+}
+
+// newConfig returns a Config on the basis of icfg.
+// The soundness of the result is guaranteed only if icfg is the result of a
+// previous call to newInternalConfig.
+func newConfig(icfg *internalConfig) *Config {
+	if icfg == nil {
+		return nil
+	}
+	// Note: do not hold (in cfg) any references to mutable fields of icfg;
+	// use defensive copying if required.
+	var cfg Config
+
+	// origins
+	if icfg.allowAnyOrigin {
+		cfg.Origins = []string{"*"}
+	} else {
+		cfg.Origins = icfg.corpus.Elems()
+	}
+
+	// credentialed
+	cfg.Credentialed = icfg.credentialed
+
+	// methods
+	switch {
+	case icfg.allowAnyMethod:
+		cfg.Methods = []string{"*"}
+	case len(icfg.allowedMethods) > 0:
+		cfg.Methods = icfg.allowedMethods.ToSortedSlice()
+	}
+
+	// request headers
+	switch {
+	case !icfg.credentialed && icfg.asteriskReqHdrs && icfg.allowAuthorization:
+		cfg.RequestHeaders = []string{"*", "Authorization"}
+	case icfg.asteriskReqHdrs:
+		cfg.RequestHeaders = []string{"*"}
+	case icfg.allowedReqHdrs.Size() > 0:
+		cfg.RequestHeaders = icfg.allowedReqHdrs.ToSortedSlice()
+	}
+
+	// max age
+	if len(icfg.acma) > 0 {
+		maxAge, _ := strconv.Atoi(icfg.acma[0]) // safe by construction of internalConfig
+		if maxAge != 0 {
+			cfg.MaxAgeInSeconds = maxAge
+		} else {
+			cfg.MaxAgeInSeconds = -1
+		}
+	}
+
+	// response headers
+	if len(icfg.aceh) > 0 {
+		resHeaders := strings.Split(icfg.aceh, ",")
+		for i := range resHeaders {
+			resHeaders[i] = http.CanonicalHeaderKey(resHeaders[i])
+		}
+		cfg.ResponseHeaders = resHeaders
+	}
+
+	// extra config
+	if icfg.preflightStatus != defaultPreflightStatus {
+		cfg.ExtraConfig.PreflightSuccessStatus = icfg.preflightStatus
+	}
+	cfg.ExtraConfig.PrivateNetworkAccess = icfg.privateNetworkAccess
+	cfg.ExtraConfig.PrivateNetworkAccessInNoCORSModeOnly = icfg.privateNetworkAccessNoCors
+	cfg.ExtraConfig.DangerouslyTolerateInsecureOrigins = icfg.insecureOrigins
+	cfg.ExtraConfig.DangerouslyTolerateSubdomainsOfPublicSuffixes = icfg.subsOfPublicSuffixes
+	return &cfg
 }

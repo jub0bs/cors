@@ -287,21 +287,32 @@ func BenchmarkMiddleware(b *testing.B) {
 		},
 	}
 
-	// benchmark initialization
 	for _, mwbc := range cases {
 		if mwbc.cfg == nil {
 			continue
 		}
+		var mw *cors.Middleware
+		// benchmark initialization
 		f := func(b *testing.B) {
 			b.ReportAllocs()
+			var err error
 			for range b.N {
-				_, err := cors.NewMiddleware(*mwbc.cfg)
+				mw, err = cors.NewMiddleware(*mwbc.cfg)
 				if err != nil {
 					b.Fatal(err)
 				}
 			}
 		}
 		b.Run("initialization "+mwbc.desc, f)
+
+		// benchmark config
+		f = func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				mw.Config()
+			}
+		}
+		b.Run("config         "+mwbc.desc, f)
 	}
 
 	// benchmark execution
