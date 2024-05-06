@@ -173,7 +173,15 @@ func scanHttpScheme(str string) (string, string, bool) {
 // isASCIILabelByte returns true if b is an (ASCII) lowercase letter, digit,
 // hyphen (0x2D), or underscore (0x5F).
 func isASCIILabelByte(b byte) bool {
-	return isLowerAlpha(b) || isDigit(b) || b == '-' || b == '_'
+	// implementation adapted from
+	// https://cs.opensource.google/go/go/+/refs/tags/go1.22.2:src/net/textproto/reader.go;l=681
+	const mask = 0 |
+		(1<<(10)-1)<<'0' |
+		(1<<(26)-1)<<'a' |
+		1<<'-' |
+		1<<'_'
+	return ((uint64(1)<<b)&(mask&(1<<64-1)) |
+		(uint64(1)<<(b-64))&(mask>>64)) != 0
 }
 
 // parsePort parses a port number. It returns the port number, the unconsumed
@@ -215,12 +223,6 @@ func isDigit(b byte) bool {
 // and false otherwise.
 func isNonZeroDigit(b byte) bool {
 	return '1' <= b && b <= '9'
-}
-
-// isLowerAlpha returns true if b is in the 0x61-0x7A ASCII range,
-// and false otherwise.
-func isLowerAlpha(b byte) bool {
-	return 'a' <= b && b <= 'z'
 }
 
 // consume checks whether target is a prefix of str.
