@@ -108,7 +108,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 			return
 		}
-		isOptionsReq := r.Method == http.MethodOptions
+		isOPTIONS := r.Method == http.MethodOptions
 		// Fetch-compliant browsers send at most one Origin header;
 		// see https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
 		// (step 12).
@@ -116,7 +116,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 		if !found {
 			// r is NOT a CORS request;
 			// see https://fetch.spec.whatwg.org/#cors-request.
-			icfg.handleNonCORS(w.Header(), isOptionsReq)
+			icfg.handleNonCORS(w.Header(), isOPTIONS)
 			h.ServeHTTP(w, r)
 			return
 		}
@@ -126,20 +126,20 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 		// Fetch-compliant browsers send at most one ACRM header;
 		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch (step 3).
 		acrm, acrmSgl, found := headers.First(r.Header, headers.ACRM)
-		if isOptionsReq && found {
+		if isOPTIONS && found {
 			// r is a CORS-preflight request;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
 			icfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl)
 			return
 		}
 		// r is an "actual" (i.e. non-preflight) CORS request.
-		icfg.handleCORSActual(w, origin, originSgl, isOptionsReq)
+		icfg.handleCORSActual(w, origin, originSgl, isOPTIONS)
 		h.ServeHTTP(w, r)
 	})
 }
 
-func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOptionsReq bool) {
-	if isOptionsReq {
+func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
+	if isOPTIONS {
 		// see the implementation comment in handleCORSPreflight
 		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
 	}
@@ -152,7 +152,7 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOptionsReq bool
 		// to actual requests even in cases where a single origin is allowed,
 		// because doing so is simpler to implement and unlikely to be
 		// detrimental to Web caches.
-		if !isOptionsReq {
+		if !isOPTIONS {
 			resHdrs.Add(headers.Vary, headers.Origin)
 		}
 		// nothing to do: at this stage, we've already added a Vary header
@@ -338,19 +338,19 @@ func (icfg *internalConfig) handleCORSActual(
 	w http.ResponseWriter,
 	origin string,
 	originSgl []string,
-	isOptionsReq bool,
+	isOPTIONS bool,
 ) {
 	resHdrs := w.Header()
 	// see https://wicg.github.io/private-network-access/#shortlinks
 	if icfg.privateNetworkAccessNoCors {
-		if isOptionsReq {
+		if isOPTIONS {
 			// see the implementation comment in handleCORSPreflight
 			resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
 		}
 		return
 	}
 	switch {
-	case isOptionsReq:
+	case isOPTIONS:
 		// see the implementation comment in handleCORSPreflight
 		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
 	case !icfg.allowAnyOrigin:
