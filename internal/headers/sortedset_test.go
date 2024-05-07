@@ -9,27 +9,29 @@ import (
 
 func TestSortedSet(t *testing.T) {
 	cases := []struct {
-		desc     string
-		elems    []string
+		desc  string
+		elems []string
+		// expectations
+		size     int
 		combined string
+		slice    []string
 		subs     []string
 		notSubs  []string
-		// expectations
-		size  int
-		slice []string
 	}{
 		{
 			desc:     "empty set",
+			size:     0,
 			combined: "",
 			notSubs: []string{
 				"x-bar",
 				"x-bar,x-foo",
 			},
-			size: 0,
 		}, {
 			desc:     "singleton set",
 			elems:    []string{"x-foo"},
+			size:     1,
 			combined: "x-foo",
+			slice:    []string{"X-Foo"},
 			subs: []string{
 				"",
 				"x-foo",
@@ -38,12 +40,12 @@ func TestSortedSet(t *testing.T) {
 				"x-bar",
 				"x-bar,x-foo",
 			},
-			size:  1,
-			slice: []string{"X-Foo"},
 		}, {
 			desc:     "no dupes",
 			elems:    []string{"x-foo", "x-bar", "x-baz"},
+			size:     3,
 			combined: "x-bar,x-baz,x-foo",
+			slice:    []string{"X-Bar", "X-Baz", "X-Foo"},
 			subs: []string{
 				"",
 				"x-bar",
@@ -61,12 +63,12 @@ func TestSortedSet(t *testing.T) {
 				"x-qux,x-foo",
 				"x-quxbaz,x-foo",
 			},
-			size:  3,
-			slice: []string{"X-Bar", "X-Baz", "X-Foo"},
 		}, {
 			desc:     "some dupes",
 			elems:    []string{"x-foo", "x-bar", "x-foo"},
+			size:     2,
 			combined: "x-bar,x-foo",
+			slice:    []string{"X-Bar", "X-Foo"},
 			subs: []string{
 				"",
 				"x-bar",
@@ -79,8 +81,6 @@ func TestSortedSet(t *testing.T) {
 				"x-qux,x-foo",
 				"x-qux,x-baz,x-foo",
 			},
-			size:  2,
-			slice: []string{"X-Bar", "X-Foo"},
 		},
 	}
 	for _, tc := range cases {
