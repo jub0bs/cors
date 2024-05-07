@@ -1473,6 +1473,127 @@ func TestMiddleware(t *testing.T) {
 	}
 }
 
+func TestWrappedHandlerCannotMutatePackageLevelSlices(t *testing.T) {
+	cases := []MiddlewareTestCase{
+		{
+			desc:       "anonymous",
+			newHandler: newMutatingHandler,
+			cfg: &cors.Config{
+				Origins:         []string{"*"},
+				ResponseHeaders: []string{"*"},
+			},
+			cases: []ReqTestCase{
+				{
+					desc:      "non-CORS GET",
+					reqMethod: "GET",
+				}, {
+					desc:      "actual GET",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+					},
+				}, {
+					desc:      "actual OPTIONS",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+					},
+				},
+			},
+		}, {
+			desc:       "credentialed",
+			newHandler: newMutatingHandler,
+			cfg: &cors.Config{
+				Origins:         []string{"https://example.com"},
+				Credentialed:    true,
+				ResponseHeaders: []string{"X-Foo", "X-Bar"},
+			},
+			cases: []ReqTestCase{
+				{
+					desc:      "actual GET",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+					},
+				}, {
+					desc:      "actual OPTIONS",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+					},
+				},
+			},
+		},
+	}
+	checks := []struct {
+		desc string
+		old  string
+		sgl  []string
+	}{
+		{
+			desc: "headers.PreflightVarySgl[0]",
+			old:  headers.PreflightVarySgl[0],
+			sgl:  headers.PreflightVarySgl,
+		}, {
+			desc: "headers.TrueSgl[0]",
+			old:  headers.TrueSgl[0],
+			sgl:  headers.TrueSgl,
+		}, {
+			desc: "headers.OriginSgl[0]",
+			old:  headers.OriginSgl[0],
+			sgl:  headers.OriginSgl,
+		}, {
+			desc: "headers.WildcardSgl[0]",
+			old:  headers.WildcardSgl[0],
+			sgl:  headers.WildcardSgl,
+		}, {
+			desc: "headers.WildcardAuthSgl[0]",
+			old:  headers.WildcardAuthSgl[0],
+			sgl:  headers.WildcardAuthSgl,
+		},
+	}
+	for _, mwtc := range cases {
+		f := func(t *testing.T) {
+			t.Parallel()
+			var (
+				mw  *cors.Middleware
+				err error
+			)
+			if mwtc.cfg == nil {
+				mw = new(cors.Middleware)
+			} else {
+				mw, err = cors.NewMiddleware(*mwtc.cfg)
+				if err != nil {
+					t.Fatalf("failure to build CORS middleware: %v", err)
+				}
+			}
+			for _, tc := range mwtc.cases {
+				f := func(t *testing.T) {
+					// --- arrange ---
+					handler := mwtc.newHandler()
+					handler = mw.Wrap(handler)
+					req := newRequest(tc.reqMethod, tc.reqHeaders)
+					rec := httptest.NewRecorder()
+
+					// --- act ---
+					handler.ServeHTTP(rec, req)
+
+					// --- assert ---
+					for _, check := range checks {
+						want := check.old
+						got := check.sgl[0]
+						if got != want {
+							t.Errorf("%s: got %q; want %q", check.desc, got, want)
+						}
+					}
+				}
+				t.Run(tc.desc, f)
+			}
+		}
+		t.Run(mwtc.desc, f)
+	}
+}
+
 func TestReconfigure(t *testing.T) {
 	cases := []MiddlewareTestCase{
 		{
@@ -1834,127 +1955,6 @@ func TestReconfigure(t *testing.T) {
 			}
 			t.Run(tc.desc, f)
 		}
-	}
-}
-
-func TestWrappedHandlerCannotMutatePackageLevelSlices(t *testing.T) {
-	cases := []MiddlewareTestCase{
-		{
-			desc:       "anonymous",
-			newHandler: newMutatingHandler,
-			cfg: &cors.Config{
-				Origins:         []string{"*"},
-				ResponseHeaders: []string{"*"},
-			},
-			cases: []ReqTestCase{
-				{
-					desc:      "non-CORS GET",
-					reqMethod: "GET",
-				}, {
-					desc:      "actual GET",
-					reqMethod: "GET",
-					reqHeaders: Headers{
-						headerOrigin: "https://example.com",
-					},
-				}, {
-					desc:      "actual OPTIONS",
-					reqMethod: "OPTIONS",
-					reqHeaders: Headers{
-						headerOrigin: "https://example.com",
-					},
-				},
-			},
-		}, {
-			desc:       "credentialed",
-			newHandler: newMutatingHandler,
-			cfg: &cors.Config{
-				Origins:         []string{"https://example.com"},
-				Credentialed:    true,
-				ResponseHeaders: []string{"X-Foo", "X-Bar"},
-			},
-			cases: []ReqTestCase{
-				{
-					desc:      "actual GET",
-					reqMethod: "GET",
-					reqHeaders: Headers{
-						headerOrigin: "https://example.com",
-					},
-				}, {
-					desc:      "actual OPTIONS",
-					reqMethod: "OPTIONS",
-					reqHeaders: Headers{
-						headerOrigin: "https://example.com",
-					},
-				},
-			},
-		},
-	}
-	checks := []struct {
-		desc string
-		old  string
-		sgl  []string
-	}{
-		{
-			desc: "headers.PreflightVarySgl[0]",
-			old:  headers.PreflightVarySgl[0],
-			sgl:  headers.PreflightVarySgl,
-		}, {
-			desc: "headers.TrueSgl[0]",
-			old:  headers.TrueSgl[0],
-			sgl:  headers.TrueSgl,
-		}, {
-			desc: "headers.OriginSgl[0]",
-			old:  headers.OriginSgl[0],
-			sgl:  headers.OriginSgl,
-		}, {
-			desc: "headers.WildcardSgl[0]",
-			old:  headers.WildcardSgl[0],
-			sgl:  headers.WildcardSgl,
-		}, {
-			desc: "headers.WildcardAuthSgl[0]",
-			old:  headers.WildcardAuthSgl[0],
-			sgl:  headers.WildcardAuthSgl,
-		},
-	}
-	for _, mwtc := range cases {
-		f := func(t *testing.T) {
-			t.Parallel()
-			var (
-				mw  *cors.Middleware
-				err error
-			)
-			if mwtc.cfg == nil {
-				mw = new(cors.Middleware)
-			} else {
-				mw, err = cors.NewMiddleware(*mwtc.cfg)
-				if err != nil {
-					t.Fatalf("failure to build CORS middleware: %v", err)
-				}
-			}
-			for _, tc := range mwtc.cases {
-				f := func(t *testing.T) {
-					// --- arrange ---
-					handler := mwtc.newHandler()
-					handler = mw.Wrap(handler)
-					req := newRequest(tc.reqMethod, tc.reqHeaders)
-					rec := httptest.NewRecorder()
-
-					// --- act ---
-					handler.ServeHTTP(rec, req)
-
-					// --- assert ---
-					for _, check := range checks {
-						want := check.old
-						got := check.sgl[0]
-						if got != want {
-							t.Errorf("%s: got %q; want %q", check.desc, got, want)
-						}
-					}
-				}
-				t.Run(tc.desc, f)
-			}
-		}
-		t.Run(mwtc.desc, f)
 	}
 }
 
