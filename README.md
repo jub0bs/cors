@@ -125,10 +125,12 @@ All source code is covered by the [MIT License][license].
 
 - [_Fearless CORS: a design philosophy for CORS middleware libraries
 (and a Go implementation)_][fearless-cors] (blog post)
+- [_jub0bs/cors: a better CORS middleware library for Go_][a-better-cors-lib] (blog post)
 - [_Useful Functional-Options Tricks for Better Libraries_
 (GopherCon Europe 2023)][funcopts] (video)
 - [github.com/jub0bs/fcors][fcors] (this library's predecessor)
 
+[a-better-cors-lib]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/
 [cors-benchmarks]: https://github.com/jub0bs/cors-benchmarks
 [cors-examples]: https://github.com/jub0bs/cors-examples
 [fcors]: https://github.com/jub0bs/fcors
