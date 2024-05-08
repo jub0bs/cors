@@ -34,7 +34,7 @@ jub0bs/cors requires Go 1.22 or above.
 
 The following program demonstrates how to create a CORS middleware that
 
-- allows anonymous access from Web origin `https://example.com`,
+- allows anonymous access from [Web origin][web-origin] `https://example.com`,
 - with requests whose method is either `GET` or `POST`, and
 - (optionally) with request header `Authorization`,
 
@@ -130,16 +130,36 @@ All source code is covered by the [MIT License][license].
 (GopherCon Europe 2023)][funcopts] (video)
 - [github.com/jub0bs/fcors][fcors] (this library's predecessor)
 
+## Reasons for favoring rs/cors over jub0bs/cors
+
+Despite all of jub0bs/cors's goodness, you may still have valid reasons
+for sticking with [rs/cors][rs-cors], at least for the time being.
+Here is as exhaustive a list as I could come up with:
+
+- You cannot yet migrate to Go v1.22
+  (whose [semantics][go-directive] are assumed by jub0bs/cors).
+- You wish to allow [Web origins][web-origin] whose scheme is neither `http`
+  nor `https`.
+- You need more flexible origin patterns than those supported by jub0bs/cors;
+  but do bear in mind that [excessive flexibility in this regard implies
+  security risks][dangerous-patterns].
+- You want to log a message for every single request processed
+  by your CORS middleware; [but do you, really?][logging]
+
 [a-better-cors-lib]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/
 [cors-benchmarks]: https://github.com/jub0bs/cors-benchmarks
 [cors-examples]: https://github.com/jub0bs/cors-examples
+[dangerous-patterns]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#disallow-dangerous-origin-patterns
 [fcors]: https://github.com/jub0bs/fcors
 [fearless-cors]: https://jub0bs.com/posts/2023-02-08-fearless-cors/
 [funcopts]: https://www.youtube.com/watch?v=5uM6z7RnReE
+[go-directive]: https://go.dev/ref/mod#go-mod-file-go
 [golang]: https://go.dev/
 [license]: https://github.com/jub0bs/cors/blob/main/LICENSE
+[logging]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/#debug-mode
 [mdn-cors]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 [mdn-sop]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 [net-http]: https://pkg.go.dev/net/http
 [pkgsite]: https://pkg.go.dev/github.com/jub0bs/cors
 [rs-cors]: https://github.com/rs/cors
+[web-origin]: https://developer.mozilla.org/en-US/docs/Glossary/Origin
