@@ -58,7 +58,7 @@ import (
 //	https://www.xn--xample-9ua.com // permitted (Punycode)
 //	https://www.résumé.com         // prohibited (Unicode)
 //
-// Because it's [fundamentally unsafe], the [null origin] is prohibited.
+// Because the [null origin] is [fundamentally unsafe], it is prohibited.
 //
 // Hosts that are IPv4 addresses must be specified in [dotted-quad notation]:
 //
