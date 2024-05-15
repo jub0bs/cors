@@ -33,7 +33,7 @@ import (
 //
 // Middleware are safe for concurrent use by multiple goroutines.
 // Therefore, you are free to expose some or all of their methods
-// so you can call them without having to restart your server;
+// so you can exercise them without having to restart your server;
 // however, if you do expose those methods, you should only do so on some
 // internal or authorized endpoints, for security reasons.
 //
@@ -544,7 +544,7 @@ func (m *Middleware) SetDebug(b bool) {
 	m.mu.Unlock()
 }
 
-// Config returns a copy of m's current configuration;
+// Config returns a pointer to a deep copy of m's current configuration;
 // if m is a passthrough middleware, it simply returns nil.
 // The result may differ from the [Config] with which m was created or last
 // reconfigured, but the following statement is guaranteed to be a no-op
