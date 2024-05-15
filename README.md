@@ -126,6 +126,7 @@ All source code is covered by the [MIT License][license].
 - [_Fearless CORS: a design philosophy for CORS middleware libraries
 (and a Go implementation)_][fearless-cors] (blog post)
 - [_jub0bs/cors: a better CORS middleware library for Go_][a-better-cors-lib] (blog post)
+- [_Reconfigurable CORS middleware with jub0bs/cors_][reconfigurable] (blog post)
 - [_Useful Functional-Options Tricks for Better Libraries_
 (GopherCon Europe 2023)][funcopts] (video)
 - [github.com/jub0bs/fcors][fcors] (this library's predecessor)
@@ -161,5 +162,6 @@ Here is as exhaustive a list as I could come up with:
 [mdn-sop]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 [net-http]: https://pkg.go.dev/net/http
 [pkgsite]: https://pkg.go.dev/github.com/jub0bs/cors
+[reconfigurable]: https://jub0bs.com/posts/2024-05-14-reconfigurable-cors-middleware/
 [rs-cors]: https://github.com/rs/cors
 [web-origin]: https://developer.mozilla.org/en-US/docs/Glossary/Origin
