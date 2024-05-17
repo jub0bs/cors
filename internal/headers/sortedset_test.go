@@ -23,6 +23,7 @@ func TestSortedSet(t *testing.T) {
 			size:     0,
 			combined: "",
 			notSubs: []string{
+				",",
 				"x-bar",
 				"x-bar,x-foo",
 			},
@@ -37,6 +38,8 @@ func TestSortedSet(t *testing.T) {
 				"x-foo",
 			},
 			notSubs: []string{
+				",",
+				"x-foo,",
 				"x-bar",
 				"x-bar,x-foo",
 			},
@@ -57,6 +60,14 @@ func TestSortedSet(t *testing.T) {
 				"x-bar,x-baz,x-foo",
 			},
 			notSubs: []string{
+				",",
+				"x-bar,",
+				"x-baz,",
+				"x-foo,",
+				"x-bar,x-baz,",
+				"x-bar,x-foo,",
+				"x-baz,x-foo,",
+				"x-bar,x-baz,x-foo,",
 				"x-qux",
 				"x-bar,x-baz,x-baz",
 				"x-qux,x-baz",
@@ -76,6 +87,10 @@ func TestSortedSet(t *testing.T) {
 				"x-bar,x-foo",
 			},
 			notSubs: []string{
+				",",
+				"x-bar,",
+				"x-foo,",
+				"x-bar,x-foo,",
 				"x-qux",
 				"x-qux,x-bar",
 				"x-qux,x-foo",
