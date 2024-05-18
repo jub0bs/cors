@@ -202,7 +202,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 
 	// When debug is on and a preflight step fails,
 	// we omit the remaining CORS response headers
-	// and let the browser fail the CORS-preflight fetch,
+	// and let the browser fail the CORS-preflight fetch;
 	// however, for easier troubleshooting on the client side,
 	// we do respond with an ok status.
 	//
