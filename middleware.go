@@ -1,6 +1,7 @@
 package cors
 
 import (
+	"maps"
 	"net/http"
 	"sync"
 
@@ -192,10 +193,12 @@ func (icfg *internalConfig) handleCORSPreflight(
 		resHdrs[headers.Vary] = append(vary, headers.ValueVaryOptions)
 	}
 
-	// Accumulating the response headers in an array rather than in a
-	// temporary map allows us to save a few heap allocations.
-	var pairs [5]headerPair // enough to hold ACAO, ACAC, ACAPN, ACAM, and ACAH
-	buf := pairs[:0]
+	// Populating a small (8 keys or fewer) local map incurs 0 heap
+	// allocations on average; see https://go.dev/play/p/RQdNE-pPCQq.
+	// Therefore, using a different data structure for accumulating response
+	// headers provides no performance advantage; a simple http.Header will do.
+	const bufSizeHint = 5 // enough to hold ACAO, ACAC, ACAPN, ACAM, and ACAH
+	buf := make(http.Header, bufSizeHint)
 
 	// When debug is on and a preflight step fails,
 	// we omit the remaining CORS response headers
@@ -209,10 +212,9 @@ func (icfg *internalConfig) handleCORSPreflight(
 
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
-	buf, ok := icfg.processOriginForPreflight(buf, origin, originSgl)
-	if !ok {
+	if !icfg.processOriginForPreflight(buf, origin, originSgl) {
 		if debug {
-			flush(w.Header(), buf)
+			maps.Copy(resHdrs, buf)
 		}
 		w.WriteHeader(http.StatusForbidden)
 		return
@@ -222,10 +224,9 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// (see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7)
 	// if the response status is not an ok status
 	// (see https://fetch.spec.whatwg.org/#ok-status).
-	buf, ok = icfg.processACRPN(buf, reqHdrs)
-	if !ok {
+	if !icfg.processACRPN(buf, reqHdrs) {
 		if debug {
-			flush(w.Header(), buf)
+			maps.Copy(resHdrs, buf)
 			w.WriteHeader(icfg.preflightStatus)
 			return
 		}
@@ -233,10 +234,9 @@ func (icfg *internalConfig) handleCORSPreflight(
 		return
 	}
 
-	buf, ok = icfg.processACRM(buf, acrm, acrmSgl)
-	if !ok {
+	if !icfg.processACRM(buf, acrm, acrmSgl) {
 		if debug {
-			flush(w.Header(), buf)
+			maps.Copy(resHdrs, buf)
 			w.WriteHeader(icfg.preflightStatus)
 			return
 		}
@@ -244,10 +244,9 @@ func (icfg *internalConfig) handleCORSPreflight(
 		return
 	}
 
-	buf, ok = icfg.processACRH(buf, reqHdrs, debug)
-	if !ok {
+	if !icfg.processACRH(buf, reqHdrs, debug) {
 		if debug {
-			flush(w.Header(), buf)
+			maps.Copy(resHdrs, buf)
 			w.WriteHeader(icfg.preflightStatus)
 			return
 		}
@@ -256,63 +255,40 @@ func (icfg *internalConfig) handleCORSPreflight(
 	}
 	// Preflight was successful.
 
-	flush(w.Header(), buf)
+	maps.Copy(resHdrs, buf)
 	if icfg.acma != nil {
 		resHdrs[headers.ACMA] = icfg.acma
 	}
 	w.WriteHeader(icfg.preflightStatus)
 }
 
-type headerPair struct {
-	k string // assumed in canonical format
-	v []string
-}
-
-func flush(hdrs http.Header, pairs []headerPair) {
-	for _, pair := range pairs {
-		hdrs[pair.k] = pair.v
-	}
-}
-
 func (icfg *internalConfig) processOriginForPreflight(
-	buf []headerPair,
+	buf http.Header,
 	origin string,
 	originSgl []string,
-) ([]headerPair, bool) {
+) bool {
 	o, ok := origins.Parse(origin)
 	if !ok {
-		return buf, false
+		return false
 	}
 	if !icfg.credentialed && icfg.allowAnyOrigin {
-		pair := headerPair{
-			k: headers.ACAO,
-			v: headers.WildcardSgl,
-		}
-		buf = append(buf, pair)
-		return buf, true
+		buf[headers.ACAO] = headers.WildcardSgl
+		return true
 	}
 	if !icfg.corpus.Contains(&o) {
-		return buf, false
+		return false
 	}
-	pair := headerPair{
-		k: headers.ACAO,
-		v: originSgl,
-	}
-	buf = append(buf, pair)
+	buf[headers.ACAO] = originSgl
 	if icfg.credentialed {
 		// We make no attempt to infer whether the request is credentialed,
 		// simply because preflight requests don't carry credentials;
 		// see https://fetch.spec.whatwg.org/#example-xhr-credentials.
-		pair := headerPair{
-			k: headers.ACAC,
-			v: headers.TrueSgl,
-		}
-		buf = append(buf, pair)
+		buf[headers.ACAC] = headers.TrueSgl
 	}
-	return buf, true
+	return true
 }
 
-func (icfg *internalConfig) processACRPN(buf []headerPair, reqHdrs http.Header) ([]headerPair, bool) {
+func (icfg *internalConfig) processACRPN(buf, reqHdrs http.Header) bool {
 	// See https://wicg.github.io/private-network-access/#cors-preflight.
 	//
 	// PNA-compliant browsers send at most one ACRPN header;
@@ -320,17 +296,13 @@ func (icfg *internalConfig) processACRPN(buf []headerPair, reqHdrs http.Header) 
 	// (step 10.2.1.1).
 	acrpn, _, found := headers.First(reqHdrs, headers.ACRPN)
 	if !found || acrpn != headers.ValueTrue { // no request for PNA
-		return buf, true
+		return true
 	}
 	if icfg.privateNetworkAccess || icfg.privateNetworkAccessNoCors {
-		pair := headerPair{
-			k: headers.ACAPN,
-			v: headers.TrueSgl,
-		}
-		buf = append(buf, pair)
-		return buf, true
+		buf[headers.ACAPN] = headers.TrueSgl
+		return true
 	}
-	return buf, false
+	return false
 }
 
 // Note: only for _non-preflight_ CORS requests
@@ -391,45 +363,37 @@ func (icfg *internalConfig) handleCORSActual(
 }
 
 func (icfg *internalConfig) processACRM(
-	buf []headerPair,
+	buf http.Header,
 	acrm string,
 	acrmSgl []string,
-) ([]headerPair, bool) {
+) bool {
 	if methods.IsSafelisted(acrm, struct{}{}) {
 		// CORS-safelisted methods get a free pass; see
 		// https://fetch.spec.whatwg.org/#ref-for-cors-safelisted-method%E2%91%A2.
 		// Therefore, no need to set the ACAM header in this case.
-		return buf, true
+		return true
 	}
 	if icfg.allowAnyMethod && !icfg.credentialed {
-		pair := headerPair{
-			k: headers.ACAM,
-			v: headers.WildcardSgl,
-		}
-		buf = append(buf, pair)
-		return buf, true
+		buf[headers.ACAM] = headers.WildcardSgl
+		return true
 	}
 	if icfg.allowAnyMethod || icfg.allowedMethods.Contains(acrm) {
-		pair := headerPair{
-			k: headers.ACAM,
-			v: acrmSgl,
-		}
-		buf = append(buf, pair)
-		return buf, true
+		buf[headers.ACAM] = acrmSgl
+		return true
 	}
-	return buf, false
+	return false
 }
 
 func (icfg *internalConfig) processACRH(
-	buf []headerPair,
+	buf http.Header,
 	reqHdrs http.Header,
 	debug bool,
-) ([]headerPair, bool) {
+) bool {
 	// Fetch-compliant browsers send at most one ACRH header;
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0 (step 5).
 	acrh, acrhSgl, found := headers.First(reqHdrs, headers.ACRH)
 	if !found {
-		return buf, true
+		return true
 	}
 	if icfg.asteriskReqHdrs && !icfg.credentialed {
 		if icfg.allowAuthorization {
@@ -456,19 +420,11 @@ func (icfg *internalConfig) processACRH(
 			// containing a maliciously long ACRH header in order to exercise
 			// this costly execution path and thereby generate undue load
 			// on the server.
-			pair := headerPair{
-				k: headers.ACAH,
-				v: headers.WildcardAuthSgl,
-			}
-			buf = append(buf, pair)
+			buf[headers.ACAH] = headers.WildcardAuthSgl
 		} else {
-			pair := headerPair{
-				k: headers.ACAH,
-				v: headers.WildcardSgl,
-			}
-			buf = append(buf, pair)
+			buf[headers.ACAH] = headers.WildcardSgl
 		}
-		return buf, true
+		return true
 	}
 	if icfg.asteriskReqHdrs && icfg.credentialed {
 		// If credentialed access is enabled,
@@ -501,36 +457,24 @@ func (icfg *internalConfig) processACRH(
 		// e.g. by cutting ACRH around "authorization" and
 		// echoing the results in up to two ACAH header(s);
 		// but the whole alternative approach is not worth the trouble anyway.
-		pair := headerPair{
-			k: headers.ACAH,
-			v: acrhSgl,
-		}
-		buf = append(buf, pair)
-		return buf, true
+		buf[headers.ACAH] = acrhSgl
+		return true
 	}
 	if !debug {
 		if icfg.allowedReqHdrs.Size() == 0 {
-			return buf, false
+			return false
 		}
 		if !icfg.allowedReqHdrs.Subsumes(acrh) {
-			return buf, false
+			return false
 		}
-		pair := headerPair{
-			k: headers.ACAH,
-			v: acrhSgl,
-		}
-		buf = append(buf, pair)
-		return buf, true
+		buf[headers.ACAH] = acrhSgl
+		return true
 	}
 	if icfg.acah != nil {
-		pair := headerPair{
-			k: headers.ACAH,
-			v: icfg.acah,
-		}
-		buf = append(buf, pair)
-		return buf, true
+		buf[headers.ACAH] = icfg.acah
+		return true
 	}
-	return buf, false
+	return false
 }
 
 // SetDebug turns debug mode on (if b is true) or off (otherwise).
