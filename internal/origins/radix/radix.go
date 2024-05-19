@@ -48,9 +48,9 @@ func (t *Tree) Insert(keyPattern string, v int) {
 			return
 		}
 
-		sPrefix, prefixOfChildSuf, suf := splitAtCommonSuffix(s, child.suf)
+		prefixOfS, prefixOfChildSuf, suf := splitAtCommonSuffix(s, child.suf)
 		if len(prefixOfChildSuf) == 0 { // child.suf is a suffix of s
-			s = sPrefix
+			s = prefixOfS
 			n = child
 			continue
 		}
@@ -82,14 +82,14 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		// Add the first grandchild in child.
 		label, _ = lastByte(prefixOfChildSuf)
 		child.insertEdge(label, grandChild1)
-		if len(sPrefix) == 0 {
+		if len(prefixOfS) == 0 {
 			child.add(v, hasLeadingAsterisk)
 			return
 		}
 
 		// Add a second grandchild in child.
-		label, _ = lastByte(sPrefix)
-		grandChild2 := &node{suf: sPrefix}
+		label, _ = lastByte(prefixOfS)
+		grandChild2 := &node{suf: prefixOfS}
 		grandChild2.add(v, hasLeadingAsterisk)
 		child.insertEdge(label, grandChild2)
 	}
@@ -115,12 +115,12 @@ func (t *Tree) Contains(k string, v int) bool {
 			return false
 		}
 
-		kPrefix, _, suf := splitAtCommonSuffix(k, n.suf)
+		prefixOfK, _, suf := splitAtCommonSuffix(k, n.suf)
 		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of k
 			return false
 		}
 		// n.suf is a suffix of k
-		k = kPrefix
+		k = prefixOfK
 	}
 }
 
