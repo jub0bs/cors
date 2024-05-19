@@ -56,20 +56,13 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		}
 
 		// child.suf is NOT a suffix of s; we need to split child.
+		// Before splitting: child
 		//
-		// Before splitting:
+		// After splitting:  child' -- grandChild1
 		//
-		//  child
-		//
-		// After splitting:
-		//
-		//  child' -- grandChild1
-		//
-		// or perhaps
-		//
-		//  child' -- grandChild1
-		//     \
-		//      grandChild2
+		// ... or perhaps    child' -- grandChild1
+		//                      \
+		//                       grandChild2
 
 		// Create the first grandchild on the basis of the current child.
 		grandChild1 := child
