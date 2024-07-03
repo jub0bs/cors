@@ -243,9 +243,5 @@ func BenchmarkParse(b *testing.B) {
 	}
 }
 
-func TestMaxUint16(t *testing.T) {
-	if maxUint16 != math.MaxUint16 {
-		const tmpl = "incorrect maxUint16 value: got %d; want %d"
-		t.Errorf(tmpl, maxUint16, math.MaxUint16)
-	}
-}
+// If this doesn't compile, maxUint16 doesn't match math.MaxUint16.
+var _ = [1]int{}[maxUint16-math.MaxUint16]
