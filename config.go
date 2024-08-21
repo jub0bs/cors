@@ -475,7 +475,6 @@ type internalConfig struct {
 	// misc
 	preflightStatus            int
 	tmp                        *tmpConfig
-	debug                      bool
 	privateNetworkAccess       bool
 	privateNetworkAccessNoCors bool
 	subsOfPublicSuffixes       bool

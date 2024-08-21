@@ -40,8 +40,9 @@ import (
 //
 // [CORS-preflight]: https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
 type Middleware struct {
-	icfg *internalConfig
-	mu   sync.RWMutex
+	mu    sync.RWMutex // guards the other fields
+	icfg  *internalConfig
+	debug bool
 }
 
 // NewMiddleware creates a CORS middleware that behaves in accordance with cfg.
@@ -88,13 +89,10 @@ func (m *Middleware) Reconfigure(cfg *Config) error {
 		return err
 	}
 	m.mu.Lock()
-	if icfg != nil && m.icfg != nil {
-		// Retain the current debug mode;
-		// as a result, m.Reconfigure(m.Config()) is a no-op
-		// (albeit an expensive one), which is a nice property.
-		icfg.debug = m.icfg.debug
-	}
 	m.icfg = icfg
+	// If the desired middleware is passthrough, unset m's debug mode;
+	// otherwise, leave it unchanged.
+	m.debug = cfg != nil && m.debug
 	m.mu.Unlock()
 	return nil
 }
@@ -104,6 +102,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		m.mu.RLock()
 		icfg := m.icfg
+		debug := m.debug
 		m.mu.RUnlock()
 		if icfg == nil { // passthrough middleware
 			h.ServeHTTP(w, r)
@@ -130,7 +129,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 		if isOPTIONS && found {
 			// r is a CORS-preflight request;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
-			icfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl)
+			icfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl, debug)
 			return
 		}
 		// r is an "actual" (i.e. non-preflight) CORS request.
@@ -173,6 +172,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	originSgl []string,
 	acrm string,
 	acrmSgl []string,
+	debug bool,
 ) {
 	resHdrs := w.Header()
 	// Responses to OPTIONS requests are not meant to be cached but,
@@ -208,7 +208,6 @@ func (icfg *internalConfig) handleCORSPreflight(
 	//
 	// When debug is off and preflight fails,
 	// we omit all CORS headers from the preflight response.
-	debug := icfg.debug
 
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
@@ -482,9 +481,7 @@ func (icfg *internalConfig) processACRH(
 // its debug mode is invariably off and SetDebug is a no-op.
 func (m *Middleware) SetDebug(b bool) {
 	m.mu.Lock()
-	if m.icfg != nil {
-		m.icfg.debug = b
-	}
+	m.debug = b
 	m.mu.Unlock()
 }
 
