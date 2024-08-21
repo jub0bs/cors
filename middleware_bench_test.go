@@ -325,9 +325,6 @@ func BenchmarkMiddleware(b *testing.B) {
 			if err != nil {
 				b.Fatal(err)
 			}
-			if mwbc.debug {
-				mw.SetDebug(true)
-			}
 			handler = mw.Wrap(handler)
 		}
 		if mwbc.outerMw != nil {
@@ -348,13 +345,16 @@ func BenchmarkMiddleware(b *testing.B) {
 				})
 			}
 			desc := fmt.Sprintf("exec       %s vs %s", mwbc.desc, bc.desc)
-			b.Run(desc, f)
-
-			if mwbc.cfg == nil {
-				continue // no more work to do if no CORS middleware
+			if mw == nil {
+				b.Run(desc, f)
+				continue
 			}
-			mw.SetDebug(true)
+			// Run the benchmark outside debug mode.
+			mw.SetDebug(false)
+			b.Run(desc, f)
+			// Run the benchmark in debug mode.
 			desc = fmt.Sprintf("exec debug %s vs %s", mwbc.desc, bc.desc)
+			mw.SetDebug(true)
 			b.Run(desc, f)
 		}
 	}
