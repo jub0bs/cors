@@ -70,6 +70,12 @@ func NewMiddleware(cfg Config) (*Middleware, error) {
 // If *cfg is invalid, it leaves m unchanged and returns some non-nil error.
 // Otherwise, it successfully reconfigures m, leaves m's debug mode unchanged,
 // and returns a nil error.
+// The following statement is guaranteed to be a no-op
+// (albeit a relatively expensive one):
+//
+//	m.Reconfigure(m.Config())
+//
+// Note that
 //
 //	mw := new(cors.Middleware)
 //	err := mw.Reconfigure(&cfg)
