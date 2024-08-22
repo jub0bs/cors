@@ -792,7 +792,7 @@ func TestMiddleware(t *testing.T) {
 						headerVary: varyPreflightValue,
 					},
 				}, {
-					desc:      "preflight with GET and Content-Type",
+					desc:      "preflight with PURGE and Content-Type",
 					reqMethod: "OPTIONS",
 					reqHeaders: Headers{
 						headerOrigin: "http://localhost:9090",
