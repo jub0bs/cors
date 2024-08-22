@@ -49,23 +49,61 @@ func (set SortedSet) String() string {
 	return strings.Join(elems, ",")
 }
 
-// Subsumes reports whether csv is a sequence of comma-separated names that are
-//   - all elements of set,
+// Subsumes reports whether s is a [list-based field value] whose elements are
+//   - all members of set,
 //   - sorted in lexicographical order,
 //   - unique.
-func (set SortedSet) Subsumes(csv string) bool {
-	if csv == "" {
-		return true
-	}
+//
+// Although [the Fetch standard] requires browsers to omit any whitespace
+// in the value of the ACRH field, some intermediaries may well alter this
+// list-based field's value by sprinkling optional whitespace (OWS) around
+// the value's elements.
+// [RFC 9110] does require recipients to tolerate arbitrary long OWS around
+// elements of a list-based field value, but adherence to this requirement
+// leads to non-negligible performance degradation in CORS middleware
+// in the face of adversarial (spoofed) CORS-preflight requests.
+// Therefore, this function only tolerates a small number (1) of OWS bytes
+// before and/or after each element. This deviation from RFC 9110 is expected
+// to strike a good balance between interoperability and performance.
+//
+// Moreover, this function tolerates a small number (16) of empty list elements,
+// in accordance with [RFC 9110]'s recommendation.
+//
+// [RFC 9110]: https://httpwg.org/specs/rfc9110.html#abnf.extension.recipient
+// [list-based field value]: https://httpwg.org/specs/rfc9110.html#abnf.extension
+// [the Fetch standard]: https://fetch.spec.whatwg.org/#cors-preflight-fetch-0
+func (set SortedSet) Subsumes(s string) bool {
+	var ( // effectively constant
+		maxLen = MaxOWSBytes + set.maxLen + MaxOWSBytes + 1 // +1 for comma
+	)
 	var (
 		posOfLastNameSeen = -1
 		name              string
 		commaFound        bool
+		emptyElements     int
+		ok                bool
 	)
 	for {
 		// As a defense against maliciously long names in csv,
 		// we process only a small number of csv's leading bytes per iteration.
-		name, csv, commaFound = cutAtComma(csv, set.maxLen+1) // +1 for comma
+		name, s, commaFound = cutAtComma(s, maxLen)
+		name, ok = TrimOWS(name, MaxOWSBytes)
+		if !ok {
+			return false
+		}
+		if name == "" {
+			// RFC 9110 requires recipients to tolerate
+			// "a reasonable number of empty list elements"; see
+			// https://httpwg.org/specs/rfc9110.html#abnf.extension.recipient.
+			emptyElements++
+			if emptyElements > MaxEmptyElements {
+				return false
+			}
+			if !commaFound { // We have now exhausted the names in csv.
+				return true
+			}
+			continue
+		}
 		pos, ok := set.m[name]
 		if !ok {
 			return false
@@ -84,6 +122,11 @@ func (set SortedSet) Subsumes(csv string) bool {
 		}
 	}
 }
+
+const (
+	MaxOWSBytes      = 1  // number of leading/trailing OWS bytes tolerated
+	MaxEmptyElements = 16 // number of empty list elements tolerated
+)
 
 // cutAtComma slices s around the first comma that appears among (up to) the
 // first n bytes of s, returning the parts of s before and after the comma.

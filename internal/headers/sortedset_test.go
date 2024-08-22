@@ -2,6 +2,7 @@ package headers_test
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jub0bs/cors/internal/headers"
@@ -22,8 +23,13 @@ func TestSortedSet(t *testing.T) {
 			desc:     "empty set",
 			size:     0,
 			combined: "",
-			notSubs: []string{
+			subs: []string{
+				// some empty elements, possibly with OWS
+				"",
 				",",
+				"\t, , ",
+			},
+			notSubs: []string{
 				"x-bar",
 				"x-bar,x-foo",
 			},
@@ -34,14 +40,27 @@ func TestSortedSet(t *testing.T) {
 			combined: "x-foo",
 			slice:    []string{"X-Foo"},
 			subs: []string{
-				"",
 				"x-foo",
+				// some empty elements, possibly with OWS
+				"",
+				",",
+				"\t, , ",
+				"\tx-foo ,",
+				" x-foo\t,",
+				strings.Repeat(",", headers.MaxEmptyElements) + "x-foo",
 			},
 			notSubs: []string{
-				",",
-				"x-foo,",
 				"x-bar",
 				"x-bar,x-foo",
+				// too much OWS
+				"x-foo  ",
+				" x-foo  ",
+				"  x-foo  ",
+				"x-foo\t\t",
+				"\tx-foo\t\t",
+				"\t\tx-foo\t\t",
+				// too many empty elements
+				strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo",
 			},
 		}, {
 			desc:     "no dupes",
@@ -50,7 +69,6 @@ func TestSortedSet(t *testing.T) {
 			combined: "x-bar,x-baz,x-foo",
 			slice:    []string{"X-Bar", "X-Baz", "X-Foo"},
 			subs: []string{
-				"",
 				"x-bar",
 				"x-baz",
 				"x-foo",
@@ -58,21 +76,35 @@ func TestSortedSet(t *testing.T) {
 				"x-bar,x-foo",
 				"x-baz,x-foo",
 				"x-bar,x-baz,x-foo",
+				// some empty elements, possibly with OWS
+				"",
+				",",
+				"\t, , ",
+				"\tx-bar ,",
+				" x-baz\t,",
+				"x-foo,",
+				"\tx-bar ,\tx-baz ,",
+				" x-bar\t, x-foo\t,",
+				"x-baz,x-foo,",
+				" x-bar , x-baz , x-foo ,",
+				"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo",
 			},
 			notSubs: []string{
-				",",
-				"x-bar,",
-				"x-baz,",
-				"x-foo,",
-				"x-bar,x-baz,",
-				"x-bar,x-foo,",
-				"x-baz,x-foo,",
-				"x-bar,x-baz,x-foo,",
 				"x-qux",
 				"x-bar,x-baz,x-baz",
 				"x-qux,x-baz",
 				"x-qux,x-foo",
 				"x-quxbaz,x-foo",
+				// too much OWS
+				"x-bar  ",
+				" x-baz  ",
+				"  x-foo  ",
+				"x-bar\t\t,x-baz",
+				"x-bar,\tx-foo\t\t",
+				"\t\tx-baz,x-foo\t\t",
+				" x-bar\t,\tx-baz\t ,x-foo",
+				// too many empty elements
+				"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+2) + "x-foo",
 			},
 		}, {
 			desc:     "some dupes",
@@ -81,20 +113,34 @@ func TestSortedSet(t *testing.T) {
 			combined: "x-bar,x-foo",
 			slice:    []string{"X-Bar", "X-Foo"},
 			subs: []string{
-				"",
 				"x-bar",
 				"x-foo",
 				"x-bar,x-foo",
+				// some empty elements, possibly with OWS
+				"",
+				",",
+				"\t, , ",
+				"\tx-bar ,",
+				" x-foo\t,",
+				"x-foo,",
+				"\tx-bar ,\tx-foo ,",
+				" x-bar\t, x-foo\t,",
+				"x-bar,x-foo,",
+				" x-bar , x-foo ,",
+				"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo",
 			},
 			notSubs: []string{
-				",",
-				"x-bar,",
-				"x-foo,",
-				"x-bar,x-foo,",
 				"x-qux",
 				"x-qux,x-bar",
 				"x-qux,x-foo",
 				"x-qux,x-baz,x-foo",
+				// too much OWS
+				"x-qux  ",
+				"x-qux,\t\tx-bar",
+				"x-qux,x-foo\t\t",
+				"\tx-qux , x-baz\t\t,x-foo",
+				// too many empty elements
+				"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+2) + "x-foo",
 			},
 		},
 	}

@@ -77,6 +77,14 @@ func BenchmarkMiddleware(b *testing.B) {
 						headerACRM:   http.MethodGet,
 						headerACRH:   strings.Repeat("accept,", http.DefaultMaxHeaderBytes/len("accept,")),
 					},
+				}, {
+					desc:      "preflight with adversarial ACRH: lots of OWS",
+					reqMethod: http.MethodOptions,
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRM:   http.MethodGet,
+						headerACRH:   "accept," + strings.Repeat(" ", http.DefaultMaxHeaderBytes) + "content-type",
+					},
 				},
 			},
 		}, {
@@ -222,6 +230,14 @@ func BenchmarkMiddleware(b *testing.B) {
 						headerACRH:   strings.Repeat("a,", http.DefaultMaxHeaderBytes/len("a,")),
 					},
 				}, {
+					desc:      "preflight with adversarial ACRH: lots of OWS",
+					reqMethod: http.MethodOptions,
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRM:   http.MethodGet,
+						headerACRH:   "a," + strings.Repeat(" ", http.DefaultMaxHeaderBytes) + "b",
+					},
+				}, {
 					desc:      "actual",
 					reqMethod: http.MethodGet,
 					reqHeaders: Headers{
@@ -275,6 +291,14 @@ func BenchmarkMiddleware(b *testing.B) {
 						headerOrigin: "https://example.com",
 						headerACRM:   http.MethodGet,
 						headerACRH:   strings.Repeat("a,", http.DefaultMaxHeaderBytes/len("a,")),
+					},
+				}, {
+					desc:      "preflight with adversarial ACRH: lots of OWS",
+					reqMethod: http.MethodOptions,
+					reqHeaders: Headers{
+						headerOrigin: "https://example.com",
+						headerACRM:   http.MethodGet,
+						headerACRH:   "a," + strings.Repeat(" ", http.DefaultMaxHeaderBytes) + "b",
 					},
 				}, {
 					desc:      "actual",
