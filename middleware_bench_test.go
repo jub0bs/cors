@@ -70,12 +70,12 @@ func BenchmarkMiddleware(b *testing.B) {
 						headerOrigin: "https://example.computer",
 					},
 				}, {
-					desc:      "preflight with adversarial ACRH",
+					desc:      "preflight with adversarial ACRH: same allowed name repeated many times",
 					reqMethod: http.MethodOptions,
 					reqHeaders: Headers{
 						headerOrigin: "https://example.com",
 						headerACRM:   http.MethodGet,
-						headerACRH:   strings.Repeat("a,", 1024),
+						headerACRH:   strings.Repeat("accept,", http.DefaultMaxHeaderBytes/len("accept,")),
 					},
 				},
 			},
@@ -214,12 +214,12 @@ func BenchmarkMiddleware(b *testing.B) {
 						headerACRH:   "authorization",
 					},
 				}, {
-					desc:      "preflight with adversarial ACRH",
+					desc:      "preflight with adversarial ACRH: same allowed name repeated many times",
 					reqMethod: http.MethodOptions,
 					reqHeaders: Headers{
 						headerOrigin: "https://example.com",
 						headerACRM:   http.MethodGet,
-						headerACRH:   strings.Repeat("a,", 1024),
+						headerACRH:   strings.Repeat("a,", http.DefaultMaxHeaderBytes/len("a,")),
 					},
 				}, {
 					desc:      "actual",
@@ -269,12 +269,12 @@ func BenchmarkMiddleware(b *testing.B) {
 						headerACRH:   "authorization",
 					},
 				}, {
-					desc:      "preflight with adversarial ACRH",
+					desc:      "preflight with adversarial ACRH: same allowed name repeated many times",
 					reqMethod: http.MethodOptions,
 					reqHeaders: Headers{
 						headerOrigin: "https://example.com",
 						headerACRM:   http.MethodGet,
-						headerACRH:   strings.Repeat("a,", 1024),
+						headerACRH:   strings.Repeat("a,", http.DefaultMaxHeaderBytes/len("a,")),
 					},
 				}, {
 					desc:      "actual",
