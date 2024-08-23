@@ -49,7 +49,7 @@ func (set SortedSet) String() string {
 	return strings.Join(elems, ",")
 }
 
-// Subsumes reports whether s is a [list-based field value] whose elements are
+// Accepts reports whether s is a [list-based field value] whose elements are
 //   - all members of set,
 //   - sorted in lexicographical order,
 //   - unique.
@@ -72,7 +72,7 @@ func (set SortedSet) String() string {
 // [RFC 9110]: https://httpwg.org/specs/rfc9110.html#abnf.extension.recipient
 // [list-based field value]: https://httpwg.org/specs/rfc9110.html#abnf.extension
 // [the Fetch standard]: https://fetch.spec.whatwg.org/#cors-preflight-fetch-0
-func (set SortedSet) Subsumes(s string) bool {
+func (set SortedSet) Accepts(s string) bool {
 	var ( // effectively constant
 		maxLen = MaxOWSBytes + set.maxLen + MaxOWSBytes + 1 // +1 for comma
 	)

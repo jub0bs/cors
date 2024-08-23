@@ -469,7 +469,7 @@ func (icfg *internalConfig) processACRH(
 		if icfg.allowedReqHdrs.Size() == 0 {
 			return false
 		}
-		if !icfg.allowedReqHdrs.Subsumes(acrh) {
+		if !icfg.allowedReqHdrs.Accepts(acrh) {
 			return false
 		}
 		buf[headers.ACAH] = acrhSgl

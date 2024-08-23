@@ -16,20 +16,20 @@ func TestSortedSet(t *testing.T) {
 		size     int
 		combined string
 		slice    []string
-		subs     []string
-		notSubs  []string
+		accepted []string
+		rejected []string
 	}{
 		{
 			desc:     "empty set",
 			size:     0,
 			combined: "",
-			subs: []string{
+			accepted: []string{
 				// some empty elements, possibly with OWS
 				"",
 				",",
 				"\t, , ",
 			},
-			notSubs: []string{
+			rejected: []string{
 				"x-bar",
 				"x-bar,x-foo",
 			},
@@ -39,7 +39,7 @@ func TestSortedSet(t *testing.T) {
 			size:     1,
 			combined: "x-foo",
 			slice:    []string{"X-Foo"},
-			subs: []string{
+			accepted: []string{
 				"x-foo",
 				// some empty elements, possibly with OWS
 				"",
@@ -49,7 +49,7 @@ func TestSortedSet(t *testing.T) {
 				" x-foo\t,",
 				strings.Repeat(",", headers.MaxEmptyElements) + "x-foo",
 			},
-			notSubs: []string{
+			rejected: []string{
 				"x-bar",
 				"x-bar,x-foo",
 				// too much OWS
@@ -68,7 +68,7 @@ func TestSortedSet(t *testing.T) {
 			size:     3,
 			combined: "x-bar,x-baz,x-foo",
 			slice:    []string{"X-Bar", "X-Baz", "X-Foo"},
-			subs: []string{
+			accepted: []string{
 				"x-bar",
 				"x-baz",
 				"x-foo",
@@ -89,7 +89,7 @@ func TestSortedSet(t *testing.T) {
 				" x-bar , x-baz , x-foo ,",
 				"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo",
 			},
-			notSubs: []string{
+			rejected: []string{
 				"x-qux",
 				"x-bar,x-baz,x-baz",
 				"x-qux,x-baz",
@@ -112,7 +112,7 @@ func TestSortedSet(t *testing.T) {
 			size:     2,
 			combined: "x-bar,x-foo",
 			slice:    []string{"X-Bar", "X-Foo"},
-			subs: []string{
+			accepted: []string{
 				"x-bar",
 				"x-foo",
 				"x-bar,x-foo",
@@ -129,7 +129,7 @@ func TestSortedSet(t *testing.T) {
 				" x-bar , x-foo ,",
 				"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo",
 			},
-			notSubs: []string{
+			rejected: []string{
 				"x-qux",
 				"x-qux,x-bar",
 				"x-qux,x-foo",
@@ -163,16 +163,16 @@ func TestSortedSet(t *testing.T) {
 				const tmpl = "NewSortedSet(%#v...).ToSortedSet(): got %q; want %q"
 				t.Errorf(tmpl, elems, slice, tc.slice)
 			}
-			for _, sub := range tc.subs {
-				if !set.Subsumes(sub) {
-					const tmpl = "%q does not subsume %q, but should"
-					t.Errorf(tmpl, set, sub)
+			for _, a := range tc.accepted {
+				if !set.Accepts(a) {
+					const tmpl = "%q rejects %q, but should accept it"
+					t.Errorf(tmpl, set, a)
 				}
 			}
-			for _, notSub := range tc.notSubs {
-				if set.Subsumes(notSub) {
-					const tmpl = "%q subsumes %q, but should not"
-					t.Errorf(tmpl, set, notSub)
+			for _, r := range tc.rejected {
+				if set.Accepts(r) {
+					const tmpl = "%q accepts %q, but should reject it"
+					t.Errorf(tmpl, set, r)
 				}
 			}
 		}
