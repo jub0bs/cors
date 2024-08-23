@@ -49,30 +49,41 @@ func (set SortedSet) String() string {
 	return strings.Join(elems, ",")
 }
 
-// Accepts reports whether s is a [list-based field value] whose elements are
+// Accepts reports whether values is a sequence of [list-based field values]
+// whose elements are
 //   - all members of set,
 //   - sorted in lexicographical order,
 //   - unique.
+//
+// This function's parameter is a slice of strings rather than just a string
+// because, although [the Fetch standard] requires browsers to include at most
+// one ACRH field line in CORS-preflight requests, some intermediaries may well
+// (and [some reportedly do]) split it into multiple ACRH field lines.
+// Note that, because [RFC 9110] (section 5.3) forbids intermediaries from
+// changing the order of field lines of the same name, we can expect the
+// overall sequence of elements to still be sorted in lexicographical order.
 //
 // Although [the Fetch standard] requires browsers to omit any whitespace
 // in the value of the ACRH field, some intermediaries may well alter this
 // list-based field's value by sprinkling optional whitespace (OWS) around
 // the value's elements.
-// [RFC 9110] does require recipients to tolerate arbitrary long OWS around
-// elements of a list-based field value, but adherence to this requirement
-// leads to non-negligible performance degradation in CORS middleware
-// in the face of adversarial (spoofed) CORS-preflight requests.
+// [RFC 9110] (section 5.6.1.2) requires recipients to tolerate arbitrary long
+// OWS around elements of a list-based field value,
+// but adherence to this requirement leads to non-negligible performance
+// degradation in CORS middleware in the face of adversarial (spoofed)
+// CORS-preflight requests.
 // Therefore, this function only tolerates a small number (1) of OWS bytes
 // before and/or after each element. This deviation from RFC 9110 is expected
 // to strike a good balance between interoperability and performance.
 //
 // Moreover, this function tolerates a small number (16) of empty list elements,
-// in accordance with [RFC 9110]'s recommendation.
+// in accordance with [RFC 9110]'s recommendation (section 5.6.1.2).
 //
-// [RFC 9110]: https://httpwg.org/specs/rfc9110.html#abnf.extension.recipient
-// [list-based field value]: https://httpwg.org/specs/rfc9110.html#abnf.extension
-// [the Fetch standard]: https://fetch.spec.whatwg.org/#cors-preflight-fetch-0
-func (set SortedSet) Accepts(s string) bool {
+// [RFC 9110]: https://httpwg.org/specs/rfc9110.html
+// [list-based field values]: https://httpwg.org/specs/rfc9110.html#abnf.extension
+// [some reportedly do]: https://github.com/rs/cors/issues/184
+// [the Fetch standard]: https://fetch.spec.whatwg.org
+func (set SortedSet) Accepts(values []string) bool {
 	var ( // effectively constant
 		maxLen = MaxOWSBytes + set.maxLen + MaxOWSBytes + 1 // +1 for comma
 	)
@@ -83,44 +94,47 @@ func (set SortedSet) Accepts(s string) bool {
 		emptyElements     int
 		ok                bool
 	)
-	for {
-		// As a defense against maliciously long names in csv,
-		// we process only a small number of csv's leading bytes per iteration.
-		name, s, commaFound = cutAtComma(s, maxLen)
-		name, ok = TrimOWS(name, MaxOWSBytes)
-		if !ok {
-			return false
-		}
-		if name == "" {
-			// RFC 9110 requires recipients to tolerate
-			// "a reasonable number of empty list elements"; see
-			// https://httpwg.org/specs/rfc9110.html#abnf.extension.recipient.
-			emptyElements++
-			if emptyElements > MaxEmptyElements {
+	for _, s := range values {
+		for {
+			// As a defense against maliciously long names in csv,
+			// we process only a small number of csv's leading bytes per iteration.
+			name, s, commaFound = cutAtComma(s, maxLen)
+			name, ok = TrimOWS(name, MaxOWSBytes)
+			if !ok {
 				return false
 			}
-			if !commaFound { // We have now exhausted the names in csv.
-				return true
+			if name == "" {
+				// RFC 9110 requires recipients to tolerate
+				// "a reasonable number of empty list elements"; see
+				// https://httpwg.org/specs/rfc9110.html#abnf.extension.recipient.
+				emptyElements++
+				if emptyElements > MaxEmptyElements {
+					return false
+				}
+				if !commaFound { // We have now exhausted the names in csv.
+					break
+				}
+				continue
 			}
-			continue
-		}
-		pos, ok := set.m[name]
-		if !ok {
-			return false
-		}
-		// The names in csv are expected to be sorted in lexicographical order
-		// and to each appear at most once.
-		// Therefore, the positions (in set) of the names that
-		// appear in csv should form a strictly increasing sequence.
-		// If that's not actually the case, bail out.
-		if pos <= posOfLastNameSeen {
-			return false
-		}
-		posOfLastNameSeen = pos
-		if !commaFound { // We have now exhausted the names in csv.
-			return true
+			pos, ok := set.m[name]
+			if !ok {
+				return false
+			}
+			// The names in csv are expected to be sorted in lexicographical order
+			// and to each appear at most once.
+			// Therefore, the positions (in set) of the names that
+			// appear in csv should form a strictly increasing sequence.
+			// If that's not actually the case, bail out.
+			if pos <= posOfLastNameSeen {
+				return false
+			}
+			posOfLastNameSeen = pos
+			if !commaFound { // We have now exhausted the names in csv.
+				break
+			}
 		}
 	}
+	return true
 }
 
 const (

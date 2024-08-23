@@ -29,8 +29,11 @@ in the chain, and the ultimate handler. Follow the rules listed below:
     Regarding the value of [list-based field] [Access-Control-Request-Headers]
     specifically, intermediaries [MAY] add some [optional whitespace] around
     the value's elements or add (inadvertently, perhaps) some empty elements
-    to that value, but they [SHOULD] do so within reason. For performance
-    (and at the cost of some interoperability),
+    to that value, but they [SHOULD] do so within reason;
+    moreover, intermediaries [MAY] split the value of that field across
+    multiple field lines of that name, but they [SHOULD NOT] add too many
+    empty field lines of that name.
+    For performance (and at the cost of some interoperability),
     this library's middleware are indeed stricter in their handling of
     this specific list-based field than required by [RFC 9110].
   - Intermediaries [SHOULD NOT] alter or augment the [CORS response headers]

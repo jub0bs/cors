@@ -16,22 +16,28 @@ func TestSortedSet(t *testing.T) {
 		size     int
 		combined string
 		slice    []string
-		accepted []string
-		rejected []string
+		accepted [][]string
+		rejected [][]string
 	}{
 		{
 			desc:     "empty set",
 			size:     0,
 			combined: "",
-			accepted: []string{
+			accepted: [][]string{
 				// some empty elements, possibly with OWS
-				"",
-				",",
-				"\t, , ",
+				{""},
+				{","},
+				{"\t, , "},
+				// multiple field lines, some empty elements
+				make([]string, headers.MaxEmptyElements),
 			},
-			rejected: []string{
-				"x-bar",
-				"x-bar,x-foo",
+			rejected: [][]string{
+				{"x-bar"},
+				{"x-bar,x-foo"},
+				// too many empty elements
+				{strings.Repeat(",", headers.MaxEmptyElements+1)},
+				// multiple field lines, too many empty elements
+				make([]string, headers.MaxEmptyElements+1),
 			},
 		}, {
 			desc:     "singleton set",
@@ -39,28 +45,34 @@ func TestSortedSet(t *testing.T) {
 			size:     1,
 			combined: "x-foo",
 			slice:    []string{"X-Foo"},
-			accepted: []string{
-				"x-foo",
+			accepted: [][]string{
+				{"x-foo"},
 				// some empty elements, possibly with OWS
-				"",
-				",",
-				"\t, , ",
-				"\tx-foo ,",
-				" x-foo\t,",
-				strings.Repeat(",", headers.MaxEmptyElements) + "x-foo",
+				{""},
+				{","},
+				{"\t, , "},
+				{"\tx-foo ,"},
+				{" x-foo\t,"},
+				{strings.Repeat(",", headers.MaxEmptyElements) + "x-foo"},
+				// multiple field lines, some empty elements
+				append(make([]string, headers.MaxEmptyElements), "x-foo"),
+				make([]string, headers.MaxEmptyElements),
 			},
-			rejected: []string{
-				"x-bar",
-				"x-bar,x-foo",
+			rejected: [][]string{
+				{"x-bar"},
+				{"x-bar,x-foo"},
 				// too much OWS
-				"x-foo  ",
-				" x-foo  ",
-				"  x-foo  ",
-				"x-foo\t\t",
-				"\tx-foo\t\t",
-				"\t\tx-foo\t\t",
+				{"x-foo  "},
+				{" x-foo  "},
+				{"  x-foo  "},
+				{"x-foo\t\t"},
+				{"\tx-foo\t\t"},
+				{"\t\tx-foo\t\t"},
 				// too many empty elements
-				strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo",
+				{strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo"},
+				// multiple field lines, too many empty elements
+				append(make([]string, headers.MaxEmptyElements+1), "x-foo"),
+				make([]string, headers.MaxEmptyElements+1),
 			},
 		}, {
 			desc:     "no dupes",
@@ -68,43 +80,54 @@ func TestSortedSet(t *testing.T) {
 			size:     3,
 			combined: "x-bar,x-baz,x-foo",
 			slice:    []string{"X-Bar", "X-Baz", "X-Foo"},
-			accepted: []string{
-				"x-bar",
-				"x-baz",
-				"x-foo",
-				"x-bar,x-baz",
-				"x-bar,x-foo",
-				"x-baz,x-foo",
-				"x-bar,x-baz,x-foo",
+			accepted: [][]string{
+				{"x-bar"},
+				{"x-baz"},
+				{"x-foo"},
+				{"x-bar,x-baz"},
+				{"x-bar,x-foo"},
+				{"x-baz,x-foo"},
+				{"x-bar,x-baz,x-foo"},
 				// some empty elements, possibly with OWS
-				"",
-				",",
-				"\t, , ",
-				"\tx-bar ,",
-				" x-baz\t,",
-				"x-foo,",
-				"\tx-bar ,\tx-baz ,",
-				" x-bar\t, x-foo\t,",
-				"x-baz,x-foo,",
-				" x-bar , x-baz , x-foo ,",
-				"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo",
+				{""},
+				{","},
+				{"\t, , "},
+				{"\tx-bar ,"},
+				{" x-baz\t,"},
+				{"x-foo,"},
+				{"\tx-bar ,\tx-baz ,"},
+				{" x-bar\t, x-foo\t,"},
+				{"x-baz,x-foo,"},
+				{" x-bar , x-baz , x-foo ,"},
+				{"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo"},
+				// multiple field lines
+				{"x-bar", "x-foo"},
+				{"x-bar", "x-baz,x-foo"},
+				// multiple field lines, some empty elements
+				append(make([]string, headers.MaxEmptyElements), "x-bar", "x-foo"),
+				make([]string, headers.MaxEmptyElements),
 			},
-			rejected: []string{
-				"x-qux",
-				"x-bar,x-baz,x-baz",
-				"x-qux,x-baz",
-				"x-qux,x-foo",
-				"x-quxbaz,x-foo",
+			rejected: [][]string{
+				{"x-qux"},
+				{"x-bar,x-baz,x-baz"},
+				{"x-qux,x-baz"},
+				{"x-qux,x-foo"},
+				{"x-quxbaz,x-foo"},
 				// too much OWS
-				"x-bar  ",
-				" x-baz  ",
-				"  x-foo  ",
-				"x-bar\t\t,x-baz",
-				"x-bar,\tx-foo\t\t",
-				"\t\tx-baz,x-foo\t\t",
-				" x-bar\t,\tx-baz\t ,x-foo",
+				{"x-bar  "},
+				{" x-baz  "},
+				{"  x-foo  "},
+				{"x-bar\t\t,x-baz"},
+				{"x-bar,\tx-foo\t\t"},
+				{"\t\tx-baz,x-foo\t\t"},
+				{" x-bar\t,\tx-baz\t ,x-foo"},
 				// too many empty elements
-				"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+2) + "x-foo",
+				{"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+2) + "x-foo"},
+				// multiple field lines, elements in the wrong order
+				{"x-foo", "x-bar"},
+				// multiple field lines, too many empty elements
+				append(make([]string, headers.MaxEmptyElements+1), "x-bar", "x-foo"),
+				make([]string, headers.MaxEmptyElements+1),
 			},
 		}, {
 			desc:     "some dupes",
@@ -112,35 +135,49 @@ func TestSortedSet(t *testing.T) {
 			size:     2,
 			combined: "x-bar,x-foo",
 			slice:    []string{"X-Bar", "X-Foo"},
-			accepted: []string{
-				"x-bar",
-				"x-foo",
-				"x-bar,x-foo",
+			accepted: [][]string{
+				{"x-bar"},
+				{"x-foo"},
+				{"x-bar,x-foo"},
 				// some empty elements, possibly with OWS
-				"",
-				",",
-				"\t, , ",
-				"\tx-bar ,",
-				" x-foo\t,",
-				"x-foo,",
-				"\tx-bar ,\tx-foo ,",
-				" x-bar\t, x-foo\t,",
-				"x-bar,x-foo,",
-				" x-bar , x-foo ,",
-				"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo",
+				{""},
+				{","},
+				{"\t, , "},
+				{"\tx-bar ,"},
+				{" x-foo\t,"},
+				{"x-foo,"},
+				{"\tx-bar ,\tx-foo ,"},
+				{" x-bar\t, x-foo\t,"},
+				{"x-bar,x-foo,"},
+				{" x-bar , x-foo ,"},
+				{"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo"},
+				// multiple field lines
+				{"x-bar", "x-foo"},
+				// multiple field lines, some empty elements
+				append(make([]string, headers.MaxEmptyElements), "x-bar", "x-foo"),
+				make([]string, headers.MaxEmptyElements),
 			},
-			rejected: []string{
-				"x-qux",
-				"x-qux,x-bar",
-				"x-qux,x-foo",
-				"x-qux,x-baz,x-foo",
+			rejected: [][]string{
+				{"x-qux"},
+				{"x-qux,x-bar"},
+				{"x-qux,x-foo"},
+				{"x-qux,x-baz,x-foo"},
 				// too much OWS
-				"x-qux  ",
-				"x-qux,\t\tx-bar",
-				"x-qux,x-foo\t\t",
-				"\tx-qux , x-baz\t\t,x-foo",
+				{"x-qux  "},
+				{"x-qux,\t\tx-bar"},
+				{"x-qux,x-foo\t\t"},
+				{"\tx-qux , x-baz\t\t,x-foo"},
 				// too many empty elements
-				"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+2) + "x-foo",
+				{"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+2) + "x-foo"},
+				// multiple field lines, elements in the wrong order
+				{"x-foo", "x-bar"},
+				// multiple field lines, too much whitespace
+				{"x-qux", "\t\tx-bar"},
+				{"x-qux", "x-foo\t\t"},
+				{"\tx-qux ", " x-baz\t\t,x-foo"},
+				// multiple field lines, too many empty elements
+				append(make([]string, headers.MaxEmptyElements+1), "x-bar", "x-foo"),
+				make([]string, headers.MaxEmptyElements+1),
 			},
 		},
 	}

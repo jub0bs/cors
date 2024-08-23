@@ -396,7 +396,10 @@ func (icfg *internalConfig) processACRH(
 ) bool {
 	// Fetch-compliant browsers send at most one ACRH header;
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0 (step 5).
-	acrh, acrhSgl, found := headers.First(reqHdrs, headers.ACRH)
+	// However, some intermediaries may well
+	// (and some reportedly do) split it into multiple ACRH field lines;
+	// see https://github.com/rs/cors/issues/184.
+	acrh, found := reqHdrs[headers.ACRH]
 	if !found {
 		return true
 	}
@@ -462,7 +465,12 @@ func (icfg *internalConfig) processACRH(
 		// e.g. by cutting ACRH around "authorization" and
 		// echoing the results in up to two ACAH header(s);
 		// but the whole alternative approach is not worth the trouble anyway.
-		buf[headers.ACAH] = acrhSgl
+		//
+		// We can simply reflect all the ACRH field lines as ACAH field lines
+		// because the Fetch standard requires browsers to handle multiple ACAH
+		// field lines;
+		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
+		buf[headers.ACAH] = acrh
 		return true
 	}
 	if !debug {
@@ -472,7 +480,11 @@ func (icfg *internalConfig) processACRH(
 		if !icfg.allowedReqHdrs.Accepts(acrh) {
 			return false
 		}
-		buf[headers.ACAH] = acrhSgl
+		// We can simply reflect all the ACRH field lines as ACAH field lines
+		// because the Fetch standard requires browsers to handle multiple ACAH
+		// field lines;
+		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
+		buf[headers.ACAH] = acrh
 		return true
 	}
 	if icfg.acah != nil {
