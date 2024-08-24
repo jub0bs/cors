@@ -39,7 +39,7 @@ func (set SortedSet) Size() int {
 	return len(set.m)
 }
 
-// String sorts joins the elements of set (in lexicographical order)
+// String joins the elements of set (sorted in lexicographical order)
 // with a comma and returns the resulting string.
 func (set SortedSet) String() string {
 	elems := make([]string, len(set.m))
