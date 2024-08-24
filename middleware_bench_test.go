@@ -384,6 +384,7 @@ func BenchmarkMiddleware(b *testing.B) {
 	}
 }
 
+// see https://github.com/rs/cors/blob/1562b1715b353146f279ff7d445b7412e0f1a842/cors.go#L197
 var requestHeadersAllowedByDefaultInRsCORS = []string{
 	"Accept",
 	"Content-Type",
