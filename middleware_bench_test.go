@@ -431,7 +431,7 @@ func init() {
 	}
 }
 
-var dummyHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var dummyHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 	io.WriteString(w, "Hello, World!")
 })
 

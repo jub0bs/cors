@@ -31,6 +31,6 @@ func ExampleMiddleware_Wrap_incorrect() {
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
-func handleDogsGet(w http.ResponseWriter, _ *http.Request) {
+func handleDogsGet(_ http.ResponseWriter, _ *http.Request) {
 	// omitted
 }

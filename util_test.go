@@ -90,7 +90,7 @@ type spyHandler struct {
 
 func newSpyHandler(statusCode int, respHeaders Headers, body string) func() http.Handler {
 	f := func() http.Handler {
-		h := func(w http.ResponseWriter, r *http.Request) {
+		h := func(w http.ResponseWriter, _ *http.Request) {
 			for k, v := range respHeaders {
 				w.Header().Add(k, v)
 			}
@@ -198,7 +198,7 @@ func deleteHeaderValue(h http.Header, key, value string) bool {
 }
 
 func newMutatingHandler() http.Handler {
-	f := func(w http.ResponseWriter, r *http.Request) {
+	f := func(w http.ResponseWriter, _ *http.Request) {
 		resHdrs := w.Header()
 		keys := []string{
 			headerACAO,

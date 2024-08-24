@@ -79,11 +79,11 @@ func handleHello(w http.ResponseWriter, _ *http.Request) {
   io.WriteString(w, "Hello, World!")
 }
 
-func handleUsersGet(w http.ResponseWriter, _ *http.Request) {
+func handleUsersGet(_ http.ResponseWriter, _ *http.Request) {
   // omitted
 }
 
-func handleUsersPost(w http.ResponseWriter, _ *http.Request) {
+func handleUsersPost(_ http.ResponseWriter, _ *http.Request) {
   // omitted
 }
 ```
