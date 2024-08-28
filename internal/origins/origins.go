@@ -2,6 +2,8 @@ package origins
 
 import (
 	"strings"
+
+	"github.com/jub0bs/cors/internal/util"
 )
 
 const (
@@ -174,8 +176,7 @@ func parseScheme(str string) (string, string, bool) {
 		return "", str, false
 	}
 	for i := 1; i < len(scheme); i++ {
-		b := scheme[i]
-		if !isLowerAlpha(b) && !isDigit(b) && b != '+' && b != '-' && b != '.' {
+		if !isSubsequentSchemeByte(scheme[i]) {
 			return "", scheme, false
 		}
 	}
@@ -183,22 +184,24 @@ func parseScheme(str string) (string, string, bool) {
 }
 
 func isLowerAlpha(b byte) bool {
-	return 'a' <= b && b <= 'z'
+	return lowerAlpha.Contains(b)
 }
+
+var lowerAlpha = util.MakeASCIISet("abcdefghijklmnopqrstuvwxyz")
+
+func isSubsequentSchemeByte(b byte) bool {
+	return laterSchemeBytes.Contains(b)
+}
+
+var laterSchemeBytes = util.MakeASCIISet("+-.0123456789abcdefghijklmnopqrstuvwxyz-_")
 
 // isASCIILabelByte returns true if b is an (ASCII) lowercase letter, digit,
 // hyphen (0x2D), or underscore (0x5F).
 func isASCIILabelByte(b byte) bool {
-	// implementation adapted from
-	// https://cs.opensource.google/go/go/+/refs/tags/go1.22.2:src/net/textproto/reader.go;l=681
-	const mask = 0 |
-		(1<<(10)-1)<<'0' |
-		(1<<(26)-1)<<'a' |
-		1<<'-' |
-		1<<'_'
-	return ((uint64(1)<<b)&(mask&(1<<64-1)) |
-		(uint64(1)<<(b-64))&(mask>>64)) != 0
+	return asciiLabelBytes.Contains(b)
 }
+
+var asciiLabelBytes = util.MakeASCIISet("0123456789abcdefghijklmnopqrstuvwxyz-_")
 
 // parsePort parses a port number. It returns the port number, the unconsumed
 // part of the input string, and a bool that indicates success or failure.
@@ -232,14 +235,18 @@ func intFromDigit(b byte) int {
 // isDigit returns true if b is in the 0x30-0x39 ASCII range,
 // and false otherwise.
 func isDigit(b byte) bool {
-	return '0' <= b && b <= '9'
+	return digits.Contains(b)
 }
+
+var digits = util.MakeASCIISet("0123456789")
 
 // isNonZeroDigit returns true if b is in the 0x31-0x39 ASCII range,
 // and false otherwise.
 func isNonZeroDigit(b byte) bool {
-	return '1' <= b && b <= '9'
+	return nonzeroDigits.Contains(b)
 }
+
+var nonzeroDigits = util.MakeASCIISet("123456789")
 
 // consume checks whether target is a prefix of str.
 // If so, it consumes target in s, and returns the remainder of str and true.
