@@ -16,8 +16,10 @@ const (
 	// the maximum length of an (absolute) domain name (253);
 	// see https://devblogs.microsoft.com/oldnewthing/20120412-00/?p=7873.
 	maxHostLen = 253
-	// maxSchemeLen is the maximum length of the allowed schemes.
-	maxSchemeLen = len(schemeHTTPS)
+	// maxSchemeLen is the maximum tolerated length for schemes.
+	// Its value is somewhat arbitrary but chosen so as to cover the great
+	// majority of commonly used schemes.
+	maxSchemeLen = 64
 	// maxPortLen is the maximum length of a port's decimal representation.
 	maxPortLen = len("65535")
 	// maxHostPortLen is the maximum length of an origin's host-port part.
@@ -49,7 +51,7 @@ func Parse(str string) (Origin, bool) {
 	if len(str) > maxOriginLen {
 		return zeroOrigin, false
 	}
-	scheme, str, ok := scanHttpScheme(str)
+	scheme, str, ok := parseScheme(str)
 	if !ok {
 		return zeroOrigin, false
 	}
@@ -155,19 +157,33 @@ func fastParseHost(str string) (Host, string, bool) {
 	return host, str[i:], true
 }
 
-// scanHttpScheme scans the more specific scheme among the allowed schemes,
-// i.e. "https" and "http". It returns the scanned scheme, the unconsumed part
-// of the input string, and a bool that indicates success of failure.
-func scanHttpScheme(str string) (string, string, bool) {
-	rest, ok := consume(schemeHTTPS, str)
-	if ok {
-		return schemeHTTPS, rest, true
+// parseScheme parses a URI scheme. It returns the scheme,
+// the unconsumed part of the input string, and a bool that indicates success
+// or failure.
+func parseScheme(str string) (string, string, bool) {
+	const maxLen = maxSchemeLen + 1 // +1 for colon
+	scheme := str[:min(maxLen, len(str))]
+	i := strings.IndexByte(scheme, ':')
+	if i == -1 {
+		return "", str, false
 	}
-	rest, ok = consume(schemeHTTP, str)
-	if ok {
-		return schemeHTTP, rest, true
+	scheme = scheme[:i] // truncate before colon
+	// For more about scheme validation,
+	// see https://www.rfc-editor.org/rfc/rfc3986.html#section-3.1.
+	if len(scheme) == 0 || !isLowerAlpha(scheme[0]) {
+		return "", str, false
 	}
-	return "", str, false
+	for i := 1; i < len(scheme); i++ {
+		b := scheme[i]
+		if !isLowerAlpha(b) && !isDigit(b) && b != '+' && b != '-' && b != '.' {
+			return "", scheme, false
+		}
+	}
+	return scheme, str[i:], true
+}
+
+func isLowerAlpha(b byte) bool {
+	return 'a' <= b && b <= 'z'
 }
 
 // isASCIILabelByte returns true if b is an (ASCII) lowercase letter, digit,

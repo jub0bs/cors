@@ -87,9 +87,13 @@ func ParsePattern(str string) (Pattern, error) {
 		return zeroPattern, util.Errorf(`prohibited origin pattern %q`, str)
 	}
 	full := str
-	scheme, str, ok := scanHttpScheme(str)
+	scheme, str, ok := parseScheme(str)
 	if !ok {
 		return zeroPattern, util.InvalidOriginPatternErr(full)
+	}
+	if scheme == "file" {
+		// The origin of requests issued from "file" origins is always "null".
+		return zeroPattern, util.Errorf(`prohibited origin pattern %q`, full)
 	}
 	str, ok = consume(schemeHostSep, str)
 	if !ok {

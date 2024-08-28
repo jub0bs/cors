@@ -44,13 +44,13 @@ import (
 // Omitting to specify at least one origin pattern is prohibited;
 // so is specifying one or more invalid or prohibited origin pattern(s).
 //
-// Permitted schemes are limited to http
-// (with one caveat explained further down)
-// and https; specifying origin patterns with other schemes is prohibited:
+// All valid schemes (no longer than 64 bytes) other than file are permitted,
+// with one caveat about schemes other than https explained further down:
 //
-//	http://example.com             // permitted
-//	https://example.com            // permitted
-//	chrome-extension://example.com // prohibited
+//	http://example.com    // permitted
+//	https://example.com   // permitted
+//	connector://localhost // permitted
+//	file:///somepath      // prohibited
 //
 // Origins must be specified in [ASCII serialized form]; Unicode is prohibited:
 //
@@ -142,7 +142,7 @@ import (
 //
 // No other forms of origin patterns are supported.
 //
-// Origin patterns whose scheme is http and whose host is neither localhost
+// Origin patterns whose scheme is not https and whose host is neither localhost
 // nor a [loopback IP address] are deemed insecure;
 // as such, they are by default prohibited when credentialed access and/or
 // some form of [Private-Network Access] is enabled.
@@ -408,7 +408,8 @@ type Config struct {
 // # DangerouslyTolerateInsecureOrigins
 //
 // DangerouslyTolerateInsecureOrigins enables you to allow insecure origins
-// (i.e. origins whose scheme is http),
+// (i.e. origins whose scheme is not https and whose host is neither localhost
+// nor a [loopback IP address]),
 // which are by default prohibited when credentialed access and/or
 // some form of [Private-Network Access] is enabled.
 //
@@ -433,6 +434,7 @@ type Config struct {
 // [Same-Origin Policy]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 // [active network attacks]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
 // [link-shortening-service example]: https://wicg.github.io/private-network-access/#shortlinks
+// [loopback IP address]: https://www.rfc-editor.org/rfc/rfc5735#section-3
 // [no-cors mode]: https://fetch.spec.whatwg.org/#concept-request-mode
 // [public suffix]: https://publicsuffix.org/
 // [security reasons]: https://developer.chrome.com/blog/private-network-access-preflight/#no-cors-mode

@@ -61,20 +61,34 @@ var parsePatternCases = []TestCase{
 		input:   "ab",
 		failure: true,
 	}, {
+		name:    "short input with colon but without double slash",
+		input:   "ab:",
+		failure: true,
+	}, {
 		name:    "whitespace",
 		input:   " http://example.com:6060 ",
 		failure: true,
 	}, {
-		name:    "short invalid scheme",
-		input:   "ab://foo",
+		name:  "non-HTTP scheme",
+		input: "connector://foo",
+		want: Pattern{
+			Scheme: "connector",
+			HostPattern: HostPattern{
+				Value: "foo",
+				Kind:  PatternKindDomain,
+			},
+		},
+	}, {
+		name:    "file scheme",
+		input:   "file:///foo",
 		failure: true,
 	}, {
-		name:    "httpfoo scheme",
-		input:   "httpfoo://foo",
+		name:    "invalid first char in scheme",
+		input:   "42-chrome-extension://foo",
 		failure: true,
 	}, {
-		name:    "httpsfoo scheme",
-		input:   "httpsfoo://foo",
+		name:    "invalid later char in scheme",
+		input:   "chrome-extension*://foo",
 		failure: true,
 	}, {
 		name:    "http with explicit port 80",

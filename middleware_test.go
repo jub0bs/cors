@@ -1398,6 +1398,96 @@ func TestMiddleware(t *testing.T) {
 					},
 				},
 			},
+		}, {
+			desc:       "insecure origin with non-HTTP scheme",
+			newHandler: newSpyHandler(200, Headers{headerVary: "foo"}, "bar"),
+			cfg: &cors.Config{
+				Origins: []string{
+					"connector://example.com",
+				},
+				Credentialed: true,
+				ExtraConfig: cors.ExtraConfig{
+					DangerouslyTolerateInsecureOrigins: true,
+				},
+			},
+			cases: []ReqTestCase{
+				{
+					desc:      "non-CORS GET request",
+					reqMethod: "GET",
+					respHeaders: Headers{
+						headerVary: headers.Origin,
+					},
+				}, {
+					desc:      "non-CORS OPTIONS request",
+					reqMethod: "OPTIONS",
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "actual GET from allowed",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "connector://example.com",
+					},
+					respHeaders: Headers{
+						headerACAO: "connector://example.com",
+						headerACAC: "true",
+						headerVary: headerOrigin,
+					},
+				}, {
+					desc:      "actual GET from disallowed",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "connector://example.com:6060",
+					},
+					respHeaders: Headers{
+						headerVary: headerOrigin,
+					},
+				}, {
+					desc:      "actual GET from invalid",
+					reqMethod: "GET",
+					reqHeaders: Headers{
+						headerOrigin: "connector://example.com/index.html",
+					},
+					respHeaders: Headers{
+						headerVary: headerOrigin,
+					},
+				}, {
+					desc:      "actual OPTIONS from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "connector://example.com",
+					},
+					respHeaders: Headers{
+						headerACAO: "connector://example.com",
+						headerACAC: "true",
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "actual OPTIONS from disallowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "connector://example.com:8080",
+					},
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				}, {
+					desc:      "preflight with GET and headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: Headers{
+						headerOrigin: "connector://example.com",
+						headerACRM:   "GET",
+						headerACRH:   "bar,baz,foo",
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					preflightFails:           true,
+					respHeaders: Headers{
+						headerVary: varyPreflightValue,
+					},
+				},
+			},
 		},
 	}
 	for _, mwtc := range cases {

@@ -25,13 +25,26 @@ var parseCases = []struct {
 			},
 		},
 	}, {
-		desc:    "prohibited scheme",
-		input:   "foo://example.com:",
+		desc:    "invalid scheme",
+		input:   "1ab://example.com",
 		failure: true,
 	}, {
-		desc:    "prohibited scheme starting with supported scheme",
-		input:   "httpsfoo://example.com:",
+		desc:    "short input without scheme-host delimiter",
+		input:   "ab",
 		failure: true,
+	}, {
+		desc:    "short input with colon but without double slash",
+		input:   "ab:",
+		failure: true,
+	}, {
+		desc:  "non-HTTP scheme",
+		input: "connector://localhost",
+		want: Origin{
+			Scheme: "connector",
+			Host: Host{
+				Value: "localhost",
+			},
+		},
 	}, {
 		desc:  "brackets containing non-IPv6 chars",
 		input: "http://[example]:90",
