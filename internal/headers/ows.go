@@ -1,5 +1,9 @@
 package headers
 
+import "github.com/jub0bs/cors/internal/util"
+
+var owsSet = util.MakeASCIISet("\t ") // see https://httpwg.org/specs/rfc9110.html#whitespace
+
 // TrimOWS trims up to n bytes of [optional whitespace (OWS)]
 // from the start of and/or the end of s.
 // If no more than n bytes of OWS are found at the start of s
@@ -30,7 +34,7 @@ func trimLeftOWS(s string, n int) (string, bool) {
 		if i > n {
 			return sCopy, false
 		}
-		if !owsSet.contains(s[0]) {
+		if !owsSet.Contains(s[0]) {
 			// Note: We could simply test s[0] == '\t' || s[0] == ' ',
 			// but relying on an asciiSet allows us to
 			//  - use one indexing operation instead of two comparisons, and
@@ -50,7 +54,7 @@ func trimRightOWS(s string, n int) (string, bool) {
 		if i > n {
 			return sCopy, false
 		}
-		if !owsSet.contains(s[len(s)-1]) {
+		if !owsSet.Contains(s[len(s)-1]) {
 			// see implementation comment trimLeftOWS
 			break
 		}
@@ -58,26 +62,4 @@ func trimRightOWS(s string, n int) (string, bool) {
 		i++
 	}
 	return s, true
-}
-
-type asciiSet [8]uint32
-
-var owsSet = makeASCIISet("\t ") // see https://httpwg.org/specs/rfc9110.html#whitespace
-
-// makeASCIISet creates a set of ASCII characters and reports whether all
-// characters in chars are ASCII.
-// All bytes in chars are assumed to be less < utf8.RuneSelf.
-// This implementation is adapted from that of the strings package.
-func makeASCIISet(chars string) asciiSet {
-	var as asciiSet
-	for i := 0; i < len(chars); i++ {
-		c := chars[i]
-		as[c/32] |= 1 << (c % 32)
-	}
-	return as
-}
-
-// contains reports whether c is inside the set.
-func (as *asciiSet) contains(c byte) bool {
-	return (as[c/32] & (1 << (c % 32))) != 0
 }
