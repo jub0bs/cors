@@ -95,7 +95,7 @@ var zeroHost Host
 
 // fastParseHost parses a raw host into an [Host] structure.
 // It returns the parsed host, the unconsumed part of the input string,
-// and a bool that indicates success of failure.
+// and a bool that indicates success or failure.
 // fastParseHost is lenient insofar as the resulting host is
 // not guaranteed to be valid.
 func fastParseHost(str string) (Host, string, bool) {
@@ -201,7 +201,7 @@ func isASCIILabelByte(b byte) bool {
 }
 
 // parsePort parses a port number. It returns the port number, the unconsumed
-// part of the input string, and a bool that indicates success of failure.
+// part of the input string, and a bool that indicates success or failure.
 func parsePort(str string) (int, string, bool) {
 	const base = 10
 	if len(str) == 0 || !isNonZeroDigit(str[0]) {

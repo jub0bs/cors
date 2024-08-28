@@ -234,7 +234,7 @@ func (hp *HostPattern) hostOnly() string {
 
 // parsePortPattern parses a port pattern. It returns the port number,
 // the unconsumed part of the input string, and a bool that indicates
-// success of failure.
+// success or failure.
 func parsePortPattern(str string) (port int, rest string, ok bool) {
 	if rest, ok = consume(portWildcard, str); ok {
 		return anyPort, rest, true
