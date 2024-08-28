@@ -48,13 +48,11 @@ type Pattern struct {
 	Port int
 }
 
-// IsDeemedInsecure returns true if any of the following conditions is
+// IsDeemedInsecure reports whether all of the following conditions are
 // fulfilled:
 //   - p's scheme is not https,
 //   - p's host is not a loopback IP address,
 //   - p's host is not localhost.
-//
-// Otherwise, IsDeemedInsecure returns false.
 func (p *Pattern) IsDeemedInsecure() bool {
 	return p.Scheme != schemeHTTPS &&
 		p.Kind != PatternKindLoopbackIP &&
