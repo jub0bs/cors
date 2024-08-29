@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -59,23 +60,19 @@ type ReqTestCase struct {
 	desc string
 	// request
 	reqMethod  string
-	reqHeaders Headers
+	reqHeaders http.Header
 	// expectations
 	preflight                bool
 	preflightPassesCORSCheck bool
 	preflightFails           bool
-	respHeaders              Headers
+	respHeaders              http.Header
 }
 
-// Headers represent a set of HTTP-header name-value pairs
-// in which there are no duplicate names.
-type Headers = map[string]string
-
-func newRequest(method string, headers Headers) *http.Request {
+func newRequest(method string, headers http.Header) *http.Request {
 	const dummyEndpoint = "https://example.com/whatever"
 	req := httptest.NewRequest(method, dummyEndpoint, nil)
 	for name, value := range headers {
-		req.Header.Add(name, value)
+		req.Header[name] = value
 	}
 	return req
 }
@@ -83,16 +80,16 @@ func newRequest(method string, headers Headers) *http.Request {
 type spyHandler struct {
 	called      atomic.Bool
 	statusCode  int
-	respHeaders Headers
+	respHeaders http.Header
 	body        string
 	handler     http.Handler
 }
 
-func newSpyHandler(statusCode int, respHeaders Headers, body string) func() http.Handler {
+func newSpyHandler(statusCode int, respHeaders http.Header, body string) func() http.Handler {
 	f := func() http.Handler {
 		h := func(w http.ResponseWriter, _ *http.Request) {
 			for k, v := range respHeaders {
-				w.Header().Add(k, v)
+				w.Header()[k] = append(w.Header()[k], v...)
 			}
 			w.WriteHeader(statusCode)
 			if len(body) > 0 {
@@ -115,17 +112,17 @@ func (s *spyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 var varyMiddleware = middleware{
-	hdrs: Headers{headerVary: "before"},
+	hdrs: http.Header{headerVary: {"before"}},
 }
 
 type middleware struct {
-	hdrs Headers
+	hdrs http.Header
 }
 
 func (m middleware) Wrap(next http.Handler) http.Handler {
 	f := func(w http.ResponseWriter, r *http.Request) {
 		for k, v := range m.hdrs {
-			w.Header().Add(k, v)
+			w.Header()[k] = append(w.Header()[k], v...)
 		}
 		next.ServeHTTP(w, r)
 	}
@@ -152,15 +149,23 @@ func assertPreflightStatus(t *testing.T, spyStatus, gotStatus int, mwtc *Middlew
 }
 
 // note: this function mutates got (to ease subsequent assertions)
-func assertResponseHeaders(t *testing.T, got http.Header, want Headers) {
+func assertResponseHeaders(t *testing.T, gotHeaders, wantHeaders http.Header) {
 	t.Helper()
-	for k, v := range want {
-		if !deleteHeaderValue(got, k, v) {
-			t.Errorf(`missing header value "%s: %s"`, k, v)
+	for name, want := range wantHeaders {
+		listBased := isListBasedField(name)
+		got := gotHeaders[name]
+		if !listBased { // name is a singleton field
+			if !slices.Equal(got, want) {
+				t.Errorf("Response header %q = %q, want %q", name, got, want)
+				continue
+			}
+			delete(gotHeaders, name)
+			continue
 		}
-		// clean up: remove headers whose values are empty but non-nil
-		if vs, found := got[k]; found && len(vs) == 0 {
-			delete(got, k)
+		// name is a list-based field
+		if !deleteKV(gotHeaders, name, want) {
+			t.Errorf("Response header %q = %q, want %q", name, got, want)
+			continue
 		}
 	}
 }
@@ -181,20 +186,76 @@ func assertBody(t *testing.T, body io.ReadCloser, want string) {
 	}
 }
 
-// deleteHeaderValue reports whether h contains a header named key
-// that contains value.
-// If that's the case, the key-value pair in question is removed from h.
-func deleteHeaderValue(h http.Header, key, value string) bool {
-	vs, ok := h[key]
-	if !ok {
+func deleteKV(h http.Header, k string, v []string) bool {
+	vh, found := h[k]
+	if !found {
 		return false
 	}
-	i := slices.Index(vs, value)
-	if i == -1 {
+	if !isListBasedField(k) { // k is a singleton field
+		return slices.Equal(h[k], v)
+	}
+	// k is a list-based field
+	v = normalize(v)
+	vh = normalize(vh)
+	if len(vh) < len(v) {
 		return false
 	}
-	h[key] = slices.Delete(vs, i, i+1)
-	return true
+	for i := 0; i <= len(vh)-len(v); i++ {
+		if !slices.Equal(v, vh[i:i+len(v)]) {
+			continue
+		}
+		vh = slices.Delete(vh, i, i+len(v))
+		h[k] = vh
+		if len(vh) == 0 {
+			delete(h, k)
+		}
+		return true
+	}
+	return false
+}
+
+// isListBasedField reports whether name is a list-based field (i.e. not a singleton field);
+// see https://httpwg.org/specs/rfc9110.html#abnf.extension.
+func isListBasedField(name string) bool {
+	switch name {
+	case "Vary":
+		// see https://www.rfc-editor.org/rfc/rfc9110#section-12.5.5
+		return true
+	case "Access-Control-Allow-Origin":
+		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
+		return false
+	case "Access-Control-Allow-Credentials":
+		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
+		return false
+	case "Access-Control-Expose-Headers":
+		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
+		return true
+	case "Access-Control-Max-Age":
+		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
+		return false
+	case "Access-Control-Allow-Methods":
+		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
+		return true
+	case "Access-Control-Allow-Headers":
+		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
+		return true
+	case "Access-Control-Allow-Private-Network":
+		// see https://wicg.github.io/private-network-access/
+		return false
+	default: // assume singleton field
+		return false
+	}
+}
+
+func normalize(s []string) (res []string) {
+	const owsChars = " \t"
+	for _, str := range s {
+		for _, e := range strings.Split(str, ",") {
+			e = strings.Trim(e, owsChars)
+			res = append(res, e)
+		}
+	}
+	return
 }
 
 func newMutatingHandler() http.Handler {
