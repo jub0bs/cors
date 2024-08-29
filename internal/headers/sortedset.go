@@ -96,8 +96,8 @@ func (set SortedSet) Accepts(values []string) bool {
 	)
 	for _, s := range values {
 		for {
-			// As a defense against maliciously long names in csv,
-			// we process only a small number of csv's leading bytes per iteration.
+			// As a defense against maliciously long names in s,
+			// we process only a small number of s's leading bytes per iteration.
 			name, s, commaFound = cutAtComma(s, maxLen)
 			name, ok = TrimOWS(name, MaxOWSBytes)
 			if !ok {
@@ -111,7 +111,7 @@ func (set SortedSet) Accepts(values []string) bool {
 				if emptyElements > MaxEmptyElements {
 					return false
 				}
-				if !commaFound { // We have now exhausted the names in csv.
+				if !commaFound { // We have now exhausted the names in s.
 					break
 				}
 				continue
@@ -120,16 +120,16 @@ func (set SortedSet) Accepts(values []string) bool {
 			if !ok {
 				return false
 			}
-			// The names in csv are expected to be sorted in lexicographical order
+			// The names in s are expected to be sorted in lexicographical order
 			// and to each appear at most once.
 			// Therefore, the positions (in set) of the names that
-			// appear in csv should form a strictly increasing sequence.
+			// appear in s should form a strictly increasing sequence.
 			// If that's not actually the case, bail out.
 			if pos <= posOfLastNameSeen {
 				return false
 			}
 			posOfLastNameSeen = pos
-			if !commaFound { // We have now exhausted the names in csv.
+			if !commaFound { // We have now exhausted the names in s.
 				break
 			}
 		}
