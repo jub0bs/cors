@@ -139,8 +139,6 @@ Here is as exhaustive a list as I could come up with:
 
 - You cannot yet migrate to Go v1.22
   (whose [semantics][go-directive] are assumed by jub0bs/cors).
-- You wish to allow [Web origins][web-origin] whose scheme is neither `http`
-  nor `https`.
 - You need more flexible origin patterns than those supported by jub0bs/cors;
   but do bear in mind that [excessive flexibility in this regard implies
   security risks][dangerous-patterns].
