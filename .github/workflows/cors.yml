@@ -9,9 +9,9 @@ jobs:
       matrix:
         go-version: [1.23]
     steps:
-      - name: Checkout Source
+      - name: Check out Source
         uses: actions/checkout@v4
-      - name: Setup Go ${{ matrix.go-version }}
+      - name: Set up Go ${{ matrix.go-version }}
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
@@ -34,12 +34,12 @@ jobs:
     name: Benchmark comparison ${{ matrix.os }} @ Go ${{ matrix.go-version }}
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout Code (previous)
+      - name: Check out Code (previous)
         uses: actions/checkout@v4
         with:
           ref: ${{ github.base_ref }}
           path: previous
-      - name: Checkout Code (new)
+      - name: Check out Code (new)
         uses: actions/checkout@v4
         with:
           path: new
