@@ -3,6 +3,7 @@ package cors_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/jub0bs/cors"
@@ -277,6 +278,88 @@ func TestMiddleware(t *testing.T) {
 						headerVary: {varyPreflightValue},
 					},
 				}, {
+					desc:      "preflight with PURGE and Authorization from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://localhost:9090"},
+						headerACRM:   {"PURGE"},
+						headerACRH:   {"authorization"},
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					respHeaders: http.Header{
+						headerACAO: {"http://localhost:9090"},
+						headerACAC: {"true"},
+						headerACAM: {"PURGE"},
+						headerACAH: {"authorization"},
+						headerACMA: {"30"},
+						headerVary: {varyPreflightValue},
+					},
+				}, {
+					desc:      "preflight with PURGE and Authorization with some empty elements from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://localhost:9090"},
+						headerACRM:   {"PURGE"},
+						headerACRH:   {",,authorization,,"},
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					respHeaders: http.Header{
+						headerACAO: {"http://localhost:9090"},
+						headerACAC: {"true"},
+						headerACAM: {"PURGE"},
+						headerACAH: {",,authorization,,"},
+						headerACMA: {"30"},
+						headerVary: {varyPreflightValue},
+					},
+				}, {
+					desc:      "preflight with PURGE and Authorization with too many empty elements from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://localhost:9090"},
+						headerACRM:   {"PURGE"},
+						headerACRH:   {"authorization" + strings.Repeat(",", 17)},
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					preflightFails:           true,
+					respHeaders: http.Header{
+						headerVary: {varyPreflightValue},
+					},
+				}, {
+					desc:      "preflight with PURGE and Authorization with some empty ACRH field lines from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://localhost:9090"},
+						headerACRM:   {"PURGE"},
+						headerACRH:   append(make([]string, 16), "authorization"),
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					respHeaders: http.Header{
+						headerACAO: {"http://localhost:9090"},
+						headerACAC: {"true"},
+						headerACAM: {"PURGE"},
+						headerACAH: append(make([]string, 16), "authorization"),
+						headerACMA: {"30"},
+						headerVary: {varyPreflightValue},
+					},
+				}, {
+					desc:      "preflight with PURGE and Authorization with too many empty ACRH field lines from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://localhost:9090"},
+						headerACRM:   {"PURGE"},
+						headerACRH:   append(make([]string, 17), "authorization"),
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					preflightFails:           true,
+					respHeaders: http.Header{
+						headerVary: {varyPreflightValue},
+					},
+				}, {
 					desc:      "preflight with GET from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
@@ -435,37 +518,106 @@ func TestMiddleware(t *testing.T) {
 						headerACMA: {"30"},
 						headerVary: {varyPreflightValue},
 					},
-				},
-			},
-		}, {
-			desc:       "no preflight caching",
-			newHandler: newSpyHandler(200, http.Header{headerVary: {"foo"}}, "bar"),
-			cfg: &cors.Config{
-				Origins:         []string{"http://localhost:9090"},
-				Credentialed:    true,
-				RequestHeaders:  []string{"*"},
-				MaxAgeInSeconds: -1,
-				ResponseHeaders: []string{"X-Foo", "X-Bar"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
-			},
-			cases: []ReqTestCase{
-				{
-					desc:      "preflight with GET and headers from allowed",
+				}, {
+					desc:      "preflight with GET and headers with some OWS from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"GET"},
-						headerACRH:   {"bar,baz,foo"},
+						headerACRH:   {"bar , baz\t, foo\t"},
 					},
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					respHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
-						headerACAH: {"bar,baz,foo"},
-						headerACMA: {"0"},
+						headerACAH: {"bar , baz\t, foo\t"},
+						headerACMA: {"30"},
+						headerVary: {varyPreflightValue},
+					},
+				}, {
+					desc:      "preflight with GET and headers with too much OWS from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://localhost:9090"},
+						headerACRM:   {"GET"},
+						headerACRH:   {"bar \t, baz\t, foo\t"},
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					respHeaders: http.Header{
+						headerACAO: {"http://localhost:9090"},
+						headerACAC: {"true"},
+						headerACAH: {"bar \t, baz\t, foo\t"},
+						headerACMA: {"30"},
+						headerVary: {varyPreflightValue},
+					},
+				}, {
+					desc:      "preflight with GET and headers with some empty elements from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://localhost:9090"},
+						headerACRM:   {"GET"},
+						headerACRH:   {"bar,baz,foo" + strings.Repeat(",", 16)},
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					respHeaders: http.Header{
+						headerACAO: {"http://localhost:9090"},
+						headerACAC: {"true"},
+						headerACAH: {"bar,baz,foo" + strings.Repeat(",", 16)},
+						headerACMA: {"30"},
+						headerVary: {varyPreflightValue},
+					},
+				}, {
+					desc:      "preflight with GET and headers with too many empty elements from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://localhost:9090"},
+						headerACRM:   {"GET"},
+						headerACRH:   {"bar,baz,foo" + strings.Repeat(",", 17)},
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					respHeaders: http.Header{
+						headerACAO: {"http://localhost:9090"},
+						headerACAC: {"true"},
+						headerACAH: {"bar,baz,foo" + strings.Repeat(",", 17)},
+						headerACMA: {"30"},
+						headerVary: {varyPreflightValue},
+					},
+				}, {
+					desc:      "preflight with GET and headers with some empty ACHR field lines from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://localhost:9090"},
+						headerACRM:   {"GET"},
+						headerACRH:   append(make([]string, 16), "bar,baz,foo"),
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					respHeaders: http.Header{
+						headerACAO: {"http://localhost:9090"},
+						headerACAC: {"true"},
+						headerACAH: append(make([]string, 16), "bar,baz,foo"),
+						headerACMA: {"30"},
+						headerVary: {varyPreflightValue},
+					},
+				}, {
+					desc:      "preflight with GET and headers with too many empty ACHR field lines from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://localhost:9090"},
+						headerACRM:   {"GET"},
+						headerACRH:   append(make([]string, 17), "bar,baz,foo"),
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					respHeaders: http.Header{
+						headerACAO: {"http://localhost:9090"},
+						headerACAC: {"true"},
+						headerACAH: append(make([]string, 17), "bar,baz,foo"),
+						headerACMA: {"30"},
 						headerVary: {varyPreflightValue},
 					},
 				},

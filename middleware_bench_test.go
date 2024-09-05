@@ -85,6 +85,14 @@ func BenchmarkMiddleware(b *testing.B) {
 						headerACRM:   {http.MethodGet},
 						headerACRH:   {"accept," + strings.Repeat(" ", http.DefaultMaxHeaderBytes) + "content-type"},
 					},
+				}, {
+					desc:      "preflight with adversarial ACRH: lots of empty ACRH lines",
+					reqMethod: http.MethodOptions,
+					reqHeaders: http.Header{
+						headerOrigin: {"https://example.com"},
+						headerACRM:   {http.MethodGet},
+						headerACRH:   make([]string, 1024),
+					},
 				},
 			},
 		}, {
@@ -210,7 +218,7 @@ func BenchmarkMiddleware(b *testing.B) {
 			cfg: &cors.Config{
 				Origins:        []string{"https://example.com"},
 				Credentialed:   true,
-				RequestHeaders: []string{"*", "Authorization"},
+				RequestHeaders: []string{"*"}, //, "Authorization"},
 			},
 			cases: []ReqTestCase{
 				{
@@ -236,6 +244,14 @@ func BenchmarkMiddleware(b *testing.B) {
 						headerOrigin: {"https://example.com"},
 						headerACRM:   {http.MethodGet},
 						headerACRH:   {"a," + strings.Repeat(" ", http.DefaultMaxHeaderBytes) + "b"},
+					},
+				}, {
+					desc:      "preflight with adversarial ACRH: lots of empty ACRH lines",
+					reqMethod: http.MethodOptions,
+					reqHeaders: http.Header{
+						headerOrigin: {"https://example.com"},
+						headerACRM:   {http.MethodGet},
+						headerACRH:   make([]string, 1024),
 					},
 				}, {
 					desc:      "actual",
@@ -299,6 +315,14 @@ func BenchmarkMiddleware(b *testing.B) {
 						headerOrigin: {"https://example.com"},
 						headerACRM:   {http.MethodGet},
 						headerACRH:   {"a," + strings.Repeat(" ", http.DefaultMaxHeaderBytes) + "b"},
+					},
+				}, {
+					desc:      "preflight with adversarial ACRH: lots of empty ACRH lines",
+					reqMethod: http.MethodOptions,
+					reqHeaders: http.Header{
+						headerOrigin: {"https://example.com"},
+						headerACRM:   {http.MethodGet},
+						headerACRH:   make([]string, 1024),
 					},
 				}, {
 					desc:      "actual",
