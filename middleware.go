@@ -21,13 +21,15 @@ import (
 // Middleware have a debug mode,
 // which can be toggled by calling their [*Middleware.SetDebug] method.
 // You should turn debug mode on whenever you're struggling to troubleshoot
-// some [CORS-preflight] issue.
+// some [CORS-preflight] issue;
+// however, be aware that keeping debug mode on may lead to observably poorer
+// middleware performance in the face of some adversarial preflight requests.
 // When debug mode is off, the information that the middleware includes in
 // preflight responses is minimal, for efficiency and confidentiality reasons;
 // however, when preflight fails, the browser then lacks enough contextual
 // information about the failure to produce a helpful CORS error message.
 // In contrast, when debug mode is on and preflight fails,
-// the middleware includes just enough contextual information about the
+// the middleware includes enough contextual information about the
 // preflight failure in the response for browsers to produce
 // a helpful CORS error message.
 // The debug mode of a passthrough middleware is invariably off.
@@ -470,6 +472,11 @@ func (icfg *internalConfig) processACRH(
 		// because the Fetch standard requires browsers to handle multiple ACAH
 		// field lines;
 		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
+		//
+		// Reflecting ACRH into ACAH isn't ideal for performance in cases where
+		// ACRH is full of junk, but there isn't much else we can do, other than
+		// discourage users from both enabling credentialed access and allowing
+		// all request-header names.
 		buf[headers.ACAH] = acrh
 		return true
 	}
@@ -484,6 +491,11 @@ func (icfg *internalConfig) processACRH(
 		// because the Fetch standard requires browsers to handle multiple ACAH
 		// field lines;
 		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
+		//
+		// Reflecting ACRH into ACAH isn't ideal for performance in cases where
+		// ACRH is full of junk, but there isn't much else we can do, other than
+		// discourage users from keeping debug mode on for extended periods of
+		// time.
 		buf[headers.ACAH] = acrh
 		return true
 	}

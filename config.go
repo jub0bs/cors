@@ -230,6 +230,10 @@ import (
 //	Credentialed:   true,
 //	RequestHeaders: []string{"*"}, // allows all request-header names
 //
+// If you can, you should avoid this conjunction of enabling credentialed access
+// and allowing all request-header names; otherwise, middleware performance may
+// indeed suffer in the face of some adversarial preflight requests.
+//
 // For both technical and security reasons, the asterisk
 // has a different meaning when credentialed access is disabled;
 // it then denotes all request-header names other than [Authorization]:
