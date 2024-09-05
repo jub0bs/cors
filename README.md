@@ -28,7 +28,7 @@ that implement CORS.
 go get github.com/jub0bs/cors
 ```
 
-jub0bs/cors requires Go 1.22 or above.
+jub0bs/cors requires Go 1.23 or above.
 
 ## Example
 
