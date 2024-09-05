@@ -137,8 +137,6 @@ Despite all of jub0bs/cors's goodness, you may still have valid reasons
 for sticking with [rs/cors][rs-cors], at least for the time being.
 Here is as exhaustive a list as I could come up with:
 
-- You cannot yet migrate to Go v1.22
-  (whose [semantics][go-directive] are assumed by jub0bs/cors).
 - You need more flexibility than that offered by jub0bs/cors's origin patterns;
   but do bear in mind that [excessive flexibility in this regard implies
   security risks][dangerous-patterns].
@@ -152,7 +150,6 @@ Here is as exhaustive a list as I could come up with:
 [fcors]: https://github.com/jub0bs/fcors
 [fearless-cors]: https://jub0bs.com/posts/2023-02-08-fearless-cors/
 [funcopts]: https://www.youtube.com/watch?v=5uM6z7RnReE
-[go-directive]: https://go.dev/ref/mod#go-mod-file-go
 [golang]: https://go.dev/
 [license]: https://github.com/jub0bs/cors/blob/main/LICENSE
 [logging]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/#debug-mode
