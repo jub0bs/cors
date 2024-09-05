@@ -68,7 +68,7 @@ func main() {
   corsMw.SetDebug(true) // turn debug mode on (optional)
 
   api := http.NewServeMux()
-  api.HandleFunc("GET /users", handleUsersGet)
+  api.HandleFunc("GET  /users", handleUsersGet)
   api.HandleFunc("POST /users", handleUsersPost)
   mux.Handle("/api/", http.StripPrefix("/api", corsMw.Wrap(api))) // note: method-less pattern here
 
