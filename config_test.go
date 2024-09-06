@@ -3,6 +3,7 @@ package cors_test
 import (
 	"encoding/json"
 	"io"
+	"iter"
 	"net/http"
 	"reflect"
 	"sort"
@@ -580,7 +581,10 @@ func TestIncorrectConfig(t *testing.T) {
 				t.Error("got nil error; want non-nil error")
 				return
 			}
-			msgs := flatten(err)
+			var msgs []string
+			for err := range allLeavesIn(err) {
+				msgs = append(msgs, err.Error())
+			}
 			sort.Strings(msgs) // the order doesn't matter
 			sort.Strings(tc.msgs)
 			res, same := diff(msgs, tc.msgs)
@@ -595,20 +599,25 @@ func TestIncorrectConfig(t *testing.T) {
 	}
 }
 
-func flatten(err error) []string {
-	return flattenRec(err, nil)
-}
-
-func flattenRec(err error, res []string) []string {
-	type wrapper interface{ Unwrap() []error }
-	errs, ok := err.(wrapper)
-	if !ok {
-		return append(res, err.Error())
+func allLeavesIn(err error) iter.Seq[error] {
+	return func(yield func(error) bool) {
+		switch err := err.(type) {
+		// Note that there's no need for any "interface { Unwrap() error }" case
+		// because nowhere do we "wrap" errors; we only ever "join" them.
+		case interface{ Unwrap() []error }:
+			for _, err := range err.Unwrap() {
+				for err := range allLeavesIn(err) {
+					if !yield(err) {
+						return
+					}
+				}
+			}
+		default:
+			if !yield(err) {
+				return
+			}
+		}
 	}
-	for _, err := range errs.Unwrap() {
-		res = flattenRec(err, res)
-	}
-	return res
 }
 
 // diff reports whether x and y contain the same elements in the same order
