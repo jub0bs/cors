@@ -80,7 +80,7 @@ func TestIncorrectConfig(t *testing.T) {
 			desc: "no origin pattern specified",
 			cfg:  &cors.Config{},
 			msgs: []string{
-				`cors: at least one origin pattern must be specified`,
+				`cors: at least one origin must be allowed`,
 			},
 		}, {
 			desc: "null origin",

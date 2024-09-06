@@ -561,7 +561,7 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 
 func (icfg *internalConfig) validateOrigins(patterns []string) error {
 	if len(patterns) == 0 {
-		const msg = "at least one origin pattern must be specified"
+		const msg = "at least one origin must be allowed"
 		return util.NewError(msg)
 	}
 	var (
