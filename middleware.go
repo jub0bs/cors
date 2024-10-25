@@ -97,10 +97,12 @@ func (m *Middleware) Reconfigure(cfg *Config) error {
 		return err
 	}
 	m.mu.Lock()
-	m.icfg = icfg
-	// If the desired middleware is passthrough, unset m's debug mode;
-	// otherwise, leave it unchanged.
-	m.debug = cfg != nil && m.debug
+	{
+		m.icfg = icfg
+		// If the desired middleware is passthrough, unset m's debug mode;
+		// otherwise, leave it unchanged.
+		m.debug = cfg != nil && m.debug
+	}
 	m.mu.Unlock()
 	return nil
 }
@@ -108,9 +110,13 @@ func (m *Middleware) Reconfigure(cfg *Config) error {
 // Wrap applies the CORS middleware to the specified handler.
 func (m *Middleware) Wrap(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var icfg *internalConfig
+		var debug bool
 		m.mu.RLock()
-		icfg := m.icfg
-		debug := m.debug
+		{
+			icfg = m.icfg
+			debug = m.debug
+		}
 		m.mu.RUnlock()
 		if icfg == nil { // passthrough middleware
 			h.ServeHTTP(w, r)
@@ -511,7 +517,9 @@ func (icfg *internalConfig) processACRH(
 // its debug mode is invariably off and SetDebug is a no-op.
 func (m *Middleware) SetDebug(b bool) {
 	m.mu.Lock()
-	m.debug = b
+	{
+		m.debug = b
+	}
 	m.mu.Unlock()
 }
 
@@ -529,7 +537,9 @@ func (m *Middleware) SetDebug(b bool) {
 func (m *Middleware) Config() *Config {
 	var icfg *internalConfig
 	m.mu.RLock()
-	icfg = m.icfg
+	{
+		icfg = m.icfg
+	}
 	m.mu.RUnlock()
 	return newConfig(icfg)
 }
