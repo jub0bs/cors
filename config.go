@@ -373,9 +373,12 @@ type Config struct {
 //
 // Specifying a non-zero status code outside the [2xx range] is prohibited.
 //
-// Setting a custom preflight-success status is useful
-// when some of your clients choke on preflight responses that are meant
-// to be successful but have a 2xx status code other than 200.
+// According to [the Fetch standard], any 2xx status code is acceptable
+// to mark a prelight response as successful;
+// however, some rare non-compliant user agents fail preflight when the
+// preflight response has a status code other than 200 (e.g. 204).
+// If some of your clients rely on such non-compliant user agents,
+// you should set a custom preflight-success status of 200.
 //
 // # PrivateNetworkAccess
 //
@@ -442,6 +445,7 @@ type Config struct {
 // [no-cors mode]: https://fetch.spec.whatwg.org/#concept-request-mode
 // [public suffix]: https://publicsuffix.org/
 // [security reasons]: https://developer.chrome.com/blog/private-network-access-preflight/#no-cors-mode
+// [the Fetch standard]: https://fetch.spec.whatwg.org
 // [the talk he gave at AppSec EU 2017]: https://www.youtube.com/watch?v=wgkj4ZgxI4c&t=1305s
 type ExtraConfig struct {
 	_ [0]func() // precludes comparability and unkeyed struct literals
