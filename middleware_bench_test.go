@@ -355,7 +355,15 @@ func BenchmarkMiddleware(b *testing.B) {
 
 		// benchmark config
 		f = func(b *testing.B) {
+			if mw == nil { // in case subbenchmark 'initialization' wasn't run
+				var err error
+				mw, err = cors.NewMiddleware(*mwbc.cfg)
+				if err != nil {
+					b.Fatal(err)
+				}
+			}
 			b.ReportAllocs()
+			b.ResetTimer()
 			for range b.N {
 				mw.Config()
 			}
