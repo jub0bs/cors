@@ -11,7 +11,7 @@ import (
 //
 // A good rule of thumb for avoiding this pitfall consists in
 // registering the result of Wrap,
-// not for a method-full pattern (e.g. "GET /api/dogs"),
+// not for a "method-full" pattern (e.g. "GET /api/dogs"),
 // but for a "method-less" pattern; see the other example.
 func ExampleMiddleware_Wrap_incorrect() {
 	corsMw, err := cors.NewMiddleware(cors.Config{
