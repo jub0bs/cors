@@ -101,6 +101,21 @@ If no error occurred, the server is now running on `localhost:8080` and
 the various resources accessible under the `/api/` path are now configured
 for CORS as desired.
 
+## A note about testing
+
+Be aware that, for performance reasons, CORS middleware produced by this
+library closely adheres to guarantees (provided by [the Fetch standard][fetch])
+about the format of some CORS headers. In particular, if you wish to write
+tests that exercise CORS middleware via CORS-preflight requests that include an
+[`Access-Control-Request-Headers` header][acrh], keep in mind that you should
+specify the comma-separated elements in that header value
+
+- in lower case,
+- in lexicographical order,
+- without repetitions.
+
+Otherwise, the CORS middleware will cause preflight to fail.
+
 ## Documentation
 
 The documentation is available on [pkg.go.dev][pkgsite].
@@ -143,12 +158,14 @@ Here is as exhaustive a list as I could come up with:
 - You want to log a message for every single request processed
   by your CORS middleware; [but do you, really?][logging]
 
+[acrh]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Headers
 [a-better-cors-lib]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/
 [cors-benchmarks]: https://github.com/jub0bs/cors-benchmarks
 [cors-examples]: https://github.com/jub0bs/cors-examples
 [dangerous-patterns]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#disallow-dangerous-origin-patterns
 [fcors]: https://github.com/jub0bs/fcors
 [fearless-cors]: https://jub0bs.com/posts/2023-02-08-fearless-cors/
+[fetch]: https://fetch.spec.whatwg.org
 [funcopts]: https://www.youtube.com/watch?v=5uM6z7RnReE
 [golang]: https://go.dev/
 [license]: https://github.com/jub0bs/cors/blob/main/LICENSE
