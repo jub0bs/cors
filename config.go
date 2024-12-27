@@ -444,7 +444,7 @@ type Config struct {
 // [loopback IP address]: https://www.rfc-editor.org/rfc/rfc5735#section-3
 // [no-cors mode]: https://fetch.spec.whatwg.org/#concept-request-mode
 // [public suffix]: https://publicsuffix.org/
-// [security reasons]: https://developer.chrome.com/blog/private-network-access-preflight/#no-cors-mode
+// [security reasons]: https://developer.chrome.com/blog/private-network-access-preflight/#no-cors_mode
 // [the Fetch standard]: https://fetch.spec.whatwg.org
 // [the talk he gave at AppSec EU 2017]: https://www.youtube.com/watch?v=wgkj4ZgxI4c&t=1305s
 type ExtraConfig struct {
@@ -822,7 +822,7 @@ func (icfg *internalConfig) validate() error {
 		}
 		if pna {
 			// see note in
-			// https://developer.chrome.com/blog/private-network-access-preflight/#no-cors-mode
+			// https://developer.chrome.com/blog/private-network-access-preflight/#no-cors_mode
 			const msg = "for security reasons, you cannot both allow all " +
 				"origins and enable Private-Network Access"
 			errs = append(errs, util.NewError(msg))
