@@ -436,7 +436,7 @@ var manyOrigins []string
 
 func init() {
 	const n = 100
-	for i := 0; i < n; i++ {
+	for i := range n {
 		manyOrigins = append(
 			manyOrigins,
 			// https

@@ -9,7 +9,7 @@ type ASCIISet [8]uint32
 // This implementation is adapted from that of the strings package.
 func MakeASCIISet(chars string) ASCIISet {
 	var as ASCIISet
-	for i := 0; i < len(chars); i++ {
+	for i := range len(chars) {
 		c := chars[i]
 		as[c/32] |= 1 << (c % 32)
 	}

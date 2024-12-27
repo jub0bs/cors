@@ -36,7 +36,7 @@ func TestImpossibilityOfUnkeyedStructLiterals(t *testing.T) {
 	for _, typ := range cfgTypes {
 		f := func(t *testing.T) {
 			var unexportedFields bool
-			for i := 0; i < typ.NumField(); i++ {
+			for i := range typ.NumField() {
 				if !typ.Field(i).IsExported() {
 					unexportedFields = true
 					break

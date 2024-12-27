@@ -15,7 +15,7 @@ func TestASCIISet(t *testing.T) {
 	for _, tc := range cases {
 		// create a reference set
 		set := make(map[byte]struct{}, len(tc.elems))
-		for i := 0; i < len(tc.elems); i++ {
+		for i := range len(tc.elems) {
 			set[tc.elems[i]] = struct{}{}
 		}
 		asciiset := MakeASCIISet(tc.elems)

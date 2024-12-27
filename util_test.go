@@ -200,7 +200,7 @@ func deleteKV(h http.Header, k string, v []string) bool {
 	if len(vh) < len(v) {
 		return false
 	}
-	for i := 0; i <= len(vh)-len(v); i++ {
+	for i := range len(vh) - len(v) + 1 {
 		if !slices.Equal(v, vh[i:i+len(v)]) {
 			continue
 		}

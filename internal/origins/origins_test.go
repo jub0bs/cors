@@ -248,7 +248,7 @@ func BenchmarkParse(b *testing.B) {
 		f := func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				Parse(c.input)
 			}
 		}
