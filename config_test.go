@@ -6,6 +6,7 @@ import (
 	"iter"
 	"net/http"
 	"reflect"
+	"slices"
 	"sort"
 	"testing"
 
@@ -67,6 +68,173 @@ func TestPossibilityToMarshalConfig(t *testing.T) {
 	enc := json.NewEncoder(io.Discard)
 	if err := enc.Encode(cfg); err != nil {
 		t.Error("cors.Config cannot be marshaled to JSON, but should be")
+	}
+}
+
+func TestConfig(t *testing.T) {
+	cases := []struct {
+		desc string
+		cfg  *cors.Config
+		want *cors.Config
+	}{
+		{
+			desc: "passthrough",
+			cfg:  nil,
+		}, {
+			desc: "anonymous allow all",
+			cfg: &cors.Config{
+				Origins:         []string{"*"},
+				Methods:         []string{"*"},
+				RequestHeaders:  []string{"authoriZation", "*"},
+				ResponseHeaders: []string{"*"},
+			},
+			want: &cors.Config{
+				Origins:         []string{"*"},
+				Methods:         []string{"*"},
+				RequestHeaders:  []string{"*", "Authorization"},
+				ResponseHeaders: []string{"*"},
+			},
+		}, {
+			desc: "discrete methods discrete headers zero max age PNAnoCORS",
+			cfg: &cors.Config{
+				Origins: []string{
+					"https://example.com",
+					"https://example.com",
+				},
+				RequestHeaders:  []string{"x-foO", "x-Bar", "authoRizaTion"},
+				MaxAgeInSeconds: -1,
+				ResponseHeaders: []string{"x-FOO", "X-baR", "x-foo"},
+				ExtraConfig: cors.ExtraConfig{
+					PrivateNetworkAccessInNoCORSModeOnly: true,
+				},
+			},
+			want: &cors.Config{
+				Origins:         []string{"https://example.com"},
+				RequestHeaders:  []string{"Authorization", "X-Bar", "X-Foo"},
+				MaxAgeInSeconds: -1,
+				ResponseHeaders: []string{"X-Bar", "X-Foo"},
+				ExtraConfig: cors.ExtraConfig{
+					PrivateNetworkAccessInNoCORSModeOnly: true,
+				},
+			},
+		}, {
+			desc: "credentialed all req headers",
+			cfg: &cors.Config{
+				Origins: []string{
+					"http://example.com",
+					"https://*.example.com:8080",
+					"https://*.foo.example.com:8080",
+				},
+				Credentialed:    true,
+				Methods:         []string{"POST", "PUT", "DELETE", "GET"},
+				RequestHeaders:  []string{"*"},
+				MaxAgeInSeconds: 30,
+				ResponseHeaders: []string{"x-FOO", "X-baR", "x-foo"},
+				ExtraConfig: cors.ExtraConfig{
+					PreflightSuccessStatus:             279,
+					PrivateNetworkAccess:               true,
+					DangerouslyTolerateInsecureOrigins: true,
+				},
+			},
+			want: &cors.Config{
+				Origins: []string{
+					"http://example.com",
+					"https://*.example.com:8080",
+				},
+				Credentialed:    true,
+				Methods:         []string{"DELETE", "PUT"},
+				RequestHeaders:  []string{"*"},
+				MaxAgeInSeconds: 30,
+				ResponseHeaders: []string{"X-Bar", "X-Foo"},
+				ExtraConfig: cors.ExtraConfig{
+					PreflightSuccessStatus:             279,
+					PrivateNetworkAccess:               true,
+					DangerouslyTolerateInsecureOrigins: true,
+				},
+			},
+		},
+	}
+	for _, tc := range cases {
+		f := func(t *testing.T) {
+			t.Parallel()
+			var (
+				mw  *cors.Middleware
+				err error
+			)
+			if tc.cfg == nil {
+				mw = new(cors.Middleware)
+			} else {
+				mw, err = cors.NewMiddleware(*tc.cfg)
+				if err != nil {
+					t.Fatalf("failure to build CORS middleware: %v", err)
+				}
+			}
+			got := mw.Config()
+			assertConfigEqual(t, got, tc.want)
+		}
+		t.Run(tc.desc, f)
+	}
+}
+
+func assertConfigEqual(t *testing.T, got, want *cors.Config) {
+	t.Helper()
+	if got == nil && want != nil {
+		t.Fatal("got nil *Config; want non-nil")
+	}
+	if got != nil && want == nil {
+		t.Fatal("got non-nil *Config; want nil")
+	}
+	if want == nil {
+		return
+	}
+	// origins
+	if !slices.Equal(got.Origins, want.Origins) {
+		t.Errorf("Origins: got %q; want %q", got.Origins, want.Origins)
+	}
+	// credentialed
+	if got.Credentialed != want.Credentialed {
+		const tmpl = "Credentialed: got %t; want %t"
+		t.Errorf(tmpl, got.Credentialed, want.Credentialed)
+	}
+	// methods
+	if !slices.Equal(got.Methods, want.Methods) {
+		t.Errorf("Methods: got %q; want %q", got.Methods, want.Methods)
+	}
+	// request headers
+	if !slices.Equal(got.RequestHeaders, want.RequestHeaders) {
+		const tmpl = "RequestHeaders: got %q; want %q"
+		t.Errorf(tmpl, got.RequestHeaders, want.RequestHeaders)
+	}
+	// max age
+	if got.MaxAgeInSeconds != want.MaxAgeInSeconds {
+		const tmpl = "MaxAgeInSeconds: got %d; want %d"
+		t.Errorf(tmpl, got.MaxAgeInSeconds, want.MaxAgeInSeconds)
+	}
+	// response headers
+	if !slices.Equal(got.ResponseHeaders, want.ResponseHeaders) {
+		const tmpl = "ResponseHeaders: got %q; want %q"
+		t.Errorf(tmpl, got.ResponseHeaders, want.ResponseHeaders)
+	}
+	// extra config
+	if got.PreflightSuccessStatus != want.PreflightSuccessStatus {
+		const tmpl = "PreflightSuccessStatus: got %d; want %d"
+		t.Errorf(tmpl, got.PreflightSuccessStatus, want.PreflightSuccessStatus)
+	}
+	if got.PrivateNetworkAccess != want.PrivateNetworkAccess {
+		const tmpl = "PrivateNetworkAccess: got %t; want %t"
+		t.Errorf(tmpl, got.PrivateNetworkAccess, want.PrivateNetworkAccess)
+	}
+	if got.PrivateNetworkAccessInNoCORSModeOnly != want.PrivateNetworkAccessInNoCORSModeOnly {
+		const tmpl = "PrivateNetworkAccessInNoCORSModeOnly: got %t; want %t"
+		t.Errorf(tmpl, got.PrivateNetworkAccessInNoCORSModeOnly, want.PrivateNetworkAccessInNoCORSModeOnly)
+	}
+	if got.DangerouslyTolerateInsecureOrigins != want.DangerouslyTolerateInsecureOrigins {
+		const tmpl = "DangerouslyTolerateInsecureOrigins: got %t; want %t"
+		t.Errorf(tmpl, got.DangerouslyTolerateInsecureOrigins, want.DangerouslyTolerateInsecureOrigins)
+	}
+	if got.DangerouslyTolerateSubdomainsOfPublicSuffixes != want.DangerouslyTolerateSubdomainsOfPublicSuffixes {
+		const tmpl = "DangerouslyTolerateSubdomainsOfPublicSuffixes: got %t; want %t"
+		t.Errorf(tmpl, got.DangerouslyTolerateSubdomainsOfPublicSuffixes, want.DangerouslyTolerateSubdomainsOfPublicSuffixes)
 	}
 }
 
