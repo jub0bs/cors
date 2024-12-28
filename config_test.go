@@ -152,6 +152,25 @@ func TestConfig(t *testing.T) {
 					DangerouslyTolerateInsecureOrigins: true,
 				},
 			},
+		}, {
+			desc: "safelisted response-header names",
+			cfg: &cors.Config{
+				Origins: []string{"http://example.com"},
+				ResponseHeaders: []string{
+					"Cache-Control",
+					"content-Language",
+					"content-lEngth",
+					"content-typE",
+					"expireS",
+					"lasT-modified",
+					"prAgmA",
+					"X-Foo",
+				},
+			},
+			want: &cors.Config{
+				Origins:         []string{"http://example.com"},
+				ResponseHeaders: []string{"X-Foo"},
+			},
 		},
 	}
 	for _, tc := range cases {
@@ -508,15 +527,6 @@ func TestIncorrectConfig(t *testing.T) {
 			},
 			msgs: []string{
 				`cors: prohibited response-header name "Access-Control-Request-Method"`,
-			},
-		}, {
-			desc: "safelisted response-header name",
-			cfg: &cors.Config{
-				Origins:         []string{"https://example.com"},
-				ResponseHeaders: []string{"Cache-Control"},
-			},
-			msgs: []string{
-				`cors: response-header name "Cache-Control" needs not be explicitly exposed`,
 			},
 		}, {
 			desc: "wildcard in addition to other response-header name",

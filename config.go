@@ -309,11 +309,14 @@ import (
 // The CORS protocol defines a number of so-called
 // "[CORS-safelisted response-header names]",
 // which need not be explicitly specified as exposed.
+// As such, explicitly specifying them as exposed in your CORS configuration
+// is permitted but never actually necessary.
+//
 // The CORS protocol also defines a number of so-called
 // "[forbidden response-header names]",
 // which cannot be exposed to clients.
-// Accordingly, specifying one or more safelisted or forbidden response-header
-// name(s) is prohibited.
+// Accordingly, specifying one or more forbidden response-header name(s) is
+// prohibited.
 //
 // Finally, some header names that have no place in a response are prohibited:
 //
@@ -774,9 +777,7 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 			continue
 		}
 		if headers.IsSafelistedResponseHeaderName(normalized) {
-			const tmpl = "response-header name %q needs not be explicitly exposed"
-			err := util.Errorf(tmpl, name)
-			errs = append(errs, err)
+			// silently tolerate safelisted response-header names
 			continue
 		}
 		exposedHeaders = append(exposedHeaders, normalized)
