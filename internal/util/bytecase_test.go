@@ -37,3 +37,39 @@ func TestByteUppercase(t *testing.T) {
 		}
 	}
 }
+
+func FuzzUpperThenLowerHasNoEffectAfterLower(f *testing.F) {
+	testcases := []string{
+		"Authorization",
+		"Foo-42",
+	}
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+	f.Fuzz(func(t *testing.T, orig string) {
+		lower := util.ByteLowercase(orig)
+		lower2 := util.ByteLowercase(util.ByteUppercase(lower))
+		if lower != lower2 {
+			const tmpl = "L(%q): %q; L(U(L(%q))): %q"
+			t.Errorf(tmpl, orig, lower, orig, lower2)
+		}
+	})
+}
+
+func FuzzLowerThenUpperHasNoEffectAfterUpper(f *testing.F) {
+	testcases := []string{
+		"Authorization",
+		"Foo-42",
+	}
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+	f.Fuzz(func(t *testing.T, orig string) {
+		upper := util.ByteUppercase(orig)
+		upper2 := util.ByteUppercase(util.ByteLowercase(upper))
+		if upper != upper2 {
+			const tmpl = "U(%q): %q; U(L(U(%q))): %q"
+			t.Errorf(tmpl, orig, upper, orig, upper2)
+		}
+	})
+}
