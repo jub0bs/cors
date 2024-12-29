@@ -93,11 +93,11 @@ func (set SortedSet) Accepts(values []string) bool {
 		emptyElements     int
 		ok                bool
 	)
-	for _, s := range values {
+	for _, str := range values {
 		for {
 			// As a defense against maliciously long names in s,
 			// we process only a small number of s's leading bytes per iteration.
-			name, s, commaFound = cutAtComma(s, maxLen)
+			name, str, commaFound = cutAtComma(str, maxLen)
 			name, ok = TrimOWS(name, MaxOWSBytes)
 			if !ok {
 				return false
@@ -145,14 +145,14 @@ const (
 // first n bytes of s, returning the parts of s before and after the comma.
 // The found result reports whether a comma appears in that portion of s.
 // If no comma appears in that portion of s, cutAtComma returns s, "", false.
-func cutAtComma(s string, n int) (before, after string, found bool) {
+func cutAtComma(str string, n int) (before, after string, found bool) {
 	// Note: this implementation draws inspiration from strings.Cut's.
-	end := min(len(s), n)
-	if i := strings.IndexByte(s[:end], ','); i >= 0 {
-		after = s[i+1:] // deal with this first to save one bounds check
-		return s[:i], after, true
+	end := min(len(str), n)
+	if i := strings.IndexByte(str[:end], ','); i >= 0 {
+		after = str[i+1:] // deal with this first to save one bounds check
+		return str[:i], after, true
 	}
-	return s, "", false
+	return str, "", false
 }
 
 // ToSortedSlice returns a slice containing set's elements sorted in
