@@ -102,11 +102,6 @@ import (
 //	Credentialed: true,
 //	Origins:      []string{"*"}, // prohibited
 //
-// Specifying origin patterns in addition to the single-asterisk
-// origin pattern is prohibited:
-//
-//	Origins: []string{"*", "https://example.com"}, // prohibited
-//
 // A leading asterisk followed by a period (.) in a host pattern
 // denotes exactly one arbitrary DNS label
 // or several period-separated arbitrary DNS labels.
@@ -600,11 +595,6 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 			}
 		}
 		originPatterns = append(originPatterns, pattern)
-	}
-	if icfg.allowAnyOrigin && len(originPatterns) > 0 {
-		// discard the errors accumulated in errs and return a single error
-		const msg = "specifying origin patterns in addition to * is prohibited"
-		return util.NewError(msg)
 	}
 	icfg.tmp.insecureOriginPatterns = insecureOriginPatterns
 	icfg.tmp.publicSuffixes = publicSuffixes

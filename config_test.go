@@ -153,6 +153,21 @@ func TestConfig(t *testing.T) {
 				},
 			},
 		}, {
+			desc: "discrete origin patterns in addition to wildcard",
+			cfg: &cors.Config{
+				Origins: []string{
+					"http://example.com",
+					"http://example.com",
+					"https://*.example.com",
+					"https://*.example.com",
+					"*",
+					"*",
+				},
+			},
+			want: &cors.Config{
+				Origins: []string{"*"},
+			},
+		}, {
 			desc: "safelisted response-header names",
 			cfg: &cors.Config{
 				Origins: []string{"http://example.com"},
@@ -307,28 +322,6 @@ func TestIncorrectConfig(t *testing.T) {
 			},
 			msgs: []string{
 				`cors: invalid origin pattern "http://example.com:6060/path"`,
-			},
-		}, {
-			desc: "wildcard origin in addition to other origin pattern",
-			cfg: &cors.Config{
-				Origins: []string{
-					"*",
-					"https://example.com",
-				},
-			},
-			msgs: []string{
-				`cors: specifying origin patterns in addition to * is prohibited`,
-			},
-		}, {
-			desc: "origin pattern in addition to wildcard origin",
-			cfg: &cors.Config{
-				Origins: []string{
-					"https://example.com",
-					"*",
-				},
-			},
-			msgs: []string{
-				`cors: specifying origin patterns in addition to * is prohibited`,
 			},
 		}, {
 			desc: "empty method name",
