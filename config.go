@@ -644,7 +644,7 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 			errs = append(errs, err)
 			continue
 		}
-		allowedMethods.Add(name)
+		allowedMethods.Add(methods.Normalize(name))
 	}
 	if icfg.allowAnyMethod && len(allowedMethods) > 0 {
 		// discard the errors accumulated in errs and return a single error

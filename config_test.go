@@ -171,6 +171,28 @@ func TestConfig(t *testing.T) {
 				Origins:         []string{"http://example.com"},
 				ResponseHeaders: []string{"X-Foo"},
 			},
+		}, {
+			desc: "browser-normalized methods",
+			cfg: &cors.Config{
+				Origins: []string{"http://example.com"},
+				Methods: []string{
+					"Get", "get", "gET",
+					"Head", "head", "hEAD",
+					"Post", "post", "pOST",
+					//
+					"getaway",
+					"headstrong",
+					"postal",
+				},
+			},
+			want: &cors.Config{
+				Origins: []string{"http://example.com"},
+				Methods: []string{
+					"getaway",
+					"headstrong",
+					"postal",
+				},
+			},
 		},
 	}
 	for _, tc := range cases {

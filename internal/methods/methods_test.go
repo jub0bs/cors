@@ -94,3 +94,40 @@ func TestIsSafelisted(t *testing.T) {
 		t.Run(tc.name, f)
 	}
 }
+
+func TestNormalize(t *testing.T) {
+	cases := []struct {
+		name string
+		want string
+	}{
+		{name: "DELETE", want: "DELETE"},
+		{name: "GET", want: "GET"},
+		{name: "HEAD", want: "HEAD"},
+		{name: "OPTIONS", want: "OPTIONS"},
+		{name: "POST", want: "POST"},
+		{name: "PUT", want: "PUT"},
+		//
+		{name: "Delete", want: "DELETE"},
+		{name: "geT", want: "GET"},
+		{name: "heAd", want: "HEAD"},
+		{name: "OPTIONs", want: "OPTIONS"},
+		{name: "PosT", want: "POST"},
+		{name: "put", want: "PUT"},
+		//
+		{name: "PATCH", want: "PATCH"},
+		{name: "patch", want: "patch"},
+		{name: "QUERY", want: "QUERY"},
+		{name: "query", want: "query"},
+		{name: "chicken", want: "chicken"},
+	}
+	for _, tc := range cases {
+		f := func(t *testing.T) {
+			got := Normalize(tc.name)
+			if got != tc.want {
+				const tmpl = "%q: got %q; want %q"
+				t.Errorf(tmpl, tc.name, got, tc.want)
+			}
+		}
+		t.Run(tc.name, f)
+	}
+}

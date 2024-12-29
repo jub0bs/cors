@@ -21,3 +21,19 @@ func TestByteLowercase(t *testing.T) {
 		}
 	}
 }
+
+func TestByteUppercase(t *testing.T) {
+	cases := []struct {
+		str  string
+		want string
+	}{
+		{"Authorization", "AUTHORIZATION"},
+		{"Foo-42", "FOO-42"},
+	}
+	for _, tc := range cases {
+		got := util.ByteUppercase(tc.str)
+		if got != tc.want {
+			t.Errorf("%q: got %q; want %q", tc.str, got, tc.want)
+		}
+	}
+}

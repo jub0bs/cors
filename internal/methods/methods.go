@@ -42,3 +42,23 @@ var safelistedMethods = util.NewSet(
 	http.MethodHead,
 	http.MethodPost,
 )
+
+// Normalize normalizes method, [per the Fetch standard].
+//
+// [per the Fetch standard]: https://fetch.spec.whatwg.org/#concept-method-normalize
+func Normalize(method string) string {
+	uppercase := util.ByteUppercase(method)
+	if browserNormalizedMethods.Contains(uppercase) {
+		return uppercase
+	}
+	return method
+}
+
+var browserNormalizedMethods = util.NewSet(
+	http.MethodDelete,
+	http.MethodGet,
+	http.MethodHead,
+	http.MethodOptions,
+	http.MethodPost,
+	http.MethodPut,
+)
