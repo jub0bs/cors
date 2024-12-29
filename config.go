@@ -876,7 +876,7 @@ func newConfig(icfg *internalConfig) *Config {
 	// request headers
 	switch {
 	case !icfg.credentialed && icfg.asteriskReqHdrs && icfg.allowAuthorization:
-		cfg.RequestHeaders = []string{"*", "Authorization"}
+		cfg.RequestHeaders = []string{"*", headers.Authorization}
 	case icfg.asteriskReqHdrs:
 		cfg.RequestHeaders = []string{"*"}
 	case icfg.allowedReqHdrs.Size() > 0:
@@ -895,11 +895,7 @@ func newConfig(icfg *internalConfig) *Config {
 
 	// response headers
 	if len(icfg.aceh) > 0 {
-		resHeaders := strings.Split(icfg.aceh, ",")
-		for i := range resHeaders {
-			resHeaders[i] = http.CanonicalHeaderKey(resHeaders[i])
-		}
-		cfg.ResponseHeaders = resHeaders
+		cfg.ResponseHeaders = strings.Split(icfg.aceh, ",")
 	}
 
 	// extra config

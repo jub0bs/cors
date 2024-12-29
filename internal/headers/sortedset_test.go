@@ -44,7 +44,7 @@ func TestSortedSet(t *testing.T) {
 			elems:    []string{"x-foo"},
 			size:     1,
 			combined: "x-foo",
-			slice:    []string{"X-Foo"},
+			slice:    []string{"x-foo"},
 			accepted: [][]string{
 				{"x-foo"},
 				// some empty elements, possibly with OWS
@@ -79,7 +79,7 @@ func TestSortedSet(t *testing.T) {
 			elems:    []string{"x-foo", "x-bar", "x-baz"},
 			size:     3,
 			combined: "x-bar,x-baz,x-foo",
-			slice:    []string{"X-Bar", "X-Baz", "X-Foo"},
+			slice:    []string{"x-bar", "x-baz", "x-foo"},
 			accepted: [][]string{
 				{"x-bar"},
 				{"x-baz"},
@@ -134,7 +134,7 @@ func TestSortedSet(t *testing.T) {
 			elems:    []string{"x-foo", "x-bar", "x-foo"},
 			size:     2,
 			combined: "x-bar,x-foo",
-			slice:    []string{"X-Bar", "X-Foo"},
+			slice:    []string{"x-bar", "x-foo"},
 			accepted: [][]string{
 				{"x-bar"},
 				{"x-foo"},

@@ -91,7 +91,7 @@ func TestConfig(t *testing.T) {
 			want: &cors.Config{
 				Origins:         []string{"*"},
 				Methods:         []string{"*"},
-				RequestHeaders:  []string{"*", "Authorization"},
+				RequestHeaders:  []string{"*", "authorization"},
 				ResponseHeaders: []string{"*"},
 			},
 		}, {
@@ -110,9 +110,9 @@ func TestConfig(t *testing.T) {
 			},
 			want: &cors.Config{
 				Origins:         []string{"https://example.com"},
-				RequestHeaders:  []string{"Authorization", "X-Bar", "X-Foo"},
+				RequestHeaders:  []string{"authorization", "x-bar", "x-foo"},
 				MaxAgeInSeconds: -1,
-				ResponseHeaders: []string{"X-Bar", "X-Foo"},
+				ResponseHeaders: []string{"x-bar", "x-foo"},
 				ExtraConfig: cors.ExtraConfig{
 					PrivateNetworkAccessInNoCORSModeOnly: true,
 				},
@@ -145,7 +145,7 @@ func TestConfig(t *testing.T) {
 				Methods:         []string{"DELETE", "PUT"},
 				RequestHeaders:  []string{"*"},
 				MaxAgeInSeconds: 30,
-				ResponseHeaders: []string{"X-Bar", "X-Foo"},
+				ResponseHeaders: []string{"x-bar", "x-foo"},
 				ExtraConfig: cors.ExtraConfig{
 					PreflightSuccessStatus:             279,
 					PrivateNetworkAccess:               true,
@@ -184,7 +184,7 @@ func TestConfig(t *testing.T) {
 			},
 			want: &cors.Config{
 				Origins:         []string{"http://example.com"},
-				ResponseHeaders: []string{"X-Foo"},
+				ResponseHeaders: []string{"x-foo"},
 			},
 		}, {
 			desc: "discrete methods in addition to wildcard",
@@ -241,7 +241,7 @@ func TestConfig(t *testing.T) {
 			},
 			want: &cors.Config{
 				Origins:        []string{"http://example.com"},
-				RequestHeaders: []string{"*", "Authorization"},
+				RequestHeaders: []string{"*", "authorization"},
 			},
 		}, {
 			desc: "discrete request-header names in addition to wildcard (credentialed)",
