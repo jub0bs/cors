@@ -190,10 +190,6 @@ import (
 //
 //	Methods: []string{"*"},
 //
-// Specifying methods in addition to the asterisk is prohibited:
-//
-//	Methods: []string{"*", "POST"}, // prohibited
-//
 // The three so-called "[CORS-safelisted methods]" ([GET], [HEAD], and [POST])
 // are by default allowed by the CORS protocol.
 // As such, allowing them explicitly in your CORS configuration is
@@ -635,11 +631,6 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 			continue
 		}
 		allowedMethods.Add(methods.Normalize(name))
-	}
-	if icfg.allowAnyMethod && len(allowedMethods) > 0 {
-		// discard the errors accumulated in errs and return a single error
-		const msg = "specifying methods in addition to * is prohibited"
-		return util.NewError(msg)
 	}
 	// Because safelisted methods need not be explicitly allowed
 	// (see https://stackoverflow.com/a/71429784/2541573),

@@ -187,6 +187,26 @@ func TestConfig(t *testing.T) {
 				ResponseHeaders: []string{"X-Foo"},
 			},
 		}, {
+			desc: "discrete methods in addition to wildcard",
+			cfg: &cors.Config{
+				Origins: []string{"http://example.com"},
+				Methods: []string{
+					http.MethodDelete,
+					http.MethodGet,
+					http.MethodHead,
+					http.MethodOptions,
+					http.MethodPost,
+					http.MethodPut,
+					"PATCH",
+					"*",
+					"*",
+				},
+			},
+			want: &cors.Config{
+				Origins: []string{"http://example.com"},
+				Methods: []string{"*"},
+			},
+		}, {
 			desc: "browser-normalized methods",
 			cfg: &cors.Config{
 				Origins: []string{"http://example.com"},
@@ -352,30 +372,6 @@ func TestIncorrectConfig(t *testing.T) {
 			},
 			msgs: []string{
 				`cors: forbidden method name "CONNECT"`,
-			},
-		}, {
-			desc: "wildcard in addition to other method",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				Methods: []string{
-					"*",
-					http.MethodGet,
-				},
-			},
-			msgs: []string{
-				`cors: specifying methods in addition to * is prohibited`,
-			},
-		}, {
-			desc: "method in addition wildcard",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				Methods: []string{
-					http.MethodGet,
-					"*",
-				},
-			},
-			msgs: []string{
-				`cors: specifying methods in addition to * is prohibited`,
 			},
 		}, {
 			desc: "empty request-header name",
