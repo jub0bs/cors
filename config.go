@@ -239,12 +239,6 @@ import (
 //	Credentialed:   false,
 //	RequestHeaders: []string{"*", "Authorization"},  // allows all request-header names
 //
-// Specifying request-header names other than Authorization in addition
-// to the asterisk is prohibited:
-//
-//	RequestHeaders: []string{"*", "Foo"},                  // prohibited
-//	RequestHeaders: []string{"*", "Authorization", "Foo"}, // prohibited
-//
 // The CORS protocol defines a number of so-called
 // "[forbidden request-header names]";
 // browsers prevent clients from including such headers in their requests.
@@ -685,14 +679,6 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		}
 	}
 	sortedSet := headers.NewSortedSet(allowedHeaders...)
-
-	if size := sortedSet.Size(); icfg.asteriskReqHdrs &&
-		(size > 1 || !icfg.allowAuthorization && size > 0) {
-		// discard the errors accumulated in errs and return a single error
-		const msg = "specifying request-header names " +
-			"(other than Authorization) in addition to * is prohibited"
-		return util.NewError(msg)
-	}
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}

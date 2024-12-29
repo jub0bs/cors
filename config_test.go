@@ -228,6 +228,38 @@ func TestConfig(t *testing.T) {
 					"postal",
 				},
 			},
+		}, {
+			desc: "discrete request-header names in addition to wildcard (anonymous)",
+			cfg: &cors.Config{
+				Origins: []string{"http://example.com"},
+				RequestHeaders: []string{
+					"Authorization",
+					"X-Api-Key",
+					"*",
+					"*",
+				},
+			},
+			want: &cors.Config{
+				Origins:        []string{"http://example.com"},
+				RequestHeaders: []string{"*", "Authorization"},
+			},
+		}, {
+			desc: "discrete request-header names in addition to wildcard (credentialed)",
+			cfg: &cors.Config{
+				Origins:      []string{"https://example.com"},
+				Credentialed: true,
+				RequestHeaders: []string{
+					"Authorization",
+					"X-Api-Key",
+					"*",
+					"*",
+				},
+			},
+			want: &cors.Config{
+				Origins:        []string{"https://example.com"},
+				Credentialed:   true,
+				RequestHeaders: []string{"*"},
+			},
 		},
 	}
 	for _, tc := range cases {
@@ -426,56 +458,6 @@ func TestIncorrectConfig(t *testing.T) {
 			},
 			msgs: []string{
 				`cors: prohibited request-header name "Access-Control-Allow-Origin"`,
-			},
-		}, {
-			desc: "wildcard in addition to request-header name other than Authorization",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				RequestHeaders: []string{
-					"*",
-					"Content-Type",
-				},
-			},
-			msgs: []string{
-				`cors: specifying request-header names (other than Authorization) in addition to * is prohibited`,
-			},
-		}, {
-			desc: "request-header name other than Authorization in addition to wildcard",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				RequestHeaders: []string{
-					"Content-Type",
-					"*",
-				},
-			},
-			msgs: []string{
-				`cors: specifying request-header names (other than Authorization) in addition to * is prohibited`,
-			},
-		}, {
-			desc: "wildcard and Authorization in addition to other request-header name",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				RequestHeaders: []string{
-					"*",
-					"Authorization",
-					"Content-Type",
-				},
-			},
-			msgs: []string{
-				`cors: specifying request-header names (other than Authorization) in addition to * is prohibited`,
-			},
-		}, {
-			desc: "request-header name other than Authorization in addition to Authorization and wildcard",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				RequestHeaders: []string{
-					"Content-Type",
-					"Authorization",
-					"*",
-				},
-			},
-			msgs: []string{
-				`cors: specifying request-header names (other than Authorization) in addition to * is prohibited`,
 			},
 		}, {
 			desc: "max age less than -1",
