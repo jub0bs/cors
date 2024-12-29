@@ -1640,6 +1640,78 @@ func TestMiddleware(t *testing.T) {
 					},
 				},
 			},
+		}, {
+			desc:       "arbitrary subdomains of depth one or more and arbitrary ports",
+			newHandler: newSpyHandler(200, http.Header{headerVary: {"foo"}}, "bar"),
+			cfg: &cors.Config{
+				Origins: []string{"http://*.example.com:*"},
+			},
+			cases: []ReqTestCase{
+				{
+					desc:      "actual GET from subdomain",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://foo.example.com"},
+					},
+					respHeaders: http.Header{
+						headerACAO: {"http://foo.example.com"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from subdomain and port",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://foo.example.com:6060"},
+					},
+					respHeaders: http.Header{
+						headerACAO: {"http://foo.example.com:6060"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from deeper ssubdomain",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://bar.foo.example.com"},
+					},
+					respHeaders: http.Header{
+						headerACAO: {"http://bar.foo.example.com"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from deeper ssubdomain and port",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://bar.foo.example.com:8080"},
+					},
+					respHeaders: http.Header{
+						headerACAO: {"http://bar.foo.example.com:8080"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from disallowed",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://example.com"},
+					},
+					respHeaders: http.Header{
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "preflight with GET and headers from allowed",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"http://foo.example.com"},
+						headerACRM:   {"GET"},
+						headerACRH:   {"bar,baz,foo"},
+					},
+					preflight:                true,
+					preflightPassesCORSCheck: true,
+					preflightFails:           true,
+					respHeaders: http.Header{
+						headerVary: {varyPreflightValue},
+					},
+				},
+			},
 		},
 	}
 	for _, mwtc := range cases {

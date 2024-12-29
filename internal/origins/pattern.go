@@ -115,11 +115,6 @@ func ParsePattern(str string) (Pattern, error) {
 		if !ok || str != "" {
 			return zeroPattern, util.InvalidOriginPatternErr(full)
 		}
-		if port == anyPort && hp.Kind == PatternKindSubdomains {
-			const tmpl = "specifying both arbitrary subdomains " +
-				"and arbitrary ports is prohibited: %q"
-			return zeroPattern, util.Errorf(tmpl, full)
-		}
 		if isDefaultPortForScheme(scheme, port) {
 			const tmpl = "default port %d for %q scheme " +
 				"needlessly specified: %q"

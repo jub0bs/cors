@@ -124,16 +124,22 @@ import (
 // encompasses the following origins (among others),
 //
 //	http://localhost
-//	http://localhost:80
+//	http://localhost:8080
 //	http://localhost:9090
 //
 // Specifying both arbitrary subdomains and arbitrary ports
-// in a given origin pattern is prohibited:
+// in a given origin pattern is permitted. For instance,
 //
-//	https://*.example.com      // permitted
-//	https://*.example.com:9090 // permitted
-//	https://example.com:*      // permitted
-//	https://*.example.com:*    // prohibited
+//	https://*.example.com:*
+//
+// encompasses the following origins (among others),
+//
+//	https://foo.example.com
+//	https://foo.example.com:8080
+//	https://foo.example.com:9090
+//	https://bar.foo.example.com
+//	https://bar.foo.example.com:8080
+//	https://bar.foo.example.com:9090
 //
 // No other forms of origin patterns are supported.
 //

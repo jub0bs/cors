@@ -325,9 +325,16 @@ var parsePatternCases = []TestCase{
 			Port: 3999,
 		},
 	}, {
-		name:    "arbitrary subdomains of depth one or more and arbitrary ports",
-		input:   "http://*.example.com:*",
-		failure: true,
+		name:  "arbitrary subdomains of depth one or more and arbitrary ports",
+		input: "http://*.example.com:*",
+		want: Pattern{
+			Scheme: "http",
+			HostPattern: HostPattern{
+				Value: "*.example.com",
+				Kind:  PatternKindSubdomains,
+			},
+			Port: -1,
+		},
 	}, {
 		name:    "leading double asterisk",
 		input:   "http://**.example.com:3999",
