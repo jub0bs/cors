@@ -260,6 +260,21 @@ func TestConfig(t *testing.T) {
 				Credentialed:   true,
 				RequestHeaders: []string{"*"},
 			},
+		}, {
+			desc: "discrete response-header names in addition to wildcard",
+			cfg: &cors.Config{
+				Origins: []string{"http://example.com"},
+				ResponseHeaders: []string{
+					"X-Foo",
+					"X-Bar",
+					"*",
+					"*",
+				},
+			},
+			want: &cors.Config{
+				Origins:         []string{"http://example.com"},
+				ResponseHeaders: []string{"*"},
+			},
 		},
 	}
 	for _, tc := range cases {
@@ -520,30 +535,6 @@ func TestIncorrectConfig(t *testing.T) {
 			},
 			msgs: []string{
 				`cors: prohibited response-header name "Access-Control-Request-Method"`,
-			},
-		}, {
-			desc: "wildcard in addition to other response-header name",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				ResponseHeaders: []string{
-					"*",
-					"X-Response-Time",
-				},
-			},
-			msgs: []string{
-				`cors: specifying response-header names in addition to * is prohibited`,
-			},
-		}, {
-			desc: "response-header name in addition to wildcard",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				ResponseHeaders: []string{
-					"X-Response-Time",
-					"*",
-				},
-			},
-			msgs: []string{
-				`cors: specifying response-header names in addition to * is prohibited`,
 			},
 		}, {
 			desc: "preflight success status less than 200",

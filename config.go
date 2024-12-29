@@ -287,10 +287,6 @@ import (
 // However, for technical reasons, this is only permitted if the Credentialed
 // field is unset.
 //
-// Specifying response-header names in addition to the asterisk is prohibited:
-//
-//	ResponseHeaders: []string{"*", "X-Response-Time"}, // prohibited
-//
 // The CORS protocol defines a number of so-called
 // "[CORS-safelisted response-header names]",
 // which need not be explicitly specified as exposed.
@@ -751,11 +747,6 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 	}
 	slices.Sort(exposedHeaders)
 	exposedHeaders = slices.Compact(exposedHeaders)
-	if icfg.exposeAllResHdrs && len(exposedHeaders) > 0 {
-		// discard the errors accumulated in errs and return a single error
-		const msg = "specifying response-header names in addition to * is prohibited"
-		return util.NewError(msg)
-	}
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
