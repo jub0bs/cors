@@ -34,6 +34,8 @@ import (
 // a helpful CORS error message.
 // The debug mode of a passthrough middleware is invariably off.
 //
+// A Middleware must not be copied after first use.
+//
 // Middleware are safe for concurrent use by multiple goroutines.
 // Therefore, you are free to expose some or all of their methods
 // so you can exercise them without having to restart your server;
