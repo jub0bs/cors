@@ -82,7 +82,7 @@ func (p *Pattern) HostIsEffectiveTLD() (string, bool) {
 // ParsePattern parses str into a [Pattern] structure.
 func ParsePattern(str string) (Pattern, error) {
 	if str == "*" || str == "null" {
-		return zeroPattern, util.Errorf(`prohibited origin pattern %q`, str)
+		return zeroPattern, util.Errorf("prohibited origin pattern %q", str)
 	}
 	full := str
 	scheme, str, ok := parseScheme(str)
@@ -91,7 +91,7 @@ func ParsePattern(str string) (Pattern, error) {
 	}
 	if scheme == "file" {
 		// The origin of requests issued from "file" origins is always "null".
-		return zeroPattern, util.Errorf(`prohibited origin pattern %q`, full)
+		return zeroPattern, util.Errorf("prohibited origin pattern %q", full)
 	}
 	str, ok = consume(schemeHostSep, str)
 	if !ok {
@@ -102,7 +102,7 @@ func ParsePattern(str string) (Pattern, error) {
 		return zeroPattern, err
 	}
 	if hp.IsIP() && scheme == schemeHTTPS {
-		const tmpl = `scheme "https" is incompatible with an IP address: %q`
+		const tmpl = "invalid origin pattern %q"
 		return zeroPattern, util.Errorf(tmpl, full)
 	}
 	var port int // assume no port
@@ -116,9 +116,8 @@ func ParsePattern(str string) (Pattern, error) {
 			return zeroPattern, util.InvalidOriginPatternErr(full)
 		}
 		if isDefaultPortForScheme(scheme, port) {
-			const tmpl = "default port %d for %q scheme " +
-				"needlessly specified: %q"
-			return zeroPattern, util.Errorf(tmpl, port, scheme, full)
+			const tmpl = "prohibited origin pattern %q"
+			return zeroPattern, util.Errorf(tmpl, full)
 		}
 	}
 	p := Pattern{
@@ -175,12 +174,12 @@ func parseHostPattern(str, full string) (HostPattern, string, error) {
 			return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
 		}
 		if ip.Is4In6() {
-			const tmpl = "prohibited IPv4-mapped IPv6 address: %q"
+			const tmpl = "prohibited origin pattern %q"
 			return zeroHostPattern, str, util.Errorf(tmpl, full)
 		}
 		var ipStr = ip.String()
 		if ipStr != host.Value {
-			const tmpl = "IP address in uncompressed form: %q"
+			const tmpl = "prohibited origin pattern %q"
 			return zeroHostPattern, str, util.Errorf(tmpl, full)
 		}
 
@@ -194,7 +193,7 @@ func parseHostPattern(str, full string) (HostPattern, string, error) {
 	}
 	_, err := profile.ToASCII(host.Value)
 	if err != nil {
-		const tmpl = "host not in ASCII form: %q"
+		const tmpl = "prohibited origin pattern %q"
 		return zeroHostPattern, str, util.Errorf(tmpl, full)
 	}
 	return pattern, str, nil
