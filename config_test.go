@@ -537,7 +537,7 @@ func TestIncorrectConfig(t *testing.T) {
 				`cors: prohibited response-header name "Access-Control-Request-Method"`,
 			},
 		}, {
-			desc: "preflight success status less than 200",
+			desc: "preflight-success status less than 200",
 			cfg: &cors.Config{
 				Origins: []string{"https://example.com"},
 				ExtraConfig: cors.ExtraConfig{
@@ -545,10 +545,10 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 			},
 			msgs: []string{
-				`cors: specified status 199 lies outside the 2xx range`,
+				`cors: out-of-bounds preflight-success status 199 (default: 204; min: 200; max: 299)`,
 			},
 		}, {
-			desc: "preflight success status greater than 299",
+			desc: "preflight-success status greater than 299",
 			cfg: &cors.Config{
 				Origins: []string{"https://example.com"},
 				ExtraConfig: cors.ExtraConfig{
@@ -556,7 +556,7 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 			},
 			msgs: []string{
-				`cors: specified status 300 lies outside the 2xx range`,
+				`cors: out-of-bounds preflight-success status 300 (default: 204; min: 200; max: 299)`,
 			},
 		}, {
 			desc: "wildcard origin with Credentialed",

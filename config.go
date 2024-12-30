@@ -764,10 +764,13 @@ func (icfg *internalConfig) validatePreflightStatus(status int) error {
 		icfg.preflightStatus = defaultPreflightStatus
 		return nil
 	}
-	// see https://fetch.spec.whatwg.org/#ok-status
-	if !(200 <= status && status < 300) {
-		const tmpl = "specified status %d lies outside the 2xx range"
-		return util.Errorf(tmpl, status)
+	const ( // see https://fetch.spec.whatwg.org/#ok-status
+		lowerBound = 200
+		upperBound = 299
+	)
+	if !(lowerBound <= status && status <= upperBound) {
+		const tmpl = "out-of-bounds preflight-success status %d (default: %d; min: %d; max: %d)"
+		return util.Errorf(tmpl, status, defaultPreflightStatus, lowerBound, upperBound)
 	}
 	icfg.preflightStatus = status
 	return nil
