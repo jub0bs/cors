@@ -677,9 +677,7 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins: []string{"https://*.com"},
 			},
 			msgs: []string{
-				`cors: for security reasons, origin patterns like ` +
-					`"https://*.com" that encompass subdomains of a ` +
-					`public suffix are by default prohibited`,
+				`cors: for security reasons, origin patterns like "https://*.com" that encompass subdomains of a public suffix are by default prohibited`,
 			},
 		}, {
 			desc: "conjunct use of PrivateNetworkAccess and PrivateNetworkAccessInNoCORSModeOnly",

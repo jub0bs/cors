@@ -816,15 +816,12 @@ func (icfg *internalConfig) validate() error {
 			}
 		}
 	}
-	if len(icfg.tmp.publicSuffixes) > 0 &&
-		!icfg.subsOfPublicSuffixes {
-		var errorMsg strings.Builder
-		errorMsg.WriteString(`for security reasons, origin patterns like `)
-		util.Join(&errorMsg, icfg.tmp.publicSuffixes)
-		errorMsg.WriteString(` that encompass subdomains of a public suffix`)
-		errorMsg.WriteString(" are by default prohibited")
-		err := util.NewError(errorMsg.String())
-		errs = append(errs, err)
+	if len(icfg.tmp.publicSuffixes) > 0 && !icfg.subsOfPublicSuffixes {
+		for _, pattern := range icfg.tmp.publicSuffixes {
+			const tmpl = "for security reasons, origin patterns like %q that encompass subdomains of a public suffix are by default prohibited"
+			err := util.Errorf(tmpl, pattern)
+			errs = append(errs, err)
+		}
 	}
 	if icfg.privateNetworkAccess && icfg.privateNetworkAccessNoCors {
 		const msg = "at most one form of Private-Network Access can be enabled"
