@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jub0bs/cors/cfgerrors"
 	"github.com/jub0bs/cors/internal/headers"
 	"github.com/jub0bs/cors/internal/methods"
 	"github.com/jub0bs/cors/internal/origins"
@@ -555,8 +556,10 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 
 func (icfg *internalConfig) validateOrigins(patterns []string) error {
 	if len(patterns) == 0 {
-		const msg = "at least one origin must be allowed"
-		return util.NewError(msg)
+		err := &cfgerrors.UnacceptableOriginPatternError{
+			Reason: "missing",
+		}
+		return err
 	}
 	var (
 		originPatterns         = make([]origins.Pattern, 0, len(patterns))
@@ -617,12 +620,18 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 			continue
 		}
 		if !methods.IsValid(name) {
-			err := util.Errorf("invalid method %q", name)
+			err := &cfgerrors.UnacceptableMethodError{
+				Value:  name,
+				Reason: "invalid",
+			}
 			errs = append(errs, err)
 			continue
 		}
 		if methods.IsForbidden(name) {
-			err := util.Errorf("forbidden method %q", name)
+			err := &cfgerrors.UnacceptableMethodError{
+				Value:  name,
+				Reason: "forbidden",
+			}
 			errs = append(errs, err)
 			continue
 		}
@@ -655,7 +664,11 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 			continue
 		}
 		if !headers.IsValid(name) {
-			err := util.Errorf("invalid request-header name %q", name)
+			err := &cfgerrors.UnacceptableHeaderNameError{
+				Value:  name,
+				Type:   "request",
+				Reason: "invalid",
+			}
 			errs = append(errs, err)
 			continue
 		}
@@ -665,12 +678,20 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		// step 6.
 		normalized := util.ByteLowercase(name)
 		if headers.IsForbiddenRequestHeaderName(normalized) {
-			err := util.Errorf("forbidden request-header name %q", name)
+			err := &cfgerrors.UnacceptableHeaderNameError{
+				Value:  name,
+				Type:   "request",
+				Reason: "forbidden",
+			}
 			errs = append(errs, err)
 			continue
 		}
 		if headers.IsProhibitedRequestHeaderName(normalized) {
-			err := util.Errorf("prohibited request-header name %q", name)
+			err := &cfgerrors.UnacceptableHeaderNameError{
+				Value:  name,
+				Type:   "request",
+				Reason: "prohibited",
+			}
 			errs = append(errs, err)
 			continue
 		}
@@ -704,8 +725,12 @@ func (icfg *internalConfig) validateMaxAge(delta int) error {
 	)
 	switch {
 	case delta < noPreflightCaching || upperBound < delta:
-		const tmpl = "out-of-bounds max-age value %d (default: %d; max: %d; disable caching: %d)"
-		return util.Errorf(tmpl, delta, defaultMaxAge, upperBound, noPreflightCaching)
+		return &cfgerrors.MaxAgeOutOfBoundsError{
+			Value:   delta,
+			Default: defaultMaxAge,
+			Max:     upperBound,
+			Disable: noPreflightCaching,
+		}
 	case delta == noPreflightCaching:
 		icfg.acma = []string{"0"}
 		return nil
@@ -729,18 +754,30 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 			continue
 		}
 		if !headers.IsValid(name) {
-			err := util.Errorf("invalid response-header name %q", name)
+			err := &cfgerrors.UnacceptableHeaderNameError{
+				Value:  name,
+				Type:   "response",
+				Reason: "invalid",
+			}
 			errs = append(errs, err)
 			continue
 		}
 		normalized := util.ByteLowercase(name)
 		if headers.IsForbiddenResponseHeaderName(normalized) {
-			err := util.Errorf("forbidden response-header name %q", name)
+			err := &cfgerrors.UnacceptableHeaderNameError{
+				Value:  name,
+				Type:   "response",
+				Reason: "forbidden",
+			}
 			errs = append(errs, err)
 			continue
 		}
 		if headers.IsProhibitedResponseHeaderName(normalized) {
-			err := util.Errorf("prohibited response-header name %q", name)
+			err := &cfgerrors.UnacceptableHeaderNameError{
+				Value:  name,
+				Type:   "response",
+				Reason: "prohibited",
+			}
 			errs = append(errs, err)
 			continue
 		}
@@ -769,8 +806,12 @@ func (icfg *internalConfig) validatePreflightStatus(status int) error {
 		upperBound = 299
 	)
 	if !(lowerBound <= status && status <= upperBound) {
-		const tmpl = "out-of-bounds preflight-success status %d (default: %d; min: %d; max: %d)"
-		return util.Errorf(tmpl, status, defaultPreflightStatus, lowerBound, upperBound)
+		return &cfgerrors.PreflightSuccessStatusOutOfBoundsError{
+			Value:   status,
+			Default: defaultPreflightStatus,
+			Min:     lowerBound,
+			Max:     upperBound,
+		}
 	}
 	icfg.preflightStatus = status
 	return nil
@@ -783,16 +824,20 @@ func (icfg *internalConfig) validate() error {
 	pna := icfg.privateNetworkAccess || icfg.privateNetworkAccessNoCors
 	if icfg.allowAnyOrigin {
 		if icfg.credentialed {
-			const msg = "for security reasons, you cannot both allow all " +
-				"origins and enable credentialed access"
-			errs = append(errs, util.NewError(msg))
+			err := &cfgerrors.IncompatibleOriginPatternError{
+				Value:  "*",
+				Reason: "credentialed",
+			}
+			errs = append(errs, err)
 		}
 		if pna {
 			// see note in
 			// https://developer.chrome.com/blog/private-network-access-preflight/#no-cors_mode
-			const msg = "for security reasons, you cannot both allow all " +
-				"origins and enable Private-Network Access"
-			errs = append(errs, util.NewError(msg))
+			err := &cfgerrors.IncompatibleOriginPatternError{
+				Value:  "*",
+				Reason: "pna",
+			}
+			errs = append(errs, err)
 		}
 	}
 	if len(icfg.tmp.insecureOriginPatterns) > 0 && !icfg.insecureOrigins {
@@ -805,32 +850,37 @@ func (icfg *internalConfig) validate() error {
 			// indeed no less insecure than * is, which itself doesn't require
 			// ExtraConfig.DangerouslyTolerateInsecureOrigins to be set.
 			if icfg.credentialed {
-				const tmpl = "for security reasons, insecure origin patterns like %q are by default prohibited when credentialed access is enabled"
-				err := util.Errorf(tmpl, pattern)
+				err := &cfgerrors.IncompatibleOriginPatternError{
+					Value:  pattern,
+					Reason: "credentialed",
+				}
 				errs = append(errs, err)
 			}
 			if pna {
-				const tmpl = "for security reasons, insecure origin patterns like %q are by default prohibited when Private-Network Access is enabled"
-				err := util.Errorf(tmpl, pattern)
+				err := &cfgerrors.IncompatibleOriginPatternError{
+					Value:  pattern,
+					Reason: "pna",
+				}
 				errs = append(errs, err)
 			}
 		}
 	}
 	if len(icfg.tmp.publicSuffixes) > 0 && !icfg.subsOfPublicSuffixes {
 		for _, pattern := range icfg.tmp.publicSuffixes {
-			const tmpl = "for security reasons, origin patterns like %q that encompass subdomains of a public suffix are by default prohibited"
-			err := util.Errorf(tmpl, pattern)
+			err := &cfgerrors.IncompatibleOriginPatternError{
+				Value:  pattern,
+				Reason: "psl",
+			}
 			errs = append(errs, err)
 		}
 	}
 	if icfg.privateNetworkAccess && icfg.privateNetworkAccessNoCors {
-		const msg = "at most one form of Private-Network Access can be enabled"
-		errs = append(errs, util.NewError(msg))
+		err := new(cfgerrors.IncompatiblePrivateNetworkAccessModesError)
+		errs = append(errs, err)
 	}
 	if icfg.exposeAllResHdrs && icfg.credentialed {
-		const msg = "you cannot both expose all response headers and enable " +
-			"credentialed access"
-		errs = append(errs, util.NewError(msg))
+		err := new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)
+		errs = append(errs, err)
 	}
 	if len(errs) != 0 {
 		return errors.Join(errs...)

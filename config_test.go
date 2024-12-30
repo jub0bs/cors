@@ -3,7 +3,6 @@ package cors_test
 import (
 	"encoding/json"
 	"io"
-	"iter"
 	"net/http"
 	"reflect"
 	"slices"
@@ -11,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jub0bs/cors"
+	"github.com/jub0bs/cors/cfgerrors"
 )
 
 var cfgTypes = []reflect.Type{
@@ -739,7 +739,7 @@ func TestIncorrectConfig(t *testing.T) {
 				return
 			}
 			var msgs []string
-			for err := range allLeavesIn(err) {
+			for err := range cfgerrors.All(err) {
 				msgs = append(msgs, err.Error())
 			}
 			sort.Strings(msgs) // the order doesn't matter
@@ -753,27 +753,6 @@ func TestIncorrectConfig(t *testing.T) {
 			}
 		}
 		t.Run(tc.desc, f)
-	}
-}
-
-func allLeavesIn(err error) iter.Seq[error] {
-	return func(yield func(error) bool) {
-		switch err := err.(type) {
-		// Note that there's no need for any "interface { Unwrap() error }" case
-		// because nowhere do we "wrap" errors; we only ever "join" them.
-		case interface{ Unwrap() []error }:
-			for _, err := range err.Unwrap() {
-				for err := range allLeavesIn(err) {
-					if !yield(err) {
-						return
-					}
-				}
-			}
-		default:
-			if !yield(err) {
-				return
-			}
-		}
 	}
 }
 

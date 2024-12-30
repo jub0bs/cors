@@ -4,8 +4,8 @@ import (
 	"net/netip"
 	"strings"
 
+	"github.com/jub0bs/cors/cfgerrors"
 	"github.com/jub0bs/cors/internal/origins/radix"
-	"github.com/jub0bs/cors/internal/util"
 	"golang.org/x/net/idna"
 	"golang.org/x/net/publicsuffix"
 )
@@ -82,42 +82,72 @@ func (p *Pattern) HostIsEffectiveTLD() (string, bool) {
 // ParsePattern parses str into a [Pattern] structure.
 func ParsePattern(str string) (Pattern, error) {
 	if str == "*" || str == "null" {
-		return zeroPattern, util.Errorf("prohibited origin pattern %q", str)
+		err := &cfgerrors.UnacceptableOriginPatternError{
+			Value:  str,
+			Reason: "prohibited",
+		}
+		return zeroPattern, err
 	}
 	full := str
 	scheme, str, ok := parseScheme(str)
 	if !ok {
-		return zeroPattern, util.InvalidOriginPatternErr(full)
+		err := &cfgerrors.UnacceptableOriginPatternError{
+			Value:  full,
+			Reason: "invalid",
+		}
+		return zeroPattern, err
 	}
 	if scheme == "file" {
 		// The origin of requests issued from "file" origins is always "null".
-		return zeroPattern, util.Errorf("prohibited origin pattern %q", full)
+		err := &cfgerrors.UnacceptableOriginPatternError{
+			Value:  full,
+			Reason: "prohibited",
+		}
+		return zeroPattern, err
 	}
 	str, ok = consume(schemeHostSep, str)
 	if !ok {
-		return zeroPattern, util.InvalidOriginPatternErr(full)
+		err := &cfgerrors.UnacceptableOriginPatternError{
+			Value:  full,
+			Reason: "invalid",
+		}
+		return zeroPattern, err
 	}
 	hp, str, err := parseHostPattern(str, full)
 	if err != nil {
 		return zeroPattern, err
 	}
 	if hp.IsIP() && scheme == schemeHTTPS {
-		const tmpl = "invalid origin pattern %q"
-		return zeroPattern, util.Errorf(tmpl, full)
+		err := &cfgerrors.UnacceptableOriginPatternError{
+			Value:  full,
+			Reason: "invalid",
+		}
+		return zeroPattern, err
 	}
 	var port int // assume no port
 	if len(str) > 0 {
 		str, ok = consume(string(hostPortSep), str)
 		if !ok {
-			return zeroPattern, util.InvalidOriginPatternErr(full)
+			err := &cfgerrors.UnacceptableOriginPatternError{
+				Value:  full,
+				Reason: "invalid",
+			}
+			return zeroPattern, err
 		}
 		port, str, ok = parsePortPattern(str)
 		if !ok || str != "" {
-			return zeroPattern, util.InvalidOriginPatternErr(full)
+			err := &cfgerrors.UnacceptableOriginPatternError{
+				Value:  full,
+				Reason: "invalid",
+			}
+			return zeroPattern, err
 		}
 		if isDefaultPortForScheme(scheme, port) {
-			const tmpl = "prohibited origin pattern %q"
-			return zeroPattern, util.Errorf(tmpl, full)
+			err := &cfgerrors.UnacceptableOriginPatternError{
+				Value:  full,
+				Reason: "prohibited",
+			}
+			return zeroPattern, err
 		}
 	}
 	p := Pattern{
@@ -146,17 +176,29 @@ func parseHostPattern(str, full string) (HostPattern, string, error) {
 	}
 	host, str, ok := fastParseHost(pattern.hostOnly())
 	if !ok {
-		return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
+		err := &cfgerrors.UnacceptableOriginPatternError{
+			Value:  full,
+			Reason: "invalid",
+		}
+		return zeroHostPattern, str, err
 	}
 	if pattern.Kind == PatternKindSubdomains {
 		// At least two bytes (e.g. "a.") are required for the part
 		// corresponding to the wildcard character sequence in a valid origin,
 		// hence the subtraction in the following expression.
 		if len(host.Value) > maxHostLen-2 {
-			return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
+			err := &cfgerrors.UnacceptableOriginPatternError{
+				Value:  full,
+				Reason: "invalid",
+			}
+			return zeroHostPattern, str, err
 		}
 		if host.AssumeIP {
-			return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
+			err := &cfgerrors.UnacceptableOriginPatternError{
+				Value:  full,
+				Reason: "invalid",
+			}
+			return zeroHostPattern, str, err
 		}
 	}
 	// trim accordingly
@@ -168,19 +210,33 @@ func parseHostPattern(str, full string) (HostPattern, string, error) {
 	if host.AssumeIP {
 		ip, err := netip.ParseAddr(host.Value)
 		if err != nil {
-			return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
+			err := &cfgerrors.UnacceptableOriginPatternError{
+				Value:  full,
+				Reason: "invalid",
+			}
+			return zeroHostPattern, str, err
 		}
 		if ip.Zone() != "" {
-			return zeroHostPattern, str, util.InvalidOriginPatternErr(full)
+			err := &cfgerrors.UnacceptableOriginPatternError{
+				Value:  full,
+				Reason: "invalid",
+			}
+			return zeroHostPattern, str, err
 		}
 		if ip.Is4In6() {
-			const tmpl = "prohibited origin pattern %q"
-			return zeroHostPattern, str, util.Errorf(tmpl, full)
+			err := &cfgerrors.UnacceptableOriginPatternError{
+				Value:  full,
+				Reason: "prohibited",
+			}
+			return zeroHostPattern, str, err
 		}
 		var ipStr = ip.String()
 		if ipStr != host.Value {
-			const tmpl = "prohibited origin pattern %q"
-			return zeroHostPattern, str, util.Errorf(tmpl, full)
+			err := &cfgerrors.UnacceptableOriginPatternError{
+				Value:  full,
+				Reason: "prohibited",
+			}
+			return zeroHostPattern, str, err
 		}
 
 		if ip.IsLoopback() {
@@ -193,8 +249,11 @@ func parseHostPattern(str, full string) (HostPattern, string, error) {
 	}
 	_, err := profile.ToASCII(host.Value)
 	if err != nil {
-		const tmpl = "prohibited origin pattern %q"
-		return zeroHostPattern, str, util.Errorf(tmpl, full)
+		err := &cfgerrors.UnacceptableOriginPatternError{
+			Value:  full,
+			Reason: "prohibited",
+		}
+		return zeroHostPattern, str, err
 	}
 	return pattern, str, nil
 }
