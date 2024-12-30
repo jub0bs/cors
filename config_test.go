@@ -602,9 +602,8 @@ func TestIncorrectConfig(t *testing.T) {
 				Credentialed: true,
 			},
 			msgs: []string{
-				`cors: for security reasons, insecure origin patterns like ` +
-					`"http://example.com:6060" and "http://*.example.com:6060" ` +
-					`are by default prohibited when credentialed access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when credentialed access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when credentialed access is enabled`,
 			},
 		}, {
 			desc: "insecure origin with PrivateNetworkAccess without DangerouslyTolerateInsecureOrigins",
@@ -618,9 +617,8 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 			},
 			msgs: []string{
-				`cors: for security reasons, insecure origin patterns like ` +
-					`"http://example.com:6060" and "http://*.example.com:6060" ` +
-					`are by default prohibited when Private-Network Access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when Private-Network Access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when Private-Network Access is enabled`,
 			},
 		}, {
 			desc: "insecure origin with PrivateNetworkAccessInNoCORSModeOnly without DangerouslyTolerateInsecureOrigins",
@@ -634,9 +632,8 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 			},
 			msgs: []string{
-				`cors: for security reasons, insecure origin patterns like ` +
-					`"http://example.com:6060" and "http://*.example.com:6060" ` +
-					`are by default prohibited when Private-Network Access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when Private-Network Access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when Private-Network Access is enabled`,
 			},
 		}, {
 			desc: "insecure origin with Credentialed and PrivateNetworkAccess without DangerouslyTolerateInsecureOrigins",
@@ -651,10 +648,10 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 			},
 			msgs: []string{
-				`cors: for security reasons, insecure origin patterns like ` +
-					`"http://example.com:6060" and "http://*.example.com:6060" are ` +
-					`by default prohibited when credentialed access is enabled ` +
-					`and/or Private-Network Access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when credentialed access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when Private-Network Access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when credentialed access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when Private-Network Access is enabled`,
 			},
 		}, {
 			desc: "insecure origin with Credentialed and PrivateNetworkAccessInNoCORSModeOnly without DangerouslyTolerateInsecureOrigins",
@@ -669,10 +666,10 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 			},
 			msgs: []string{
-				`cors: for security reasons, insecure origin patterns like ` +
-					`"http://example.com:6060" and "http://*.example.com:6060" are ` +
-					`by default prohibited when credentialed access is enabled ` +
-					`and/or Private-Network Access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when credentialed access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when Private-Network Access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when credentialed access is enabled`,
+				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when Private-Network Access is enabled`,
 			},
 		}, {
 			desc: "wildcard pattern encompassing subdomains of a public suffix without DangerouslyTolerateSubdomainsOfPublicSuffixes",

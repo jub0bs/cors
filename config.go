@@ -795,31 +795,26 @@ func (icfg *internalConfig) validate() error {
 			errs = append(errs, util.NewError(msg))
 		}
 	}
-	if len(icfg.tmp.insecureOriginPatterns) > 0 &&
-		!icfg.insecureOrigins &&
-		(icfg.credentialed || pna) {
-		// We don't require ExtraConfig.DangerouslyTolerateInsecureOrigins to
-		// be set when users specify one or more insecure origin patterns in
-		// anonymous-only mode and without some form of PNA;
-		// in such cases, insecure origins like http://example.com are indeed
-		// no less insecure than * is, which itself doesn't require
-		// ExtraConfig.DangerouslyTolerateInsecureOrigins to be set.
-		var errorMsg strings.Builder
-		var patterns = icfg.tmp.insecureOriginPatterns
-		errorMsg.WriteString(`for security reasons, insecure origin patterns like `)
-		util.Join(&errorMsg, patterns)
-		errorMsg.WriteString(` are by default prohibited when `)
-		if icfg.credentialed {
-			errorMsg.WriteString("credentialed access is enabled")
-		}
-		if pna {
+	if len(icfg.tmp.insecureOriginPatterns) > 0 && !icfg.insecureOrigins {
+		for _, pattern := range icfg.tmp.insecureOriginPatterns {
+			// We require ExtraConfig.DangerouslyTolerateInsecureOrigins to
+			// be set only when
+			// - users specify one or more insecure origin patterns, and
+			// - enable credentialed access and/or some form of PNA.
+			// In all other cases, insecure origins like http://example.com are
+			// indeed no less insecure than * is, which itself doesn't require
+			// ExtraConfig.DangerouslyTolerateInsecureOrigins to be set.
 			if icfg.credentialed {
-				errorMsg.WriteString(" and/or ")
+				const tmpl = "for security reasons, insecure origin patterns like %q are by default prohibited when credentialed access is enabled"
+				err := util.Errorf(tmpl, pattern)
+				errs = append(errs, err)
 			}
-			errorMsg.WriteString("Private-Network Access is enabled")
+			if pna {
+				const tmpl = "for security reasons, insecure origin patterns like %q are by default prohibited when Private-Network Access is enabled"
+				err := util.Errorf(tmpl, pattern)
+				errs = append(errs, err)
+			}
 		}
-		err := util.NewError(errorMsg.String())
-		errs = append(errs, err)
 	}
 	if len(icfg.tmp.publicSuffixes) > 0 &&
 		!icfg.subsOfPublicSuffixes {
