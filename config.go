@@ -692,30 +692,29 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 }
 
 func (icfg *internalConfig) validateMaxAge(delta int) error {
-	const noPreflightCaching = -1 // sentinel value
-	if delta < noPreflightCaching {
-		const tmpl = "specified max-age value %d is invalid"
-		return util.Errorf(tmpl, delta)
-	}
-	if delta == noPreflightCaching {
+	const (
+		defaultMaxAge = 5
+		// Current upper bounds:
+		//  - Firefox: 86400 (24h)
+		//  - Chromium: 7200 (2h)
+		//  - WebKit/Safari: 600 (10m)
+		// see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#delta-seconds
+		upperBound         = 86400
+		noPreflightCaching = -1 // sentinel value
+	)
+	switch {
+	case delta < noPreflightCaching || upperBound < delta:
+		const tmpl = "out-of-bounds max-age value %d (default: %d; max: %d; disable caching: %d)"
+		return util.Errorf(tmpl, delta, defaultMaxAge, upperBound, noPreflightCaching)
+	case delta == noPreflightCaching:
 		icfg.acma = []string{"0"}
 		return nil
-	}
-	if delta == 0 { // leave cfg.ACMA at nil
+	case delta == 0: // leave cfg.ACMA at nil
+		return nil
+	default:
+		icfg.acma = []string{strconv.Itoa(delta)}
 		return nil
 	}
-	// Current upper bounds:
-	//  - Firefox: 86400 (24h)
-	//  - Chromium: 7200 (2h)
-	//  - WebKit/Safari: 600 (10m)
-	// see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#delta-seconds
-	const upperBound = 86400
-	if delta > upperBound {
-		const tmpl = "specified max-age value %d exceeds upper bound %d"
-		return util.Errorf(tmpl, delta, upperBound)
-	}
-	icfg.acma = []string{strconv.Itoa(delta)}
-	return nil
 }
 
 func (icfg *internalConfig) validateResponseHeaders(names []string) error {

@@ -485,7 +485,7 @@ func TestIncorrectConfig(t *testing.T) {
 				MaxAgeInSeconds: -2,
 			},
 			msgs: []string{
-				`cors: specified max-age value -2 is invalid`,
+				`cors: out-of-bounds max-age value -2 (default: 5; max: 86400; disable caching: -1)`,
 			},
 		}, {
 			desc: "max age exceeds upper bound",
@@ -498,7 +498,7 @@ func TestIncorrectConfig(t *testing.T) {
 				MaxAgeInSeconds: 86_401,
 			},
 			msgs: []string{
-				`cors: specified max-age value 86401 exceeds upper bound 86400`,
+				`cors: out-of-bounds max-age value 86401 (default: 5; max: 86400; disable caching: -1)`,
 			},
 		}, {
 			desc: "empty response-header name",
@@ -729,7 +729,7 @@ func TestIncorrectConfig(t *testing.T) {
 				`cors: invalid method name "résumé"`,
 				`cors: invalid request-header name "résumé"`,
 				`cors: prohibited request-header name "Access-Control-Allow-Origin"`,
-				`cors: specified max-age value 86401 exceeds upper bound 86400`,
+				`cors: out-of-bounds max-age value 86401 (default: 5; max: 86400; disable caching: -1)`,
 			},
 		},
 	}
