@@ -617,12 +617,12 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 			continue
 		}
 		if !methods.IsValid(name) {
-			err := util.Errorf("invalid method name %q", name)
+			err := util.Errorf("invalid method %q", name)
 			errs = append(errs, err)
 			continue
 		}
 		if methods.IsForbidden(name) {
-			err := util.Errorf("forbidden method name %q", name)
+			err := util.Errorf("forbidden method %q", name)
 			errs = append(errs, err)
 			continue
 		}

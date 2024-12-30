@@ -397,7 +397,7 @@ func TestIncorrectConfig(t *testing.T) {
 				Methods: []string{""},
 			},
 			msgs: []string{
-				`cors: invalid method name ""`,
+				`cors: invalid method ""`,
 			},
 		}, {
 			desc: "invalid method name",
@@ -406,7 +406,7 @@ func TestIncorrectConfig(t *testing.T) {
 				Methods: []string{"résumé"},
 			},
 			msgs: []string{
-				`cors: invalid method name "résumé"`,
+				`cors: invalid method "résumé"`,
 			},
 		}, {
 			desc: "forbidden method name",
@@ -418,7 +418,7 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 			},
 			msgs: []string{
-				`cors: forbidden method name "CONNECT"`,
+				`cors: forbidden method "CONNECT"`,
 			},
 		}, {
 			desc: "empty request-header name",
@@ -725,8 +725,8 @@ func TestIncorrectConfig(t *testing.T) {
 			},
 			msgs: []string{
 				`cors: invalid origin pattern "https://example.com/"`,
-				`cors: forbidden method name "CONNECT"`,
-				`cors: invalid method name "résumé"`,
+				`cors: forbidden method "CONNECT"`,
+				`cors: invalid method "résumé"`,
 				`cors: invalid request-header name "résumé"`,
 				`cors: prohibited request-header name "Access-Control-Allow-Origin"`,
 				`cors: out-of-bounds max-age value 86401 (default: 5; max: 86400; disable caching: -1)`,
