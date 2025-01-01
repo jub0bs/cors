@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"reflect"
 	"slices"
-	"sort"
 	"testing"
 
 	"github.com/jub0bs/cors"
@@ -365,30 +364,36 @@ func TestIncorrectConfig(t *testing.T) {
 	type InvalidConfigTestCase struct {
 		desc string
 		cfg  *cors.Config
-		msgs []string
+		want []*errorMatcher
 	}
 	var cases = []InvalidConfigTestCase{
 		{
 			desc: "no origin pattern specified",
 			cfg:  &cors.Config{},
-			msgs: []string{
-				`cors: at least one origin must be allowed`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{Reason: "missing"}),
 			},
 		}, {
 			desc: "null origin",
 			cfg: &cors.Config{
 				Origins: []string{"null"},
 			},
-			msgs: []string{
-				`cors: prohibited origin pattern "null"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{
+					Value:  "null",
+					Reason: "prohibited",
+				}),
 			},
 		}, {
 			desc: "invalid origin pattern",
 			cfg: &cors.Config{
 				Origins: []string{"http://example.com:6060/path"},
 			},
-			msgs: []string{
-				`cors: invalid origin pattern "http://example.com:6060/path"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{
+					Value:  "http://example.com:6060/path",
+					Reason: "invalid",
+				}),
 			},
 		}, {
 			desc: "empty method name",
@@ -396,8 +401,11 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins: []string{"https://example.com"},
 				Methods: []string{""},
 			},
-			msgs: []string{
-				`cors: invalid method ""`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableMethodError{
+					Value:  "",
+					Reason: "invalid",
+				}),
 			},
 		}, {
 			desc: "invalid method name",
@@ -405,8 +413,11 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins: []string{"https://example.com"},
 				Methods: []string{"résumé"},
 			},
-			msgs: []string{
-				`cors: invalid method "résumé"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableMethodError{
+					Value:  "résumé",
+					Reason: "invalid",
+				}),
 			},
 		}, {
 			desc: "forbidden method name",
@@ -417,8 +428,11 @@ func TestIncorrectConfig(t *testing.T) {
 					http.MethodConnect,
 				},
 			},
-			msgs: []string{
-				`cors: forbidden method "CONNECT"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableMethodError{
+					Value:  http.MethodConnect,
+					Reason: "forbidden",
+				}),
 			},
 		}, {
 			desc: "empty request-header name",
@@ -426,8 +440,12 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:        []string{"https://example.com"},
 				RequestHeaders: []string{""},
 			},
-			msgs: []string{
-				`cors: invalid request-header name ""`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "",
+					Type:   "request",
+					Reason: "invalid",
+				}),
 			},
 		}, {
 			desc: "invalid request-header name",
@@ -435,8 +453,12 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:        []string{"https://example.com"},
 				RequestHeaders: []string{"résumé"},
 			},
-			msgs: []string{
-				`cors: invalid request-header name "résumé"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "résumé",
+					Type:   "request",
+					Reason: "invalid",
+				}),
 			},
 		}, {
 			desc: "forbidden request-header name",
@@ -444,8 +466,12 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:        []string{"https://example.com"},
 				RequestHeaders: []string{"Connection"},
 			},
-			msgs: []string{
-				`cors: forbidden request-header name "Connection"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "Connection",
+					Type:   "request",
+					Reason: "forbidden",
+				}),
 			},
 		}, {
 			desc: "forbidden request-header name with Sec- prefix",
@@ -453,8 +479,12 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:        []string{"https://example.com"},
 				RequestHeaders: []string{"Sec-Foo"},
 			},
-			msgs: []string{
-				`cors: forbidden request-header name "Sec-Foo"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "Sec-Foo",
+					Type:   "request",
+					Reason: "forbidden",
+				}),
 			},
 		}, {
 			desc: "forbidden request-header name with Proxy- prefix",
@@ -462,8 +492,12 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:        []string{"https://example.com"},
 				RequestHeaders: []string{"Proxy-Foo"},
 			},
-			msgs: []string{
-				`cors: forbidden request-header name "Proxy-Foo"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "Proxy-Foo",
+					Type:   "request",
+					Reason: "forbidden",
+				}),
 			},
 		}, {
 			desc: "prohibited request-header name",
@@ -471,8 +505,12 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:        []string{"https://example.com"},
 				RequestHeaders: []string{"Access-Control-Allow-Origin"},
 			},
-			msgs: []string{
-				`cors: prohibited request-header name "Access-Control-Allow-Origin"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "Access-Control-Allow-Origin",
+					Type:   "request",
+					Reason: "prohibited",
+				}),
 			},
 		}, {
 			desc: "max age less than -1",
@@ -484,8 +522,13 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 				MaxAgeInSeconds: -2,
 			},
-			msgs: []string{
-				`cors: out-of-bounds max-age value -2 (default: 5; max: 86400; disable caching: -1)`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.MaxAgeOutOfBoundsError{
+					Value:   -2,
+					Default: 5,
+					Max:     86_400,
+					Disable: -1,
+				}),
 			},
 		}, {
 			desc: "max age exceeds upper bound",
@@ -497,8 +540,13 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 				MaxAgeInSeconds: 86_401,
 			},
-			msgs: []string{
-				`cors: out-of-bounds max-age value 86401 (default: 5; max: 86400; disable caching: -1)`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.MaxAgeOutOfBoundsError{
+					Value:   86_401,
+					Default: 5,
+					Max:     86_400,
+					Disable: -1,
+				}),
 			},
 		}, {
 			desc: "empty response-header name",
@@ -506,8 +554,12 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:         []string{"https://example.com"},
 				ResponseHeaders: []string{""},
 			},
-			msgs: []string{
-				`cors: invalid response-header name ""`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "",
+					Type:   "response",
+					Reason: "invalid",
+				}),
 			},
 		}, {
 			desc: "invalid response-header name",
@@ -515,8 +567,12 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:         []string{"https://example.com"},
 				ResponseHeaders: []string{"résumé"},
 			},
-			msgs: []string{
-				`cors: invalid response-header name "résumé"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "résumé",
+					Type:   "response",
+					Reason: "invalid",
+				}),
 			},
 		}, {
 			desc: "forbidden response-header name",
@@ -524,8 +580,12 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:         []string{"https://example.com"},
 				ResponseHeaders: []string{"Set-Cookie"},
 			},
-			msgs: []string{
-				`cors: forbidden response-header name "Set-Cookie"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "Set-Cookie",
+					Type:   "response",
+					Reason: "forbidden",
+				}),
 			},
 		}, {
 			desc: "prohibited response-header name",
@@ -533,8 +593,12 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:         []string{"https://example.com"},
 				ResponseHeaders: []string{"Access-Control-Request-Method"},
 			},
-			msgs: []string{
-				`cors: prohibited response-header name "Access-Control-Request-Method"`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "Access-Control-Request-Method",
+					Type:   "response",
+					Reason: "prohibited",
+				}),
 			},
 		}, {
 			desc: "preflight-success status less than 200",
@@ -544,8 +608,13 @@ func TestIncorrectConfig(t *testing.T) {
 					PreflightSuccessStatus: 199,
 				},
 			},
-			msgs: []string{
-				`cors: out-of-bounds preflight-success status 199 (default: 204; min: 200; max: 299)`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.PreflightSuccessStatusOutOfBoundsError{
+					Value:   199,
+					Default: 204,
+					Min:     200,
+					Max:     299,
+				}),
 			},
 		}, {
 			desc: "preflight-success status greater than 299",
@@ -555,8 +624,13 @@ func TestIncorrectConfig(t *testing.T) {
 					PreflightSuccessStatus: 300,
 				},
 			},
-			msgs: []string{
-				`cors: out-of-bounds preflight-success status 300 (default: 204; min: 200; max: 299)`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.PreflightSuccessStatusOutOfBoundsError{
+					Value:   300,
+					Default: 204,
+					Min:     200,
+					Max:     299,
+				}),
 			},
 		}, {
 			desc: "wildcard origin with Credentialed",
@@ -564,9 +638,11 @@ func TestIncorrectConfig(t *testing.T) {
 				Origins:      []string{"*"},
 				Credentialed: true,
 			},
-			msgs: []string{
-				`cors: for security reasons, you cannot both allow all origins ` +
-					`and enable credentialed access`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "*",
+					Reason: "credentialed",
+				}),
 			},
 		}, {
 			desc: "wildcard origin with PrivateNetworkAccess",
@@ -576,9 +652,11 @@ func TestIncorrectConfig(t *testing.T) {
 					PrivateNetworkAccess: true,
 				},
 			},
-			msgs: []string{
-				`cors: for security reasons, you cannot both allow all origins ` +
-					`and enable Private-Network Access`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "*",
+					Reason: "pna",
+				}),
 			},
 		}, {
 			desc: "wildcard origin with PrivateNetworkAccessInNoCORSModeOnly",
@@ -588,9 +666,11 @@ func TestIncorrectConfig(t *testing.T) {
 					PrivateNetworkAccessInNoCORSModeOnly: true,
 				},
 			},
-			msgs: []string{
-				`cors: for security reasons, you cannot both allow all origins ` +
-					`and enable Private-Network Access`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "*",
+					Reason: "pna",
+				}),
 			},
 		}, {
 			desc: "insecure origin with Credentialed without DangerouslyTolerateInsecureOrigins",
@@ -601,9 +681,15 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 				Credentialed: true,
 			},
-			msgs: []string{
-				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when credentialed access is enabled`,
-				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when credentialed access is enabled`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://example.com:6060",
+					Reason: "credentialed",
+				}),
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://*.example.com:6060",
+					Reason: "credentialed",
+				}),
 			},
 		}, {
 			desc: "insecure origin with PrivateNetworkAccess without DangerouslyTolerateInsecureOrigins",
@@ -616,9 +702,15 @@ func TestIncorrectConfig(t *testing.T) {
 					PrivateNetworkAccess: true,
 				},
 			},
-			msgs: []string{
-				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when Private-Network Access is enabled`,
-				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when Private-Network Access is enabled`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://example.com:6060",
+					Reason: "pna",
+				}),
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://*.example.com:6060",
+					Reason: "pna",
+				}),
 			},
 		}, {
 			desc: "insecure origin with PrivateNetworkAccessInNoCORSModeOnly without DangerouslyTolerateInsecureOrigins",
@@ -631,9 +723,15 @@ func TestIncorrectConfig(t *testing.T) {
 					PrivateNetworkAccessInNoCORSModeOnly: true,
 				},
 			},
-			msgs: []string{
-				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when Private-Network Access is enabled`,
-				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when Private-Network Access is enabled`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://example.com:6060",
+					Reason: "pna",
+				}),
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://*.example.com:6060",
+					Reason: "pna",
+				}),
 			},
 		}, {
 			desc: "insecure origin with Credentialed and PrivateNetworkAccess without DangerouslyTolerateInsecureOrigins",
@@ -647,11 +745,23 @@ func TestIncorrectConfig(t *testing.T) {
 					PrivateNetworkAccess: true,
 				},
 			},
-			msgs: []string{
-				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when credentialed access is enabled`,
-				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when Private-Network Access is enabled`,
-				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when credentialed access is enabled`,
-				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when Private-Network Access is enabled`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://example.com:6060",
+					Reason: "credentialed",
+				}),
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://*.example.com:6060",
+					Reason: "credentialed",
+				}),
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://example.com:6060",
+					Reason: "pna",
+				}),
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://*.example.com:6060",
+					Reason: "pna",
+				}),
 			},
 		}, {
 			desc: "insecure origin with Credentialed and PrivateNetworkAccessInNoCORSModeOnly without DangerouslyTolerateInsecureOrigins",
@@ -665,19 +775,34 @@ func TestIncorrectConfig(t *testing.T) {
 					PrivateNetworkAccessInNoCORSModeOnly: true,
 				},
 			},
-			msgs: []string{
-				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when credentialed access is enabled`,
-				`cors: for security reasons, insecure origin patterns like "http://example.com:6060" are by default prohibited when Private-Network Access is enabled`,
-				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when credentialed access is enabled`,
-				`cors: for security reasons, insecure origin patterns like "http://*.example.com:6060" are by default prohibited when Private-Network Access is enabled`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://example.com:6060",
+					Reason: "credentialed",
+				}),
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://*.example.com:6060",
+					Reason: "credentialed",
+				}),
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://example.com:6060",
+					Reason: "pna",
+				}),
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "http://*.example.com:6060",
+					Reason: "pna",
+				}),
 			},
 		}, {
 			desc: "wildcard pattern encompassing subdomains of a public suffix without DangerouslyTolerateSubdomainsOfPublicSuffixes",
 			cfg: &cors.Config{
 				Origins: []string{"https://*.com"},
 			},
-			msgs: []string{
-				`cors: for security reasons, origin patterns like "https://*.com" that encompass subdomains of a public suffix are by default prohibited`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+					Value:  "https://*.com",
+					Reason: "psl",
+				}),
 			},
 		}, {
 			desc: "conjunct use of PrivateNetworkAccess and PrivateNetworkAccessInNoCORSModeOnly",
@@ -688,8 +813,8 @@ func TestIncorrectConfig(t *testing.T) {
 					PrivateNetworkAccessInNoCORSModeOnly: true,
 				},
 			},
-			msgs: []string{
-				`cors: at most one form of Private-Network Access can be enabled`,
+			want: []*errorMatcher{
+				newErrorMatcher(new(cfgerrors.IncompatiblePrivateNetworkAccessModesError)),
 			},
 		}, {
 			desc: "wildcard response-header name with Credentialed",
@@ -698,8 +823,8 @@ func TestIncorrectConfig(t *testing.T) {
 				Credentialed:    true,
 				ResponseHeaders: []string{"*"},
 			},
-			msgs: []string{
-				`cors: you cannot both expose all response headers and enable credentialed access`,
+			want: []*errorMatcher{
+				newErrorMatcher(new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)),
 			},
 		}, {
 			desc: "multiple configuration issues",
@@ -718,13 +843,35 @@ func TestIncorrectConfig(t *testing.T) {
 				},
 				MaxAgeInSeconds: 86_401,
 			},
-			msgs: []string{
-				`cors: invalid origin pattern "https://example.com/"`,
-				`cors: forbidden method "CONNECT"`,
-				`cors: invalid method "résumé"`,
-				`cors: invalid request-header name "résumé"`,
-				`cors: prohibited request-header name "Access-Control-Allow-Origin"`,
-				`cors: out-of-bounds max-age value 86401 (default: 5; max: 86400; disable caching: -1)`,
+			want: []*errorMatcher{
+				newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{
+					Value:  "https://example.com/",
+					Reason: "invalid",
+				}),
+				newErrorMatcher(&cfgerrors.UnacceptableMethodError{
+					Value:  http.MethodConnect,
+					Reason: "forbidden",
+				}),
+				newErrorMatcher(&cfgerrors.UnacceptableMethodError{
+					Value:  "résumé",
+					Reason: "invalid",
+				}),
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "résumé",
+					Type:   "request",
+					Reason: "invalid",
+				}),
+				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+					Value:  "Access-Control-Allow-Origin",
+					Type:   "request",
+					Reason: "prohibited",
+				}),
+				newErrorMatcher(&cfgerrors.MaxAgeOutOfBoundsError{
+					Value:   86_401,
+					Default: 5,
+					Max:     86_400,
+					Disable: -1,
+				}),
 			},
 		},
 	}
@@ -738,41 +885,53 @@ func TestIncorrectConfig(t *testing.T) {
 				t.Error("got nil error; want non-nil error")
 				return
 			}
-			var msgs []string
+		iterationOverErrorTree: // O(m * n) isn't ideal, but ok.
 			for err := range cfgerrors.All(err) {
-				msgs = append(msgs, err.Error())
-			}
-			sort.Strings(msgs) // the order doesn't matter
-			sort.Strings(tc.msgs)
-			res, same := diff(msgs, tc.msgs)
-			if !same {
-				t.Error("unexpected error message(s):")
-				for _, s := range res {
-					t.Logf("\t%s", s)
+				for i, m := range tc.want {
+					if m == nil {
+						continue
+					}
+					if m.matches(err) {
+						tc.want[i] = nil // Mark as "matched".
+						continue iterationOverErrorTree
+					}
 				}
+				t.Errorf("unexpected error: %q", err)
+			}
+			for _, m := range tc.want {
+				if m == nil { // Already matched.
+					continue
+				}
+				t.Errorf("missing error:    %q", m.err)
 			}
 		}
 		t.Run(tc.desc, f)
 	}
 }
 
-// diff reports whether x and y contain the same elements in the same order
-// and returns a visual summary of the difference y-x.
-func diff(x, y []string) (res []string, same bool) {
-	same = len(x) == len(y)
-	for 0 < len(x) && 0 < len(y) {
-		if x[0] == y[0] {
-			res = append(res, "  "+y[0])
-			y = y[1:]
-			x = x[1:]
-			continue
+type errorMatcher struct {
+	matches func(error) bool
+	err     error
+}
+
+func newErrorMatcher[T comparable, P errPtrRcvr[T]](ptrToTargetValue P) *errorMatcher {
+	pred := func(err error) bool {
+		ptr, ok := err.(P)
+		if !ok {
+			return false
 		}
-		same = false
-		res = append(res, "- "+y[0]) // missing element
-		y = y[1:]
+		if ptrToTargetValue == nil {
+			return ptr == nil
+		}
+		return ptr != nil && *ptrToTargetValue == *ptr
 	}
-	for _, s := range x {
-		res = append(res, "+ "+s) // extraneous element
+	return &errorMatcher{
+		matches: pred,
+		err:     ptrToTargetValue,
 	}
-	return res, same
+}
+
+type errPtrRcvr[T any] interface {
+	error
+	*T
 }

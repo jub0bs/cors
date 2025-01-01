@@ -59,6 +59,9 @@ type Middleware struct {
 // middleware does not alter the latter's behavior.
 // However, you can reconfigure a [Middleware] via its
 // [*Middleware.Reconfigure] method.
+//
+// If you need to programmatically handle the configuration errors constitutive
+// of the resulting error, rely on package [github.com/jub0bs/cors/cfgerrors].
 func NewMiddleware(cfg Config) (*Middleware, error) {
 	var m Middleware
 	icfg, err := newInternalConfig(&cfg)
@@ -93,6 +96,9 @@ func NewMiddleware(cfg Config) (*Middleware, error) {
 //
 // Mutating the fields of cfg after Reconfigure has returned does not alter
 // m's behavior.
+//
+// If you need to programmatically handle the configuration errors constitutive
+// of the resulting error, rely on package [github.com/jub0bs/cors/cfgerrors].
 func (m *Middleware) Reconfigure(cfg *Config) error {
 	icfg, err := newInternalConfig(cfg)
 	if err != nil {
