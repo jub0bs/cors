@@ -197,9 +197,10 @@ func (icfg *internalConfig) handleCORSPreflight(
 	debug bool,
 ) {
 	resHdrs := w.Header()
-	// Responses to OPTIONS requests are not meant to be cached but,
-	// for better or worse, some caching intermediaries can nevertheless be
-	// configured to cache such responses.
+	// Responses to OPTIONS requests are not meant to be cached
+	// (see https://httpwg.org/specs/rfc9110.html#rfc.section.9.3.7)
+	// but, for better or worse, some caching intermediaries can nevertheless
+	// be configured to cache such responses.
 	// To avoid poisoning such caches with inadequate preflight responses,
 	// middleware provided by this package by default lists
 	// the following header names in the Vary header of preflight responses:
