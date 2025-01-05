@@ -97,7 +97,7 @@ func (err *MaxAgeOutOfBoundsError) Error() string {
 	return fmt.Sprintf(tmpl, err.Value, err.Default, err.Max, err.Disable)
 }
 
-// A PreflightSuccessStatusOutOfBoundsError indicates a preflight-sucess status
+// A PreflightSuccessStatusOutOfBoundsError indicates a preflight-success status
 // that's either too low or too high.
 //
 // For more details, see [github.com/jub0bs/cors.Config.PreflightSuccessStatus].
