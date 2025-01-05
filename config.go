@@ -714,24 +714,26 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 
 func (icfg *internalConfig) validateMaxAge(delta int) error {
 	const (
+		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7.9
 		defaultMaxAge = 5
 		// Current upper bounds:
 		//  - Firefox: 86400 (24h)
 		//  - Chromium: 7200 (2h)
 		//  - WebKit/Safari: 600 (10m)
 		// see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#delta-seconds
-		upperBound         = 86400
-		noPreflightCaching = -1 // sentinel value
+		upperBound = 86400
+		// sentinel value for disabling preflight caching
+		disableCaching = -1
 	)
 	switch {
-	case delta < noPreflightCaching || upperBound < delta:
+	case delta < disableCaching || upperBound < delta:
 		return &cfgerrors.MaxAgeOutOfBoundsError{
 			Value:   delta,
 			Default: defaultMaxAge,
 			Max:     upperBound,
-			Disable: noPreflightCaching,
+			Disable: disableCaching,
 		}
-	case delta == noPreflightCaching:
+	case delta == disableCaching:
 		icfg.acma = []string{"0"}
 		return nil
 	case delta == 0: // leave cfg.ACMA at nil
