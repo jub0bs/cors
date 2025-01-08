@@ -2,7 +2,6 @@ package cors
 
 import (
 	"errors"
-	"maps"
 	"net/http"
 	"slices"
 	"strconv"
@@ -627,6 +626,12 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 			errs = append(errs, err)
 			continue
 		}
+		name = methods.Normalize(name)
+		if methods.IsSafelisted(name) {
+			// Safelisted methods need not be explicitly allowed;
+			// see https://stackoverflow.com/a/71429784/2541573.
+			continue
+		}
 		if methods.IsForbidden(name) {
 			err := &cfgerrors.UnacceptableMethodError{
 				Value:  name,
@@ -635,12 +640,8 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 			errs = append(errs, err)
 			continue
 		}
-		allowedMethods.Add(methods.Normalize(name))
+		allowedMethods.Add(name)
 	}
-	// Because safelisted methods need not be explicitly allowed
-	// (see https://stackoverflow.com/a/71429784/2541573),
-	// let's remove them silently.
-	maps.DeleteFunc(allowedMethods, methods.IsSafelisted)
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}

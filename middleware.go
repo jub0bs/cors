@@ -389,7 +389,7 @@ func (icfg *internalConfig) processACRM(
 	acrm string,
 	acrmSgl []string,
 ) bool {
-	if methods.IsSafelisted(acrm, struct{}{}) {
+	if methods.IsSafelisted(acrm) {
 		// CORS-safelisted methods get a free pass; see
 		// https://fetch.spec.whatwg.org/#ref-for-cors-safelisted-method%E2%91%A2.
 		// Therefore, no need to set the ACAM header in this case.

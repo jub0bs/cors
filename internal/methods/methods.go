@@ -33,7 +33,7 @@ var byteLowercasedForbiddenMethods = util.NewSet(
 // [per the Fetch standard].
 //
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#cors-safelisted-method
-func IsSafelisted(name string, _ struct{}) bool {
+func IsSafelisted(name string) bool {
 	return safelistedMethods.Contains(name)
 }
 

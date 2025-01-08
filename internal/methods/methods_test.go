@@ -85,7 +85,7 @@ func TestIsSafelisted(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			got := IsSafelisted(tc.name, struct{}{})
+			got := IsSafelisted(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
