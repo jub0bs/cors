@@ -154,7 +154,7 @@ Despite all of jub0bs/cors's goodness, you may still have valid reasons
 for sticking with [rs/cors][rs-cors], at least for the time being.
 Here is as exhaustive a list as I could come up with:
 
-- You need more flexibility than that offered by jub0bs/cors's origin patterns;
+- You need more flexibility than that afforded by jub0bs/cors's origin patterns;
   but do bear in mind that [excessive flexibility in this regard implies
   security risks][dangerous-patterns].
 - You want to log a message for every single request processed
