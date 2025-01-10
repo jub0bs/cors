@@ -351,7 +351,8 @@ func BenchmarkMiddleware(b *testing.B) {
 				}
 			}
 		}
-		b.Run("initialization "+mwbc.desc, f)
+		desc := fmt.Sprintf("type=init/cfg=%s", mwbc.desc)
+		b.Run(desc, f)
 
 		// benchmark config
 		f = func(b *testing.B) {
@@ -368,7 +369,8 @@ func BenchmarkMiddleware(b *testing.B) {
 				mw.Config()
 			}
 		}
-		b.Run("config         "+mwbc.desc, f)
+		desc = fmt.Sprintf("type=config/cfg=%s", mwbc.desc)
+		b.Run(desc, f)
 	}
 
 	// benchmark execution
@@ -400,7 +402,7 @@ func BenchmarkMiddleware(b *testing.B) {
 					}
 				})
 			}
-			desc := fmt.Sprintf("exec       %s vs %s", mwbc.desc, bc.desc)
+			desc := fmt.Sprintf("type=exec/debug=n/cfg=%s/req=%s", mwbc.desc, bc.desc)
 			if mw == nil {
 				b.Run(desc, f)
 				continue
@@ -409,8 +411,8 @@ func BenchmarkMiddleware(b *testing.B) {
 			mw.SetDebug(false)
 			b.Run(desc, f)
 			// Run the benchmark in debug mode.
-			desc = fmt.Sprintf("exec debug %s vs %s", mwbc.desc, bc.desc)
 			mw.SetDebug(true)
+			desc = fmt.Sprintf("type=exec/debug=y/cfg=%s/req=%s", mwbc.desc, bc.desc)
 			b.Run(desc, f)
 		}
 	}

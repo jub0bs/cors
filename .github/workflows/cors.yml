@@ -26,6 +26,8 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: jub0bs/cors
   benchmark:
+    # Mostly to compare allocations;
+    # measurements of execution speed in GitHub Actions are unreliable.
     needs: test
     strategy:
       matrix:
@@ -52,13 +54,17 @@ jobs:
       - name: Run Benchmark (previous)
         run: |
           cd previous
-          go test -run=^$ -bench=. -count=10 . -benchtime 10000x > benchmark.txt
+          go test -run=^$ -bench=. -count=10 . -benchtime 10000x > bench_results.txt
       - name: Run Benchmark (new)
         run: |
           cd new
-          go test -run=^$ -bench=. -count=10 . -benchtime 10000x > benchmark.txt
-      - name: Run benchstat
-        # Mostly to compare allocations;
-        # measurements of execution speed in GitHub Actions are unreliable.
+          go test -run=^$ -bench=. -count=10 . -benchtime 10000x > bench_results.txt
+      - name: Run benchstat for middleware initialization
         run: |
-          benchstat previous/benchmark.txt new/benchmark.txt
+          benchstat -filter "/type:init" previous/bench_results.txt new/bench_results.txt
+      - name: Run benchstat for middleware Config method
+        run: |
+          benchstat -filter "/type:config" previous/bench_results.txt new/bench_results.txt
+      - name: Run benchstat for middleware execution
+        run: |
+          benchstat -filter "/type:exec" previous/bench_results.txt new/bench_results.txt
