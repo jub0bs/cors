@@ -1,9 +1,8 @@
 /*
 Package cfgerrors provides functionalities for programmatically handling
-configuration errors returned by [github.com/jub0bs/cors.NewMiddleware] and
-[github.com/jub0bs/cors.Middleware.Reconfigure].
+configuration errors produced by package [github.com/jub0bs/cors].
 
-Most users of [github.com/jub0bs/cors] have no use for this package.
+Most users of package [github.com/jub0bs/cors] have no use for this package.
 However, multi-tenant SaaS companies that allow their tenants to configure CORS
 (e.g. via some Web portal) may find this package useful:
 it indeed allows those companies to inform their tenants about
