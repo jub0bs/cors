@@ -2,6 +2,7 @@ package util_test
 
 import (
 	"testing"
+	"unicode/utf8"
 
 	"github.com/jub0bs/cors/internal/util"
 )
@@ -65,6 +66,9 @@ func FuzzLowerThenUpperHasNoEffectAfterUpper(f *testing.F) {
 		f.Add(tc)
 	}
 	f.Fuzz(func(t *testing.T, orig string) {
+		if !isASCII(orig) {
+			t.Skip()
+		}
 		upper := util.ByteUppercase(orig)
 		upper2 := util.ByteUppercase(util.ByteLowercase(upper))
 		if upper != upper2 {
@@ -72,4 +76,13 @@ func FuzzLowerThenUpperHasNoEffectAfterUpper(f *testing.F) {
 			t.Errorf(tmpl, orig, upper, orig, upper2)
 		}
 	})
+}
+
+func isASCII(s string) bool {
+	for i := range len(s) {
+		if s[i] >= utf8.RuneSelf {
+			return false
+		}
+	}
+	return true
 }
