@@ -20,13 +20,15 @@ func IsValid(name string) bool {
 //
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#forbidden-method
 func IsForbidden(name string) bool {
-	return byteLowercasedForbiddenMethods.Contains(util.ByteLowercase(name))
+	return byteUppercasedForbiddenMethods.Contains(util.ByteUppercase(name))
 }
 
-var byteLowercasedForbiddenMethods = util.NewSet(
-	"connect",
-	"trace",
-	"track",
+// Note: because users are more likely to submit methods in uppercase,
+// we store them in the same case with the hope to save a few allocations.
+var byteUppercasedForbiddenMethods = util.NewSet(
+	"CONNECT",
+	"TRACE",
+	"TRACK",
 )
 
 // IsSafelisted reports whether name is a safelisted method,
