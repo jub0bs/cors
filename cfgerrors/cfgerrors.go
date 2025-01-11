@@ -87,7 +87,7 @@ func (err *UnacceptableHeaderNameError) Error() string {
 type MaxAgeOutOfBoundsError struct {
 	Value   int // the unacceptable value that was specified
 	Default int // max-age value used by browsers if MaxAgeInSeconds is 0
-	Max     int // maximum max-age value allowed by this library
+	Max     int // maximum max-age value permitted by this library
 	Disable int // sentinel value for disabling preflight caching
 }
 
