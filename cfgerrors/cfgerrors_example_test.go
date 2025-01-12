@@ -147,7 +147,7 @@ func adaptCORSConfigErrorMessagesForClient(err error) []string {
 				if err.Value == "*" {
 					msg = "For security reasons, you cannot both allow credentialed access and allow all Web origins."
 				} else {
-					const tmpl = "For security reasons, you cannot both allow credentialed access allow insecure origins like %q."
+					const tmpl = "For security reasons, you cannot both allow credentialed access and allow insecure origins like %q."
 					msg = fmt.Sprintf(tmpl, err.Value)
 				}
 			case "psl":
