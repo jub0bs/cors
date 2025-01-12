@@ -36,11 +36,11 @@ jobs:
     name: Benchmark comparison ${{ matrix.os }} @ Go ${{ matrix.go-version }}
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Check out Code (previous)
+      - name: Check out Code (old)
         uses: actions/checkout@v4
         with:
           ref: ${{ github.base_ref }}
-          path: previous
+          path: old
       - name: Check out Code (new)
         uses: actions/checkout@v4
         with:
@@ -51,9 +51,9 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Install benchstat
         run: go install golang.org/x/perf/cmd/benchstat@latest
-      - name: Run Benchmark (previous)
+      - name: Run Benchmark (old)
         run: |
-          cd previous
+          cd old
           go test -run=^$ -bench=. -count=10 . -benchtime 10000x > bench_results.txt
       - name: Run Benchmark (new)
         run: |
@@ -61,10 +61,10 @@ jobs:
           go test -run=^$ -bench=. -count=10 . -benchtime 10000x > bench_results.txt
       - name: Run benchstat for middleware initialization
         run: |
-          benchstat -filter "/type:init" previous/bench_results.txt new/bench_results.txt
+          benchstat -filter "/type:init" old/bench_results.txt new/bench_results.txt
       - name: Run benchstat for middleware Config method
         run: |
-          benchstat -filter "/type:config" previous/bench_results.txt new/bench_results.txt
+          benchstat -filter "/type:config" old/bench_results.txt new/bench_results.txt
       - name: Run benchstat for middleware execution
         run: |
-          benchstat -filter "/type:exec" previous/bench_results.txt new/bench_results.txt
+          benchstat -filter "/type:exec" old/bench_results.txt new/bench_results.txt
