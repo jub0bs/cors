@@ -32,30 +32,31 @@ func (t *Tree) Insert(keyPattern string, v int) {
 	// The key pattern is processed from right to left.
 	s := keyPattern
 	for {
-		label, ok := lastByte(s)
-		if !ok {
+		labelToChild, ok := lastByte(s)
+		if !ok { // s is empty
 			n.add(v, hasLeadingAsterisk)
 			return
 		}
 		if n.wSet.Contains(v) {
 			return
 		}
-		child := n.edges[label]
+		child := n.edges[labelToChild]
 		if child == nil { // No matching edge found; create one.
 			child = &node{suf: s}
 			child.add(v, hasLeadingAsterisk)
-			n.insertEdge(label, child)
+			n.upsertEdge(labelToChild, child)
 			return
 		}
 
 		prefixOfS, prefixOfChildSuf, suf := splitAtCommonSuffix(s, child.suf)
-		if len(prefixOfChildSuf) == 0 { // child.suf is a suffix of s
+		labelToGrandChild1, ok := lastByte(prefixOfChildSuf)
+		if !ok { // child.suf is a suffix of s
 			s = prefixOfS
 			n = child
 			continue
 		}
-
 		// child.suf is NOT a suffix of s; we need to split child.
+		//
 		// Before splitting: child
 		//
 		// After splitting:  child' -- grandChild1
@@ -64,27 +65,26 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		//                      \
 		//                       grandChild2
 
-		// Create the first grandchild on the basis of the current child.
+		// Create a first grandchild on the basis of the current child.
 		grandChild1 := child
 		grandChild1.suf = prefixOfChildSuf
 
 		// Replace child in n.
 		child = &node{suf: suf}
-		n.insertEdge(label, child)
+		n.upsertEdge(labelToChild, child)
 
-		// Add the first grandchild in child.
-		label, _ = lastByte(prefixOfChildSuf)
-		child.insertEdge(label, grandChild1)
-		if len(prefixOfS) == 0 {
+		// Add a first grandchild in child.
+		child.upsertEdge(labelToGrandChild1, grandChild1)
+		labelToGrandChild2, ok := lastByte(prefixOfS)
+		if !ok {
 			child.add(v, hasLeadingAsterisk)
 			return
 		}
 
 		// Add a second grandchild in child.
-		label, _ = lastByte(prefixOfS)
 		grandChild2 := &node{suf: prefixOfS}
 		grandChild2.add(v, hasLeadingAsterisk)
-		child.insertEdge(label, grandChild2)
+		child.upsertEdge(labelToGrandChild2, grandChild2)
 	}
 }
 
@@ -197,7 +197,7 @@ func (n *node) add(elem int, toWildcardSet bool) {
 
 var wildcardSingleton = util.NewSet(WildcardElem)
 
-func (n *node) insertEdge(label byte, child *node) {
+func (n *node) upsertEdge(label byte, child *node) {
 	if n.edges == nil {
 		n.edges = edges{label: child}
 		return
