@@ -28,7 +28,9 @@ func ExampleMiddleware_Wrap_incorrect() {
 	// Therefore, CORS preflight will systematically fail
 	// and you'll have a bad day...
 	mux.Handle("GET /api/dogs", corsMw.Wrap(http.HandlerFunc(handleDogsGet))) // incorrect!
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	if err := http.ListenAndServe(":8080", mux); err != http.ErrServerClosed {
+		log.Fatal(err)
+	}
 }
 
 func handleDogsGet(_ http.ResponseWriter, _ *http.Request) {
