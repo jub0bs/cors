@@ -121,7 +121,7 @@ import (
 //
 //	http://localhost:*
 //
-// encompasses the following origins (among others),
+// encompasses the following origins (among others):
 //
 //	http://localhost
 //	http://localhost:8080
@@ -132,7 +132,7 @@ import (
 //
 //	https://*.example.com:*
 //
-// encompasses the following origins (among others),
+// encompasses the following origins (among others):
 //
 //	https://foo.example.com
 //	https://foo.example.com:8080
