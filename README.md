@@ -18,11 +18,37 @@ The [Same-Origin Policy (SOP)][mdn-sop] is a security mechanism that
 Web browsers implement to protect their users.
 In particular, the SOP places some restrictions on cross-origin network access,
 in terms of both sending and reading.
+
 [Cross-Origin Resource Sharing (CORS)][mdn-cors] is a protocol that
 lets servers instruct browsers to relax those restrictions for select clients.
 
-This package allows you to configure and build [net/http][net-http] middleware
-that implement CORS.
+## Features
+
+This library allows you to configure and build [net/http][net-http] middleware
+that implement CORS. It distinguishes itself from other CORS middleware
+libraries by providing the following features:
+
+- [a simple and coherent API][pkgsite-index];
+- [thorough documentation][pkgsite];
+- [extensive configuration validation][validation];
+- [programmatic handling of configuration errors][cfgerrors];
+- [safe-by-default middleware behavior][safe];
+- [a useful debug mode][debug];
+- [on-the-fly, concurrency-safe middleware reconfigurability][reconfigurable];
+- [strong performance guarantees][benchmark-results];
+- [support for Private-Network Access][pna];
+- full compliance with [the Fetch standard][fetch].
+
+Despite all of this library's goodness, you may still have valid reasons
+for favoring libraries like the more popular [rs/cors][rs-cors].
+Here is as exhaustive a list as I could come up with:
+
+- You need more flexibility than that afforded by the
+  [origin patterns supported by this library][origin-patterns];
+  but do bear in mind that
+  [excessive flexibility in this regard implies security risks][danger].
+- You want to log a message for every single request processed
+  by your CORS middleware; [but do you, really?][logging]
 
 ## Installation
 
@@ -30,18 +56,18 @@ that implement CORS.
 go get github.com/jub0bs/cors
 ```
 
-jub0bs/cors requires [Go 1.23][go1.23] or above.
+This library requires [Go 1.23][go1.23] or above.
 
 ## Example
 
 The following program demonstrates how to create a CORS middleware that
 
 - allows anonymous access from [Web origin][web-origin] `https://example.com`,
-- with requests whose method is either `GET` or `POST`, and
+- with requests whose method is either `GET` or `POST` (or `HEAD`), and
 - (optionally) with request header `Authorization`,
 
 and how to apply the middleware in question to all the resources accessible
-under some `/api/` path:
+under the `/api/` path:
 
 ```go
 package main
@@ -105,6 +131,9 @@ If no error occurred, the server is now running on `localhost:8080` and
 the various resources accessible under the `/api/` path are now configured
 for CORS as desired.
 
+If you need to handle CORS-configuration errors programmatically,
+see [package cfgerrors][cfgerrors].
+
 ## A note about testing
 
 Be aware that, for performance reasons, CORS middleware produced by this
@@ -124,7 +153,7 @@ Otherwise, the CORS middleware will cause preflight to fail.
 
 The documentation is available on [pkg.go.dev][pkgsite].
 
-Moreover, guidance on how to use jub0bs/cors with popular third-party routers
+Moreover, guidance on how to use this library with popular third-party routers
 can be found in [jub0bs/cors-examples][cors-examples].
 
 ## Code coverage
@@ -133,7 +162,7 @@ can be found in [jub0bs/cors-examples][cors-examples].
 
 ## Benchmarks
 
-Some benchmarks pitting jub0bs/cors against [rs/cors][rs-cors]
+Some benchmarks pitting this library against [rs/cors][rs-cors]
 are available in [jub0bs/cors-benchmarks][cors-benchmarks].
 
 ## License
@@ -150,23 +179,14 @@ All source code is covered by the [MIT License][license].
 (GopherCon Europe 2023)][funcopts] (video)
 - [github.com/jub0bs/fcors][fcors] (this library's predecessor)
 
-## Reasons for favoring rs/cors over jub0bs/cors
-
-Despite all of jub0bs/cors's goodness, you may still have valid reasons
-for sticking with [rs/cors][rs-cors], at least for the time being.
-Here is as exhaustive a list as I could come up with:
-
-- You need more flexibility than that afforded by jub0bs/cors's origin patterns;
-  but do bear in mind that [excessive flexibility in this regard implies
-  security risks][dangerous-patterns].
-- You want to log a message for every single request processed
-  by your CORS middleware; [but do you, really?][logging]
-
-[acrh]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Headers
 [a-better-cors-lib]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/
+[acrh]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Headers
+[benchmark-results]: https://github.com/jub0bs/cors-benchmarks#results
+[cfgerrors]: https://pkg.go.dev/github.com/jub0bs/cors/cfgerrors
 [cors-benchmarks]: https://github.com/jub0bs/cors-benchmarks
 [cors-examples]: https://github.com/jub0bs/cors-examples
-[dangerous-patterns]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#disallow-dangerous-origin-patterns
+[danger]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#disallow-dangerous-origin-patterns
+[debug]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/#debug-mode
 [fcors]: https://github.com/jub0bs/fcors
 [fearless-cors]: https://jub0bs.com/posts/2023-02-08-fearless-cors/
 [fetch]: https://fetch.spec.whatwg.org
@@ -178,7 +198,12 @@ Here is as exhaustive a list as I could come up with:
 [mdn-cors]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 [mdn-sop]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 [net-http]: https://pkg.go.dev/net/http
+[origin-patterns]: https://pkg.go.dev/github.com/jub0bs/cors#hdr-Origins-Config
+[pkgsite-index]: https://pkg.go.dev/github.com/jub0bs/cors#pkg-index
 [pkgsite]: https://pkg.go.dev/github.com/jub0bs/cors
+[pna]: https://pkg.go.dev/github.com/jub0bs/cors#hdr-PrivateNetworkAccess-ExtraConfig
 [reconfigurable]: https://jub0bs.com/posts/2024-05-14-reconfigurable-cors-middleware/
 [rs-cors]: https://github.com/rs/cors
+[safe]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#10-render-insecure-configurations-impossible
+[validation]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#5-validate-configuration-and-fail-fast
 [web-origin]: https://developer.mozilla.org/en-US/docs/Glossary/Origin
