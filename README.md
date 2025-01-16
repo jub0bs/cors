@@ -29,10 +29,10 @@ that implement CORS. It distinguishes itself from other CORS middleware
 libraries by providing the following features:
 
 - [a simple and coherent API][pkgsite-index];
-- [thorough documentation][pkgsite];
+- [comprehensive documentation][pkgsite];
 - [extensive configuration validation][validation];
 - [programmatic handling of configuration errors][cfgerrors];
-- [safe-by-default middleware behavior][safe];
+- [safe-by-default middleware][safe];
 - [a useful debug mode][debug];
 - [on-the-fly, concurrency-safe middleware reconfigurability][reconfigurable];
 - [strong performance guarantees][benchmark-results];
