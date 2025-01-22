@@ -561,7 +561,7 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 		return err
 	}
 	var (
-		originPatterns         = make([]origins.Pattern, 0, len(patterns))
+		corpus                 origins.Corpus
 		publicSuffixes         []string
 		insecureOriginPatterns []string
 		discreteOrigin         string
@@ -588,7 +588,10 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 				publicSuffixes = append(publicSuffixes, raw)
 			}
 		}
-		originPatterns = append(originPatterns, pattern)
+		if corpus == nil {
+			corpus = make(origins.Corpus)
+		}
+		corpus.Add(&pattern)
 	}
 	icfg.tmp.insecureOriginPatterns = insecureOriginPatterns
 	icfg.tmp.publicSuffixes = publicSuffixes
@@ -597,10 +600,6 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 	}
 	if icfg.allowAnyOrigin {
 		return nil
-	}
-	corpus := make(origins.Corpus)
-	for _, pattern := range originPatterns {
-		corpus.Add(&pattern)
 	}
 	icfg.corpus = corpus
 	return nil
