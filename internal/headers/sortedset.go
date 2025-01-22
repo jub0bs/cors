@@ -41,11 +41,7 @@ func (set SortedSet) Size() int {
 // String joins the elements of set (sorted in lexicographical order)
 // with a comma and returns the resulting string.
 func (set SortedSet) String() string {
-	elems := make([]string, len(set.m))
-	for elem, i := range set.m {
-		elems[i] = elem // safe indexing, by construction of SortedSet
-	}
-	return strings.Join(elems, ",")
+	return strings.Join(set.ToSortedSlice(), ",")
 }
 
 // Accepts reports whether values is a sequence of [list-based field values]
@@ -158,10 +154,9 @@ func cutAtComma(str string, n int) (before, after string, found bool) {
 // ToSortedSlice returns a slice containing set's elements sorted in
 // lexicographical order.
 func (set SortedSet) ToSortedSlice() []string {
-	res := make([]string, 0, set.Size())
-	for elem := range set.m {
-		res = append(res, elem)
+	elems := make([]string, len(set.m))
+	for elem, i := range set.m {
+		elems[i] = elem // safe indexing, by construction of SortedSet
 	}
-	slices.Sort(res)
-	return res
+	return elems
 }
