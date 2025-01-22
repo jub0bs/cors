@@ -39,7 +39,7 @@ jobs:
       - name: Check out Code (old)
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.base_ref }}
+          ref: v0.5.2
           path: old
       - name: Check out Code (new)
         uses: actions/checkout@v4
