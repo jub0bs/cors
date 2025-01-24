@@ -533,10 +533,11 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 
 	// precompute ACAH if discrete request headers are allowed (without *)
 	if icfg.allowedReqHdrs.Size() != 0 {
+		s := icfg.allowedReqHdrs.ToSortedSlice()
 		// The elements of a header-field value may be separated simply by commas;
 		// since whitespace is optional, let's not use any.
 		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
-		icfg.acah = []string{strings.Join(icfg.allowedReqHdrs.ToSortedSlice(), ",")}
+		icfg.acah = []string{strings.Join(s, headers.ValueSep)}
 	}
 
 	// precompute ACEH
@@ -544,6 +545,9 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	case icfg.exposeAllResHdrs:
 		icfg.aceh = headers.ValueWildcard
 	case len(icfg.tmp.exposedResHdrs) != 0:
+		// The elements of a header-field value may be separated simply by commas;
+		// since whitespace is optional, let's not use any.
+		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
 		icfg.aceh = strings.Join(icfg.tmp.exposedResHdrs, headers.ValueSep)
 	}
 
@@ -944,7 +948,7 @@ func newConfig(icfg *internalConfig) *Config {
 
 	// response headers
 	if len(icfg.aceh) > 0 {
-		cfg.ResponseHeaders = strings.Split(icfg.aceh, ",")
+		cfg.ResponseHeaders = strings.Split(icfg.aceh, headers.ValueSep)
 	}
 
 	// extra config
