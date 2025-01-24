@@ -50,7 +50,7 @@ func (set SortedSet) Size() int {
 //
 // Accepts requires a preliminary call to method [SortedSet.Fix].
 //
-// This function's parameter is a slice of strings rather than just a string
+// This methods's parameter is a slice of strings rather than just a string
 // because, although [the Fetch standard] requires browsers to include at most
 // one ACRH field line in CORS-preflight requests, some intermediaries may well
 // (and [some reportedly do]) split it into multiple ACRH field lines.
@@ -67,11 +67,11 @@ func (set SortedSet) Size() int {
 // but adherence to this requirement leads to non-negligible performance
 // degradation in CORS middleware in the face of adversarial (spoofed)
 // CORS-preflight requests.
-// Therefore, this function only tolerates a small number (1) of OWS bytes
-// before and/or after each element. This deviation from RFC 9110 is expected
+// Therefore, this method only tolerates a small number (1) of OWS bytes
+// before and/or after each element. This divergence from RFC 9110 is expected
 // to strike a good balance between interoperability and performance.
 //
-// Moreover, this function tolerates a small number (16) of empty list elements,
+// Moreover, this method tolerates a small number (16) of empty list elements,
 // in accordance with [RFC 9110]'s recommendation (section 5.6.1.2).
 //
 // [RFC 9110]: https://httpwg.org/specs/rfc9110.html
