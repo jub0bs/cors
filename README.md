@@ -39,16 +39,15 @@ libraries by providing the following features:
 - [support for Private-Network Access][pna];
 - full compliance with [the Fetch standard][fetch].
 
-Despite all of this library's goodness, you may still have valid reasons
-for favoring libraries like the more popular [rs/cors][rs-cors].
-Here is as exhaustive a list as I could come up with:
+Despite all of this library's goodness, here are some valid reasons
+for favoring libraries like the more popular [rs/cors][rs-cors]:
 
 - You need more flexibility than that afforded by the
   [origin patterns supported by this library][origin-patterns];
   but do bear in mind that
   [excessive flexibility in this regard implies security risks][danger].
 - You want to log a message for every single request processed
-  by your CORS middleware; [but do you, really?][logging]
+  by your CORS middleware; [but do you really?][logging]
 
 ## Installation
 
