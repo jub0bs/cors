@@ -474,33 +474,39 @@ type internalConfig struct {
 
 	// misc
 	preflightStatus            int
-	tmp                        *tmpConfig
 	privateNetworkAccess       bool
 	privateNetworkAccessNoCors bool
 	subsOfPublicSuffixes       bool
 	insecureOrigins            bool
 }
 
-type tmpConfig struct {
-	publicSuffixes         []string
-	insecureOriginPatterns []string
-	exposedResHdrs         []string
-}
-
 func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	if cfg == nil {
 		return nil, nil
 	}
-	icfg := internalConfig{
-		tmp: new(tmpConfig),
+	var (
+		icfg internalConfig
+		errs []error
+	)
+
+	// extra config (accessed by other validateX methods)
+	if err := icfg.validatePreflightStatus(cfg.PreflightSuccessStatus); err != nil {
+		errs = append(errs, err)
 	}
-	var errs []error
+	if cfg.PrivateNetworkAccess && cfg.PrivateNetworkAccessInNoCORSModeOnly {
+		err := new(cfgerrors.IncompatiblePrivateNetworkAccessModesError)
+		errs = append(errs, err)
+	}
+	icfg.privateNetworkAccess = cfg.PrivateNetworkAccess
+	icfg.privateNetworkAccessNoCors = cfg.PrivateNetworkAccessInNoCORSModeOnly
+	icfg.insecureOrigins = cfg.DangerouslyTolerateInsecureOrigins
+	icfg.subsOfPublicSuffixes = cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes
 
 	// base config
+	icfg.credentialed = cfg.Credentialed // accessed by other validateX methods
 	if err := icfg.validateOrigins(cfg.Origins); err != nil {
 		errs = append(errs, err)
 	}
-	icfg.credentialed = cfg.Credentialed
 	if err := icfg.validateMethods(cfg.Methods); err != nil {
 		errs = append(errs, err)
 	}
@@ -514,46 +520,9 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 		errs = append(errs, err)
 	}
 
-	// extra config
-	if err := icfg.validatePreflightStatus(cfg.PreflightSuccessStatus); err != nil {
-		errs = append(errs, err)
-	}
-	icfg.privateNetworkAccess = cfg.PrivateNetworkAccess
-	icfg.privateNetworkAccessNoCors = cfg.PrivateNetworkAccessInNoCORSModeOnly
-	icfg.insecureOrigins = cfg.DangerouslyTolerateInsecureOrigins
-	icfg.subsOfPublicSuffixes = cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes
-
-	// validate config as a whole
-	if err := icfg.validate(); err != nil {
-		errs = append(errs, err)
-	}
 	if len(errs) != 0 {
 		return nil, errors.Join(errs...)
 	}
-
-	// precompute ACAH if discrete request headers are allowed (without *)
-	if icfg.allowedReqHdrs.Size() != 0 {
-		s := icfg.allowedReqHdrs.ToSortedSlice()
-		// The elements of a header-field value may be separated simply by commas;
-		// since whitespace is optional, let's not use any.
-		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
-		icfg.acah = []string{strings.Join(s, headers.ValueSep)}
-	}
-
-	// precompute ACEH
-	switch {
-	case icfg.exposeAllResHdrs:
-		icfg.aceh = headers.ValueWildcard
-	case len(icfg.tmp.exposedResHdrs) != 0:
-		// The elements of a header-field value may be separated simply by commas;
-		// since whitespace is optional, let's not use any.
-		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
-		icfg.aceh = strings.Join(icfg.tmp.exposedResHdrs, headers.ValueSep)
-	}
-
-	// tmp is no longer needed; let's make it eligible to GC
-	icfg.tmp = nil
-
 	return &icfg, nil
 }
 
@@ -565,14 +534,29 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 		return err
 	}
 	var (
-		corpus                 origins.Corpus
-		publicSuffixes         []string
-		insecureOriginPatterns []string
-		discreteOrigin         string
+		corpus         origins.Corpus
+		discreteOrigin string
+		errs           []error
 	)
-	var errs []error
+	pna := icfg.privateNetworkAccess || icfg.privateNetworkAccessNoCors
 	for _, raw := range patterns {
 		if raw == headers.ValueWildcard {
+			if icfg.credentialed {
+				err := &cfgerrors.IncompatibleOriginPatternError{
+					Value:  "*",
+					Reason: "credentialed",
+				}
+				errs = append(errs, err)
+			}
+			if pna {
+				// see note in
+				// https://developer.chrome.com/blog/private-network-access-preflight/#no-cors_mode
+				err := &cfgerrors.IncompatibleOriginPatternError{
+					Value:  "*",
+					Reason: "pna",
+				}
+				errs = append(errs, err)
+			}
 			icfg.allowAnyOrigin = true
 			continue
 		}
@@ -581,15 +565,39 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 			errs = append(errs, err)
 			continue
 		}
-		if pattern.IsDeemedInsecure() {
-			insecureOriginPatterns = append(insecureOriginPatterns, raw)
+		if pattern.IsDeemedInsecure() && !icfg.insecureOrigins {
+			// We require ExtraConfig.DangerouslyTolerateInsecureOrigins to
+			// be set only when
+			// - users specify one or more insecure origin patterns, and
+			// - enable credentialed access and/or some form of PNA.
+			// In all other cases, insecure origins like http://example.com are
+			// indeed no less insecure than * is, which itself doesn't require
+			// ExtraConfig.DangerouslyTolerateInsecureOrigins to be set.
+			if icfg.credentialed {
+				err := &cfgerrors.IncompatibleOriginPatternError{
+					Value:  raw,
+					Reason: "credentialed",
+				}
+				errs = append(errs, err)
+			}
+			if pna {
+				err := &cfgerrors.IncompatibleOriginPatternError{
+					Value:  raw,
+					Reason: "pna",
+				}
+				errs = append(errs, err)
+			}
 		}
 		if pattern.Kind != origins.PatternKindSubdomains && discreteOrigin == "" {
 			discreteOrigin = raw
 		}
-		if pattern.Kind == origins.PatternKindSubdomains {
+		if pattern.Kind == origins.PatternKindSubdomains && !icfg.subsOfPublicSuffixes {
 			if _, isEffectiveTLD := pattern.HostIsEffectiveTLD(); isEffectiveTLD {
-				publicSuffixes = append(publicSuffixes, raw)
+				err := &cfgerrors.IncompatibleOriginPatternError{
+					Value:  raw,
+					Reason: "psl",
+				}
+				errs = append(errs, err)
 			}
 		}
 		if corpus == nil {
@@ -597,8 +605,6 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 		}
 		corpus.Add(&pattern)
 	}
-	icfg.tmp.insecureOriginPatterns = insecureOriginPatterns
-	icfg.tmp.publicSuffixes = publicSuffixes
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
@@ -704,18 +710,25 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		}
 	}
 
-	var sortedSet headers.SortedSet
+	var allowedReqHdrs headers.SortedSet
 	for _, h := range allowedHeaders {
-		sortedSet.Add(h)
+		allowedReqHdrs.Add(h)
 	}
-	sortedSet.Fix()
+	allowedReqHdrs.Fix()
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
 	if icfg.asteriskReqHdrs {
 		return nil
 	}
-	icfg.allowedReqHdrs = sortedSet
+	if allowedReqHdrs.Size() != 0 {
+		icfg.allowedReqHdrs = allowedReqHdrs
+		s := allowedReqHdrs.ToSortedSlice()
+		// The elements of a header-field value may be separated simply by commas;
+		// since whitespace is optional, let's not use any.
+		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
+		icfg.acah = []string{strings.Join(s, headers.ValueSep)}
+	}
 	return nil
 }
 
@@ -759,6 +772,10 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 	var errs []error
 	for _, name := range names {
 		if name == headers.ValueWildcard {
+			if icfg.credentialed {
+				err := new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)
+				errs = append(errs, err)
+			}
 			icfg.exposeAllResHdrs = true
 			continue
 		}
@@ -801,7 +818,15 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
-	icfg.tmp.exposedResHdrs = exposedHeaders
+	switch {
+	case icfg.exposeAllResHdrs:
+		icfg.aceh = headers.ValueWildcard
+	case len(exposedHeaders) != 0:
+		// The elements of a header-field value may be separated simply by commas;
+		// since whitespace is optional, let's not use any.
+		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
+		icfg.aceh = strings.Join(exposedHeaders, headers.ValueSep)
+	}
 	return nil
 }
 
@@ -827,75 +852,6 @@ func (icfg *internalConfig) validatePreflightStatus(status int) error {
 }
 
 const defaultPreflightStatus = http.StatusNoContent
-
-func (icfg *internalConfig) validate() error {
-	var errs []error
-	pna := icfg.privateNetworkAccess || icfg.privateNetworkAccessNoCors
-	if icfg.allowAnyOrigin {
-		if icfg.credentialed {
-			err := &cfgerrors.IncompatibleOriginPatternError{
-				Value:  "*",
-				Reason: "credentialed",
-			}
-			errs = append(errs, err)
-		}
-		if pna {
-			// see note in
-			// https://developer.chrome.com/blog/private-network-access-preflight/#no-cors_mode
-			err := &cfgerrors.IncompatibleOriginPatternError{
-				Value:  "*",
-				Reason: "pna",
-			}
-			errs = append(errs, err)
-		}
-	}
-	if len(icfg.tmp.insecureOriginPatterns) > 0 && !icfg.insecureOrigins {
-		for _, pattern := range icfg.tmp.insecureOriginPatterns {
-			// We require ExtraConfig.DangerouslyTolerateInsecureOrigins to
-			// be set only when
-			// - users specify one or more insecure origin patterns, and
-			// - enable credentialed access and/or some form of PNA.
-			// In all other cases, insecure origins like http://example.com are
-			// indeed no less insecure than * is, which itself doesn't require
-			// ExtraConfig.DangerouslyTolerateInsecureOrigins to be set.
-			if icfg.credentialed {
-				err := &cfgerrors.IncompatibleOriginPatternError{
-					Value:  pattern,
-					Reason: "credentialed",
-				}
-				errs = append(errs, err)
-			}
-			if pna {
-				err := &cfgerrors.IncompatibleOriginPatternError{
-					Value:  pattern,
-					Reason: "pna",
-				}
-				errs = append(errs, err)
-			}
-		}
-	}
-	if len(icfg.tmp.publicSuffixes) > 0 && !icfg.subsOfPublicSuffixes {
-		for _, pattern := range icfg.tmp.publicSuffixes {
-			err := &cfgerrors.IncompatibleOriginPatternError{
-				Value:  pattern,
-				Reason: "psl",
-			}
-			errs = append(errs, err)
-		}
-	}
-	if icfg.privateNetworkAccess && icfg.privateNetworkAccessNoCors {
-		err := new(cfgerrors.IncompatiblePrivateNetworkAccessModesError)
-		errs = append(errs, err)
-	}
-	if icfg.exposeAllResHdrs && icfg.credentialed {
-		err := new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)
-		errs = append(errs, err)
-	}
-	if len(errs) != 0 {
-		return errors.Join(errs...)
-	}
-	return nil
-}
 
 // newConfig returns a Config on the basis of icfg.
 // The soundness of the result is guaranteed only if icfg is the result of a
