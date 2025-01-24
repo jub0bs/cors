@@ -39,9 +39,9 @@ func TestSet(t *testing.T) {
 			for _, s := range tc.more {
 				set.Add(s)
 			}
-			if maxSize := 1 + len(tc.rest) + len(tc.more); len(set) > maxSize {
-				const tmpl = "got a set of size %d; want at most %d"
-				t.Errorf(tmpl, len(set), maxSize)
+			if size := set.Size(); size != len(tc.want) {
+				const tmpl = "got a set of size %d; want %d"
+				t.Errorf(tmpl, size, len(tc.want))
 			}
 			all := append(tc.rest, tc.more...)
 			all = append(all, tc.first)

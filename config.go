@@ -920,7 +920,7 @@ func newConfig(icfg *internalConfig) *Config {
 	switch {
 	case icfg.allowAnyMethod:
 		cfg.Methods = []string{"*"}
-	case len(icfg.allowedMethods) > 0:
+	case icfg.allowedMethods.Size() > 0:
 		cfg.Methods = icfg.allowedMethods.ToSortedSlice()
 	}
 

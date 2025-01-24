@@ -27,6 +27,11 @@ func (s Set[E]) Contains(e E) bool {
 	return found
 }
 
+// Size returns the cardinality of s.
+func (s Set[_]) Size() int {
+	return len(s)
+}
+
 // ToSortedSlice returns a sorted slice containing the results.
 func (s Set[E]) ToSortedSlice() []E {
 	res := make([]E, 0, len(s))
