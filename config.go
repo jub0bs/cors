@@ -3,7 +3,6 @@ package cors
 import (
 	"errors"
 	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -778,8 +777,10 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 	if len(names) == 0 {
 		return nil
 	}
-	exposedHeaders := make([]string, 0, len(names))
-	var errs []error
+	var (
+		exposedHeaders util.Set[string]
+		errs           []error
+	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
 			if icfg.credentialed {
@@ -821,21 +822,22 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 			// silently tolerate safelisted response-header names
 			continue
 		}
-		exposedHeaders = append(exposedHeaders, normalized)
+		if exposedHeaders == nil {
+			exposedHeaders = make(util.Set[string])
+		}
+		exposedHeaders.Add(normalized)
 	}
-	slices.Sort(exposedHeaders)
-	exposedHeaders = slices.Compact(exposedHeaders)
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
 	switch {
 	case icfg.exposeAllResHdrs:
 		icfg.aceh = headers.ValueWildcard
-	case len(exposedHeaders) != 0:
+	case exposedHeaders.Size() > 0:
 		// The elements of a header-field value may be separated simply by commas;
 		// since whitespace is optional, let's not use any.
 		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
-		icfg.aceh = strings.Join(exposedHeaders, headers.ValueSep)
+		icfg.aceh = strings.Join(exposedHeaders.ToSortedSlice(), headers.ValueSep)
 	}
 	return nil
 }
