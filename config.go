@@ -656,7 +656,6 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		return nil
 	}
 	allowedHeaders := make([]string, 0, len(names))
-	var maxLength int
 	var errs []error
 	for _, name := range names {
 		if name == headers.ValueWildcard {
@@ -695,7 +694,6 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 			errs = append(errs, err)
 			continue
 		}
-		maxLength = max(maxLength, len(normalized))
 		allowedHeaders = append(allowedHeaders, normalized)
 		if normalized == headers.Authorization {
 			icfg.allowAuthorization = true
