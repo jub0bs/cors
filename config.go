@@ -702,7 +702,7 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		}
 	}
 
-	sortedSet := headers.NewSortedSet()
+	var sortedSet headers.SortedSet
 	for _, h := range allowedHeaders {
 		sortedSet.Add(h)
 	}

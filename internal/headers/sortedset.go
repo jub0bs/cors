@@ -15,14 +15,12 @@ type SortedSet struct {
 	maxLen int
 }
 
-// NewSortedSet returns an empty SortedSet.
-func NewSortedSet() SortedSet {
-	return SortedSet{m: make(map[string]int)}
-}
-
 // Add adds e to set without enforcing set's invariants;
 // see method [SortedSet.Fix].
-func (set SortedSet) Add(e string) {
+func (set *SortedSet) Add(e string) {
+	if set.m == nil {
+		set.m = make(map[string]int)
+	}
 	set.m[e] = 0 // dummy value
 }
 
