@@ -619,9 +619,10 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 	if len(names) == 0 {
 		return nil
 	}
-	sizeHint := len(names) // optimizing for no dupes
-	allowedMethods := make(util.Set[string], sizeHint)
-	var errs []error
+	var (
+		allowedMethods util.Set[string]
+		errs           []error
+	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
 			icfg.allowAnyMethod = true
@@ -648,6 +649,9 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 			}
 			errs = append(errs, err)
 			continue
+		}
+		if allowedMethods == nil {
+			allowedMethods = make(util.Set[string])
 		}
 		allowedMethods.Add(name)
 	}
