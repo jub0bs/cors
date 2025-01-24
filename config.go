@@ -701,7 +701,12 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 			icfg.allowAuthorization = true
 		}
 	}
-	sortedSet := headers.NewSortedSet(allowedHeaders...)
+
+	sortedSet := headers.NewSortedSet()
+	for _, h := range allowedHeaders {
+		sortedSet.Add(h)
+	}
+	sortedSet.Fix()
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}

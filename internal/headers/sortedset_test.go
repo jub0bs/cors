@@ -179,7 +179,11 @@ func TestSortedSet(t *testing.T) {
 	for _, tc := range cases {
 		f := func(t *testing.T) {
 			elems := slices.Clone(tc.elems)
-			set := headers.NewSortedSet(tc.elems...)
+			set := headers.NewSortedSet()
+			for _, elem := range tc.elems {
+				set.Add(elem)
+			}
+			set.Fix()
 			size := set.Size()
 			if set.Size() != tc.size {
 				const tmpl = "NewSortedSet(%#v...).Size(): got %d; want %d"

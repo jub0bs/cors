@@ -15,22 +15,28 @@ type SortedSet struct {
 	maxLen int
 }
 
-// NewSortedSet returns a SortedSet that contains all of elems,
-// but no other elements.
-func NewSortedSet(elems ...string) SortedSet {
+// NewSortedSet returns an empty SortedSet.
+func NewSortedSet() SortedSet {
+	return SortedSet{m: make(map[string]int)}
+}
+
+// Add adds e to set without enforcing set's invariants;
+// see method [SortedSet.Fix].
+func (set SortedSet) Add(e string) {
+	set.m[e] = 0 // dummy value
+}
+
+// Fix restores set's invariants.
+func (set *SortedSet) Fix() {
+	elems := make([]string, 0, len(set.m))
+	for e := range set.m {
+		elems = append(elems, e)
+	}
 	slices.Sort(elems)
-	elems = slices.Compact(elems)
-	m := make(map[string]int)
-	var maxLen int
 	for i, s := range elems {
-		maxLen = max(maxLen, len(s))
-		m[s] = i
+		set.maxLen = max(set.maxLen, len(s))
+		set.m[s] = i
 	}
-	res := SortedSet{
-		m:      m,
-		maxLen: maxLen,
-	}
-	return res
 }
 
 // Size returns the cardinality of set.
@@ -43,6 +49,8 @@ func (set SortedSet) Size() int {
 //   - all members of set,
 //   - sorted in lexicographical order,
 //   - unique.
+//
+// Accepts requires a preliminary call to method [SortedSet.Fix].
 //
 // This function's parameter is a slice of strings rather than just a string
 // because, although [the Fetch standard] requires browsers to include at most
@@ -147,6 +155,8 @@ func cutAtComma(str string, n int) (before, after string, found bool) {
 
 // ToSortedSlice returns a slice containing set's elements sorted in
 // lexicographical order.
+//
+// ToSortedSlice requires a preliminary call to method [SortedSet.Fix].
 func (set SortedSet) ToSortedSlice() []string {
 	elems := make([]string, len(set.m))
 	for elem, i := range set.m {
