@@ -39,7 +39,7 @@ jobs:
       - name: Check out Code (old)
         uses: actions/checkout@v4
         with:
-          ref: v0.5.2
+          ref: v0.5.3
           path: old
       - name: Check out Code (new)
         uses: actions/checkout@v4
