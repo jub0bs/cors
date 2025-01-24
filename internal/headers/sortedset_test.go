@@ -14,15 +14,13 @@ func TestSortedSet(t *testing.T) {
 		elems []string
 		// expectations
 		size     int
-		combined string
 		slice    []string
 		accepted [][]string
 		rejected [][]string
 	}{
 		{
-			desc:     "empty set",
-			size:     0,
-			combined: "",
+			desc: "empty set",
+			size: 0,
 			accepted: [][]string{
 				// some empty elements, possibly with OWS
 				{""},
@@ -40,11 +38,10 @@ func TestSortedSet(t *testing.T) {
 				make([]string, headers.MaxEmptyElements+1),
 			},
 		}, {
-			desc:     "singleton set",
-			elems:    []string{"x-foo"},
-			size:     1,
-			combined: "x-foo",
-			slice:    []string{"x-foo"},
+			desc:  "singleton set",
+			elems: []string{"x-foo"},
+			size:  1,
+			slice: []string{"x-foo"},
 			accepted: [][]string{
 				{"x-foo"},
 				// some empty elements, possibly with OWS
@@ -75,11 +72,10 @@ func TestSortedSet(t *testing.T) {
 				make([]string, headers.MaxEmptyElements+1),
 			},
 		}, {
-			desc:     "no dupes",
-			elems:    []string{"x-foo", "x-bar", "x-baz"},
-			size:     3,
-			combined: "x-bar,x-baz,x-foo",
-			slice:    []string{"x-bar", "x-baz", "x-foo"},
+			desc:  "no dupes",
+			elems: []string{"x-foo", "x-bar", "x-baz"},
+			size:  3,
+			slice: []string{"x-bar", "x-baz", "x-foo"},
 			accepted: [][]string{
 				{"x-bar"},
 				{"x-baz"},
@@ -130,11 +126,10 @@ func TestSortedSet(t *testing.T) {
 				make([]string, headers.MaxEmptyElements+1),
 			},
 		}, {
-			desc:     "some dupes",
-			elems:    []string{"x-foo", "x-bar", "x-foo"},
-			size:     2,
-			combined: "x-bar,x-foo",
-			slice:    []string{"x-bar", "x-foo"},
+			desc:  "some dupes",
+			elems: []string{"x-foo", "x-bar", "x-foo"},
+			size:  2,
+			slice: []string{"x-bar", "x-foo"},
 			accepted: [][]string{
 				{"x-bar"},
 				{"x-foo"},
@@ -190,11 +185,6 @@ func TestSortedSet(t *testing.T) {
 				const tmpl = "NewSortedSet(%#v...).Size(): got %d; want %d"
 				t.Errorf(tmpl, elems, size, tc.size)
 			}
-			combined := set.String()
-			if combined != tc.combined {
-				const tmpl = "NewSortedSet(%#v...).String(): got %q; want %q"
-				t.Errorf(tmpl, elems, combined, tc.combined)
-			}
 			slice := set.ToSortedSlice()
 			if !slices.Equal(slice, tc.slice) {
 				const tmpl = "NewSortedSet(%#v...).ToSortedSet(): got %q; want %q"
@@ -203,13 +193,13 @@ func TestSortedSet(t *testing.T) {
 			for _, a := range tc.accepted {
 				if !set.Accepts(a) {
 					const tmpl = "%q rejects %q, but should accept it"
-					t.Errorf(tmpl, set, a)
+					t.Errorf(tmpl, slice, a)
 				}
 			}
 			for _, r := range tc.rejected {
 				if set.Accepts(r) {
 					const tmpl = "%q accepts %q, but should reject it"
-					t.Errorf(tmpl, set, r)
+					t.Errorf(tmpl, slice, r)
 				}
 			}
 		}

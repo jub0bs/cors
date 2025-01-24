@@ -38,12 +38,6 @@ func (set SortedSet) Size() int {
 	return len(set.m)
 }
 
-// String joins the elements of set (sorted in lexicographical order)
-// with a comma and returns the resulting string.
-func (set SortedSet) String() string {
-	return strings.Join(set.ToSortedSlice(), ",")
-}
-
 // Accepts reports whether values is a sequence of [list-based field values]
 // whose elements are
 //   - all members of set,
