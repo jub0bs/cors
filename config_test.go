@@ -82,9 +82,13 @@ func TestConfig(t *testing.T) {
 		}, {
 			desc: "anonymous allow all",
 			cfg: &cors.Config{
-				Origins:         []string{"*"},
-				Methods:         []string{"*"},
-				RequestHeaders:  []string{"authoriZation", "*"},
+				Origins: []string{"*"},
+				Methods: []string{"*"},
+				RequestHeaders: []string{
+					"authoriZation",
+					"*",
+					"Authorization",
+				},
 				ResponseHeaders: []string{"*"},
 			},
 			want: &cors.Config{
@@ -100,9 +104,18 @@ func TestConfig(t *testing.T) {
 					"https://example.com",
 					"https://example.com",
 				},
-				RequestHeaders:  []string{"x-foO", "x-Bar", "authoRizaTion"},
+				RequestHeaders: []string{
+					"x-foO",
+					"x-Bar",
+					"authoRizaTion",
+					"Authorization",
+				},
 				MaxAgeInSeconds: -1,
-				ResponseHeaders: []string{"x-FOO", "X-baR", "x-foo"},
+				ResponseHeaders: []string{
+					"x-FOO",
+					"X-baR",
+					"x-foo",
+				},
 				ExtraConfig: cors.ExtraConfig{
 					PrivateNetworkAccessInNoCORSModeOnly: true,
 				},
@@ -124,11 +137,20 @@ func TestConfig(t *testing.T) {
 					"https://*.example.com:8080",
 					"https://*.foo.example.com:8080",
 				},
-				Credentialed:    true,
-				Methods:         []string{"POST", "PUT", "DELETE", "GET"},
+				Credentialed: true,
+				Methods: []string{
+					"POST",
+					"PUT",
+					"DELETE",
+					"GET",
+				},
 				RequestHeaders:  []string{"*"},
 				MaxAgeInSeconds: 30,
-				ResponseHeaders: []string{"x-FOO", "X-baR", "x-foo"},
+				ResponseHeaders: []string{
+					"x-FOO",
+					"X-baR",
+					"x-foo",
+				},
 				ExtraConfig: cors.ExtraConfig{
 					PreflightSuccessStatus:             279,
 					PrivateNetworkAccess:               true,
@@ -236,6 +258,7 @@ func TestConfig(t *testing.T) {
 					"X-Api-Key",
 					"*",
 					"*",
+					"AuthorizatioN",
 				},
 			},
 			want: &cors.Config{
@@ -252,6 +275,7 @@ func TestConfig(t *testing.T) {
 					"X-Api-Key",
 					"*",
 					"*",
+					"AuthorizatioN",
 				},
 			},
 			want: &cors.Config{

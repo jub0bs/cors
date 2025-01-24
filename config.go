@@ -669,8 +669,10 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 	if len(names) == 0 {
 		return nil
 	}
-	allowedHeaders := make([]string, 0, len(names))
-	var errs []error
+	var (
+		allowedHeaders headers.SortedSet
+		errs           []error
+	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
 			icfg.asteriskReqHdrs = true
@@ -690,6 +692,21 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		// https://fetch.spec.whatwg.org/#cors-unsafe-request-header-names,
 		// step 6.
 		normalized := util.ByteLowercase(name)
+		if normalized == headers.Authorization {
+			if icfg.allowAuthorization {
+				continue
+			}
+			icfg.allowAuthorization = true
+			if !icfg.asteriskReqHdrs || !icfg.credentialed {
+				// According to the Fetch standard, the wildcard does not cover
+				// request-header name Authorization; see
+				// https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name
+				// and https://github.com/whatwg/fetch/issues/251#issuecomment-209265586.
+				allowedHeaders.Add(normalized)
+			}
+			continue
+		}
+		// Note: at this stage, normalized is other than "authorization".
 		if headers.IsForbiddenRequestHeaderName(normalized) {
 			err := &cfgerrors.UnacceptableHeaderNameError{
 				Value:  name,
@@ -708,26 +725,15 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 			errs = append(errs, err)
 			continue
 		}
-		allowedHeaders = append(allowedHeaders, normalized)
-		if normalized == headers.Authorization {
-			icfg.allowAuthorization = true
-		}
+		allowedHeaders.Add(normalized)
 	}
-
-	var allowedReqHdrs headers.SortedSet
-	for _, h := range allowedHeaders {
-		allowedReqHdrs.Add(h)
-	}
-	allowedReqHdrs.Fix()
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
-	if icfg.asteriskReqHdrs {
-		return nil
-	}
-	if allowedReqHdrs.Size() != 0 {
-		icfg.allowedReqHdrs = allowedReqHdrs
-		s := allowedReqHdrs.ToSortedSlice()
+	if !icfg.asteriskReqHdrs && allowedHeaders.Size() != 0 {
+		allowedHeaders.Fix()
+		icfg.allowedReqHdrs = allowedHeaders
+		s := allowedHeaders.ToSortedSlice()
 		// The elements of a header-field value may be separated simply by commas;
 		// since whitespace is optional, let's not use any.
 		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
