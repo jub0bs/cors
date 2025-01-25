@@ -448,8 +448,7 @@ type ExtraConfig struct {
 
 type internalConfig struct {
 	// origins
-	corpus         origins.Corpus
-	allowAnyOrigin bool
+	corpus origins.Corpus // nil means all origins allowed
 
 	// credentialed
 	credentialed bool
@@ -536,6 +535,7 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 		corpus         origins.Corpus
 		discreteOrigin string
 		errs           []error
+		allowAnyOrigin bool
 	)
 	pna := icfg.privateNetworkAccess || icfg.privateNetworkAccessNoCors
 	for _, raw := range patterns {
@@ -556,7 +556,7 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 				}
 				errs = append(errs, err)
 			}
-			icfg.allowAnyOrigin = true
+			allowAnyOrigin = true
 			continue
 		}
 		pattern, err := origins.ParsePattern(raw)
@@ -607,7 +607,7 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
-	if icfg.allowAnyOrigin {
+	if allowAnyOrigin {
 		return nil
 	}
 	icfg.corpus = corpus
@@ -877,7 +877,7 @@ func newConfig(icfg *internalConfig) *Config {
 	var cfg Config
 
 	// origins
-	if icfg.allowAnyOrigin {
+	if icfg.corpus == nil {
 		cfg.Origins = []string{"*"}
 	} else {
 		cfg.Origins = icfg.corpus.Elems()

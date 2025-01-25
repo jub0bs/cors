@@ -168,7 +168,7 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
 	if icfg.privateNetworkAccessNoCors {
 		return
 	}
-	if !icfg.allowAnyOrigin {
+	if icfg.corpus != nil {
 		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
 		// Note that we deliberately list "Origin" in the Vary header of responses
 		// to actual requests even in cases where a single origin is allowed,
@@ -293,7 +293,7 @@ func (icfg *internalConfig) processOriginForPreflight(
 	if !ok {
 		return false
 	}
-	if !icfg.credentialed && icfg.allowAnyOrigin {
+	if !icfg.credentialed && icfg.corpus == nil {
 		buf[headers.ACAO] = headers.WildcardSgl
 		return true
 	}
@@ -347,11 +347,11 @@ func (icfg *internalConfig) handleCORSActual(
 	case isOPTIONS:
 		// see the implementation comment in handleCORSPreflight
 		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
-	case !icfg.allowAnyOrigin:
+	case icfg.corpus != nil:
 		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
 		resHdrs.Add(headers.Vary, headers.Origin)
 	}
-	if !icfg.credentialed && icfg.allowAnyOrigin {
+	if !icfg.credentialed && icfg.corpus == nil {
 		// See the last paragraph in
 		// https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
 		// Note that we deliberately list "Origin" in the Vary header of responses
