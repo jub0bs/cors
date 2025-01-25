@@ -467,8 +467,7 @@ type internalConfig struct {
 	acma []string
 
 	// response headers
-	aceh             string
-	exposeAllResHdrs bool
+	aceh string
 
 	// misc
 	preflightStatus            int
@@ -778,8 +777,9 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 		return nil
 	}
 	var (
-		exposedHeaders util.Set[string]
-		errs           []error
+		exposedHeaders   util.Set[string]
+		errs             []error
+		exposeAllResHdrs bool
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
@@ -787,7 +787,7 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 				err := new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)
 				errs = append(errs, err)
 			}
-			icfg.exposeAllResHdrs = true
+			exposeAllResHdrs = true
 			continue
 		}
 		if !headers.IsValid(name) {
@@ -831,7 +831,7 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 		return errors.Join(errs...)
 	}
 	switch {
-	case icfg.exposeAllResHdrs:
+	case exposeAllResHdrs:
 		icfg.aceh = headers.ValueWildcard
 	case exposedHeaders.Size() > 0:
 		// The elements of a header-field value may be separated simply by commas;
