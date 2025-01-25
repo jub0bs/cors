@@ -447,32 +447,20 @@ type ExtraConfig struct {
 }
 
 type internalConfig struct {
-	// origins
-	corpus origins.Corpus // nil means all origins allowed
-
-	// credentialed
-	credentialed bool
-
-	// methods
-	allowedMethods util.Set[string]
-	allowAnyMethod bool
-
-	// request headers
-	acah               []string
-	allowedReqHdrs     headers.SortedSet
-	asteriskReqHdrs    bool
-	allowAuthorization bool
-
-	// max age
-	acma []string
-
-	// response headers
-	aceh string
-
-	// misc
+	corpus                     origins.Corpus // nil means all origins allowed
+	allowedMethods             util.Set[string]
+	allowedReqHdrs             headers.SortedSet
+	acah                       []string
 	preflightStatusMinus200    uint8 // range: [0,99]
+	credentialed               bool
+	allowAnyMethod             bool
+	asteriskReqHdrs            bool
+	allowAuthorization         bool
 	privateNetworkAccess       bool
 	privateNetworkAccessNoCors bool
+	_padding                   byte //lint:ignore U1000 (pad to 64 bytes)
+	acma                       []string
+	aceh                       string
 	subsOfPublicSuffixes       bool
 	insecureOrigins            bool
 }
