@@ -249,7 +249,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	if !icfg.processACRPN(buf, reqHdrs) {
 		if debug {
 			maps.Copy(resHdrs, buf)
-			w.WriteHeader(icfg.preflightStatus)
+			w.WriteHeader(int(icfg.preflightStatusMinus200) + 200)
 			return
 		}
 		w.WriteHeader(http.StatusForbidden)
@@ -259,7 +259,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	if !icfg.processACRM(buf, acrm, acrmSgl) {
 		if debug {
 			maps.Copy(resHdrs, buf)
-			w.WriteHeader(icfg.preflightStatus)
+			w.WriteHeader(int(icfg.preflightStatusMinus200) + 200)
 			return
 		}
 		w.WriteHeader(http.StatusForbidden)
@@ -269,7 +269,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	if !icfg.processACRH(buf, reqHdrs, debug) {
 		if debug {
 			maps.Copy(resHdrs, buf)
-			w.WriteHeader(icfg.preflightStatus)
+			w.WriteHeader(int(icfg.preflightStatusMinus200) + 200)
 			return
 		}
 		w.WriteHeader(http.StatusForbidden)
@@ -281,7 +281,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	if icfg.acma != nil {
 		resHdrs[headers.ACMA] = icfg.acma
 	}
-	w.WriteHeader(icfg.preflightStatus)
+	w.WriteHeader(int(icfg.preflightStatusMinus200) + 200)
 }
 
 func (icfg *internalConfig) processOriginForPreflight(

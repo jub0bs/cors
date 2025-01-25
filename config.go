@@ -470,7 +470,7 @@ type internalConfig struct {
 	aceh string
 
 	// misc
-	preflightStatus            int
+	preflightStatusMinus200    uint8 // range: [0,99]
 	privateNetworkAccess       bool
 	privateNetworkAccessNoCors bool
 	subsOfPublicSuffixes       bool
@@ -844,7 +844,7 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 
 func (icfg *internalConfig) validatePreflightStatus(status int) error {
 	if status == 0 {
-		icfg.preflightStatus = defaultPreflightStatus
+		icfg.preflightStatusMinus200 = defaultPreflightStatus - 200
 		return nil
 	}
 	const ( // see https://fetch.spec.whatwg.org/#ok-status
@@ -859,7 +859,7 @@ func (icfg *internalConfig) validatePreflightStatus(status int) error {
 			Max:     upperBound,
 		}
 	}
-	icfg.preflightStatus = status
+	icfg.preflightStatusMinus200 = uint8(status - 200) // 200 <= status < 300
 	return nil
 }
 
@@ -920,8 +920,8 @@ func newConfig(icfg *internalConfig) *Config {
 	}
 
 	// extra config
-	if icfg.preflightStatus != defaultPreflightStatus {
-		cfg.ExtraConfig.PreflightSuccessStatus = icfg.preflightStatus
+	if icfg.preflightStatusMinus200+200 != defaultPreflightStatus {
+		cfg.ExtraConfig.PreflightSuccessStatus = int(icfg.preflightStatusMinus200) + 200
 	}
 	cfg.ExtraConfig.PrivateNetworkAccess = icfg.privateNetworkAccess
 	cfg.ExtraConfig.PrivateNetworkAccessInNoCORSModeOnly = icfg.privateNetworkAccessNoCors
