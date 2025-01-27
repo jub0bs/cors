@@ -4,10 +4,12 @@ on: [push]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        os: [ubuntu-latest]
         go-version: [1.23]
+    name: Tests ${{ matrix.os }} @ Go ${{ matrix.go-version }}
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Check out Source
         uses: actions/checkout@v4
