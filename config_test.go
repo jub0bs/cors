@@ -390,7 +390,7 @@ func TestIncorrectConfig(t *testing.T) {
 		cfg  *cors.Config
 		want []*errorMatcher
 	}
-	var cases = []InvalidConfigTestCase{
+	cases := []InvalidConfigTestCase{
 		{
 			desc: "no origin pattern specified",
 			cfg:  &cors.Config{},

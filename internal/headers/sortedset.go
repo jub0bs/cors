@@ -79,9 +79,9 @@ func (set SortedSet) Size() int {
 // [some reportedly do]: https://github.com/rs/cors/issues/184
 // [the Fetch standard]: https://fetch.spec.whatwg.org
 func (set SortedSet) Accepts(values []string) bool {
-	var ( // effectively constant
-		maxLen = MaxOWSBytes + set.maxLen + MaxOWSBytes + 1 // +1 for comma
-	)
+	// effectively constant
+	maxLen := MaxOWSBytes + set.maxLen + MaxOWSBytes + 1 // +1 for comma
+
 	var (
 		posOfLastNameSeen = -1
 		name              string

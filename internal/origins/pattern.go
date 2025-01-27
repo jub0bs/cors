@@ -230,7 +230,7 @@ func parseHostPattern(str, full string) (HostPattern, string, error) {
 			}
 			return zeroHostPattern, str, err
 		}
-		var ipStr = ip.String()
+		ipStr := ip.String()
 		if ipStr != host.Value {
 			err := &cfgerrors.UnacceptableOriginPatternError{
 				Value:  full,

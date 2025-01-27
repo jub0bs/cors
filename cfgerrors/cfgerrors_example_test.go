@@ -71,7 +71,7 @@ func (app *TenantApp) handleReconfigureCORS(w http.ResponseWriter, r *http.Reque
 	if err := app.corsMiddleware.Reconfigure(&cfg); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		var resData = struct {
+		resData := struct {
 			Errors []string `json:"errors"`
 		}{
 			Errors: adaptCORSConfigErrorMessagesForClient(err),
