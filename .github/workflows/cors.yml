@@ -36,15 +36,21 @@ jobs:
     name: Benchmark comparison ${{ matrix.os }} @ Go ${{ matrix.go-version }}
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Check out Code (old)
-        uses: actions/checkout@v4
-        with:
-          ref: v0.5.3
-          path: old
       - name: Check out Code (new)
         uses: actions/checkout@v4
         with:
           path: new
+          fetch-depth: '0' # fetch all history for all branches and tags
+      - name: Retrieve latest tag
+        id: latest-tag
+        run: |
+          cd new
+          echo "LATEST_TAG=$(git for-each-ref --sort=-version:refname --format='%(refname:lstrip=2)' --count=1 refs/tags)" >> "$GITHUB_OUTPUT"
+      - name: Check out Code (old)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.latest-tag.outputs.LATEST_TAG }}
+          path: old
       - name: Set up Go ${{ matrix.go-version }}
         uses: actions/setup-go@v5
         with:
