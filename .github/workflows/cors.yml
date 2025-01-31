@@ -62,11 +62,11 @@ jobs:
       - name: Run Benchmark (old)
         run: |
           cd old
-          go test -run=^$ -bench=. -count=10 . -benchtime 10000x > bench_results.txt
+          go test -run=^$ -bench=. -count=10 . -benchtime 500ms > bench_results.txt
       - name: Run Benchmark (new)
         run: |
           cd new
-          go test -run=^$ -bench=. -count=10 . -benchtime 10000x > bench_results.txt
+          go test -run=^$ -bench=. -count=10 . -benchtime 500ms > bench_results.txt
       - name: Run benchstat for middleware initialization
         run: |
           benchstat -filter "/type:init" old/bench_results.txt new/bench_results.txt
