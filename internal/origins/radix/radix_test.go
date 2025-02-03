@@ -7,20 +7,18 @@ import (
 	"github.com/jub0bs/cors/internal/origins/radix"
 )
 
-type TestCase struct {
-	desc     string
-	patterns []Pair
-	elems    []string
-	accept   []Pair
-	reject   []Pair
-}
-
-type Pair struct {
-	key   string
-	value int
-}
-
 func TestRadix(t *testing.T) {
+	type Pair struct {
+		key   string
+		value int
+	}
+	type TestCase struct {
+		desc     string
+		patterns []Pair
+		elems    []string
+		accept   []Pair
+		reject   []Pair
+	}
 	cases := []TestCase{
 		{
 			desc: "empty tree",
@@ -443,7 +441,10 @@ func TestRadix(t *testing.T) {
 			for _, pair := range tc.accept {
 				if !tree.Contains(pair.key, pair.value) {
 					if !topHeader {
-						logMsgHeader(t, tc.patterns)
+						t.Log("a radix tree composed of")
+						for _, pair := range tc.patterns {
+							t.Logf("\t- %v\n", pair)
+						}
 						topHeader = true
 					}
 					if !acceptHeader {
@@ -457,7 +458,10 @@ func TestRadix(t *testing.T) {
 			for _, pair := range tc.reject {
 				if tree.Contains(pair.key, pair.value) {
 					if !topHeader {
-						logMsgHeader(t, tc.patterns)
+						t.Log("a radix tree composed of")
+						for _, pair := range tc.patterns {
+							t.Logf("\t- %v\n", pair)
+						}
 						topHeader = true
 					}
 					if !rejectHeader {
@@ -469,13 +473,5 @@ func TestRadix(t *testing.T) {
 			}
 		}
 		t.Run(tc.desc, f)
-	}
-}
-
-func logMsgHeader(t *testing.T, pairs []Pair) {
-	t.Helper()
-	t.Log("a radix tree composed of")
-	for _, pair := range pairs {
-		t.Logf("\t- %v\n", pair)
 	}
 }
