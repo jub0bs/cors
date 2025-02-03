@@ -1,16 +1,12 @@
 package origins
 
-import (
-	"slices"
-
-	"github.com/jub0bs/cors/internal/origins/radix"
-)
+import "slices"
 
 // A Corpus represents a set of allowed (tuple) [Web origins].
 // The keys in this map correspond to origin schemes.
 //
 // [Web origins]: https://developer.mozilla.org/en-US/docs/Glossary/Origin
-type Corpus map[string]radix.Tree
+type Corpus map[string]Tree
 
 // Add augments c with all Web origins encompassed by pattern.
 func (c Corpus) Add(pattern *Pattern) {

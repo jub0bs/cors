@@ -1,7 +1,4 @@
-// Package radix provides an implementation of a specialized radix tree.
-// The implementation draws heavy inspiration from
-// https://github.com/armon/go-radix.
-package radix
+package origins
 
 import (
 	"slices"
@@ -13,6 +10,9 @@ import (
 // A Tree is radix tree whose edges are each labeled by a byte,
 // and whose conceptual leaf nodes each contain a set of ints.
 // The zero value of a Tree is an empty tree.
+//
+// The implementation draws heavy inspiration from
+// https://github.com/armon/go-radix.
 type Tree struct {
 	root node
 }
@@ -94,11 +94,11 @@ func (t *Tree) Contains(k string, v int) bool {
 	for {
 		label, ok := lastByte(k)
 		if !ok {
-			return n.set.Contains(v) || n.set.Contains(WildcardElem)
+			return n.set.Contains(v) || n.set.Contains(wildcardPort)
 		}
 
 		// k is not empty; check wildcard edge
-		if n.wSet.Contains(v) || n.wSet.Contains(WildcardElem) {
+		if n.wSet.Contains(v) || n.wSet.Contains(wildcardPort) {
 			return true
 		}
 
@@ -156,8 +156,8 @@ func (t *Tree) Elems() []string {
 	return res
 }
 
-// WildcardElem is a sentinel value that subsumes all others.
-const WildcardElem = -1
+// wildcardPort is a sentinel value that subsumes all others.
+const wildcardPort = -1
 
 // A node represents a regular node
 // (i.e. a node that does not stem from a wildcard edge)
@@ -174,28 +174,28 @@ type node struct {
 	wSet util.Set[int]
 }
 
-func (n *node) add(elem int, toWildcardSet bool) {
+func (n *node) add(port int, wildcardSubs bool) {
 	var set *util.Set[int]
-	if toWildcardSet {
+	if wildcardSubs {
 		set = &n.wSet
 	} else {
 		set = &n.set
 	}
-	if elem == WildcardElem {
+	if port == wildcardPort {
 		*set = wildcardSingleton
 		return
 	}
 	if *set == nil {
-		*set = util.NewSet(elem)
+		*set = util.NewSet(port)
 		return
 	}
-	if set.Contains(WildcardElem) { // nothing to do
+	if set.Contains(wildcardPort) { // nothing to do
 		return
 	}
-	set.Add(elem)
+	set.Add(port)
 }
 
-var wildcardSingleton = util.NewSet(WildcardElem)
+var wildcardSingleton = util.NewSet(wildcardPort)
 
 func (n *node) upsertEdge(label byte, child *node) {
 	if n.edges == nil {
@@ -214,7 +214,7 @@ func (n *node) Elems(dst *[]string, suf string) {
 	for port := range n.set {
 		var s string
 		switch port {
-		case WildcardElem:
+		case wildcardPort:
 			s = suf + ":*"
 		case 0:
 			s = suf
@@ -226,7 +226,7 @@ func (n *node) Elems(dst *[]string, suf string) {
 	for port := range n.wSet {
 		var s string
 		switch port {
-		case WildcardElem:
+		case wildcardPort:
 			s = "*" + suf + ":*"
 		case 0:
 			s = "*" + suf

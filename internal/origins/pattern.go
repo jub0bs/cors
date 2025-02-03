@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/jub0bs/cors/cfgerrors"
-	"github.com/jub0bs/cors/internal/origins/radix"
 	"golang.org/x/net/idna"
 	"golang.org/x/net/publicsuffix"
 )
@@ -22,8 +21,6 @@ const (
 	subdomainWildcard = "*"
 	// marks an arbitrary (possibly implicit) port number
 	portWildcard = "*"
-	// sentinel value indicating that arbitrary port numbers are allowed
-	anyPort int = radix.WildcardElem
 )
 
 // PatternKind represents the kind of a host pattern.
@@ -288,7 +285,7 @@ func (hp *HostPattern) hostOnly() string {
 // success or failure.
 func parsePortPattern(str string) (port int, rest string, ok bool) {
 	if rest, ok = consume(portWildcard, str); ok {
-		return anyPort, rest, true
+		return wildcardPort, rest, true
 	}
 	return parsePort(str)
 }

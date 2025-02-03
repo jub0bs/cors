@@ -1,10 +1,10 @@
-package radix_test
+package origins_test
 
 import (
 	"slices"
 	"testing"
 
-	"github.com/jub0bs/cors/internal/origins/radix"
+	"github.com/jub0bs/cors/internal/origins"
 )
 
 func TestRadix(t *testing.T) {
@@ -426,7 +426,7 @@ func TestRadix(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			var tree radix.Tree
+			var tree origins.Tree
 			for _, pair := range tc.patterns {
 				tree.Insert(pair.key, pair.value)
 			}

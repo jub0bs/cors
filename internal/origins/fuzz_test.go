@@ -81,7 +81,7 @@ func FuzzParsePattern(f *testing.F) {
 			t.Skip()
 		}
 		if strings.HasSuffix(raw, ":*") {
-			if pattern.Port != anyPort {
+			if pattern.Port != wildcardPort {
 				const tmpl = "pattern %q should but does not result" +
 					" in a Pattern that allows arbitrary ports"
 				t.Errorf(tmpl, raw)
@@ -121,7 +121,7 @@ func FuzzCorpus(f *testing.F) {
 			}
 			return
 		}
-		if pattern.Port == anyPort {
+		if pattern.Port == wildcardPort {
 			if !strings.HasSuffix(longestCommonPrefix(raw, origin), ":") {
 				t.Errorf(tmpl, raw, origin)
 			}
