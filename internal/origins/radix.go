@@ -1,9 +1,6 @@
 package origins
 
-import (
-	"slices"
-	"strconv"
-)
+import "strconv"
 
 // A Tree is radix tree whose edges are each labeled by a byte,
 // and whose conceptual leaf nodes each contain a set of ints.
@@ -147,11 +144,8 @@ func splitAtCommonSuffix(a, b string) (string, string, string) {
 }
 
 // Elems returns a slice containing textual representations of t's elements.
-func (t *Tree) Elems() []string {
-	var res []string
-	t.root.Elems(&res, "")
-	slices.Sort(res)
-	return res
+func (t *Tree) Elems(dst *[]string, prefix string) {
+	t.root.Elems(dst, prefix, "")
 }
 
 // A node represents a regular node
@@ -189,33 +183,28 @@ type edges = map[byte]*node
 
 // Elems adds textual representations of n's elements to dst,
 // using suf as a base suffix.
-func (n *node) Elems(dst *[]string, suf string) {
+func (n *node) Elems(dst *[]string, prefix, suf string) {
 	suf = n.suf + suf
 	for port := range n.set {
-		var s string
-		switch port {
-		case wildcardPort:
-			s = suf + ":*"
-		case 0:
-			s = suf
-		default:
-			s = suf + ":" + strconv.Itoa(port)
-		}
-		*dst = append(*dst, s)
+		emit(dst, prefix, suf, port)
 	}
 	for port := range n.wSet {
-		var s string
-		switch port {
-		case wildcardPort:
-			s = "*" + suf + ":*"
-		case 0:
-			s = "*" + suf
-		default:
-			s = "*" + suf + ":" + strconv.Itoa(port)
-		}
-		*dst = append(*dst, s)
+		emit(dst, prefix+subdomainWildcard, suf, port)
 	}
 	for _, child := range n.edges {
-		child.Elems(dst, suf)
+		child.Elems(dst, prefix, suf)
 	}
+}
+
+func emit(dst *[]string, prefix, suf string, port int) {
+	var s string
+	switch port {
+	case wildcardPort:
+		s = suf + ":" + portWildcard
+	case 0:
+		s = suf
+	default:
+		s = suf + ":" + strconv.Itoa(port)
+	}
+	*dst = append(*dst, prefix+s)
 }

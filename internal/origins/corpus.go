@@ -21,21 +21,11 @@ func (c Corpus) Contains(o *Origin) bool {
 	return found && tree.Contains(o.Value, o.Port)
 }
 
-// Elems returns a slice containing textual representations of c's elements.
-func (c Corpus) Elems() []string {
-	var res []string
-	schemes := make([]string, 0, len(c))
-	for scheme := range c {
-		schemes = append(schemes, scheme)
+// Elems returns a sorted slice of textual representations of c's elements.
+func (c Corpus) Elems() (res []string) {
+	for scheme, tree := range c {
+		tree.Elems(&res, scheme+schemeHostSep)
 	}
-	slices.Sort(schemes)
-	for _, scheme := range schemes {
-		tree := c[scheme]
-		elems := tree.Elems()
-		for i := range elems {
-			elems[i] = scheme + "://" + elems[i]
-		}
-		res = append(res, elems...)
-	}
-	return res
+	slices.Sort(res)
+	return
 }

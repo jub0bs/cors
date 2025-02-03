@@ -430,7 +430,9 @@ func TestRadix(t *testing.T) {
 			for _, pair := range tc.patterns {
 				tree.Insert(pair.key, pair.value)
 			}
-			elems := tree.Elems()
+			var elems []string
+			tree.Elems(&elems, "")
+			slices.Sort(elems)
 			if !slices.Equal(elems, tc.elems) {
 				t.Errorf("got %q; want %q", elems, tc.elems)
 			}
