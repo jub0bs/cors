@@ -3,8 +3,6 @@ package origins
 import (
 	"slices"
 	"strconv"
-
-	"github.com/jub0bs/cors/internal/util"
 )
 
 // A Tree is radix tree whose edges are each labeled by a byte,
@@ -94,11 +92,11 @@ func (t *Tree) Contains(k string, v int) bool {
 	for {
 		label, ok := lastByte(k)
 		if !ok {
-			return n.set.Contains(v) || n.set.Contains(wildcardPort)
+			return n.set.Contains(v)
 		}
 
 		// k is not empty; check wildcard edge
-		if n.wSet.Contains(v) || n.wSet.Contains(wildcardPort) {
+		if n.wSet.Contains(v) {
 			return true
 		}
 
@@ -156,9 +154,6 @@ func (t *Tree) Elems() []string {
 	return res
 }
 
-// wildcardPort is a sentinel value that subsumes all others.
-const wildcardPort = -1
-
 // A node represents a regular node
 // (i.e. a node that does not stem from a wildcard edge)
 // of a Tree.
@@ -168,34 +163,19 @@ type node struct {
 	// edges to children of this node
 	edges edges
 	// values in this node
-	set util.Set[int]
+	set PortSet
 	// values in the "conceptual" child node down the wildcard edge
 	// that stems from this node
-	wSet util.Set[int]
+	wSet PortSet
 }
 
 func (n *node) add(port int, wildcardSubs bool) {
-	var set *util.Set[int]
 	if wildcardSubs {
-		set = &n.wSet
+		n.wSet.Add(port)
 	} else {
-		set = &n.set
+		n.set.Add(port)
 	}
-	if port == wildcardPort {
-		*set = wildcardSingleton
-		return
-	}
-	if *set == nil {
-		*set = util.NewSet(port)
-		return
-	}
-	if set.Contains(wildcardPort) { // nothing to do
-		return
-	}
-	set.Add(port)
 }
-
-var wildcardSingleton = util.NewSet(wildcardPort)
 
 func (n *node) upsertEdge(label byte, child *node) {
 	if n.edges == nil {
