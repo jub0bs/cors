@@ -2,39 +2,38 @@ package util
 
 import "slices"
 
-// A Set represents a mathematical set of ints or strings.
-type Set[E int | string] map[E]struct{}
+// A Set represents a set of strings.
+type Set map[string]struct{}
 
-// NewSet returns a Set that contains first and all elements of rest,
+// NewSet returns a Set that contains all of elems,
 // but no other elements.
-func NewSet[E int | string](first E, rest ...E) Set[E] {
-	set := make(Set[E], 1+len(rest))
-	set.Add(first)
-	for _, e := range rest {
+func NewSet(elems ...string) Set {
+	set := make(Set)
+	for _, e := range elems {
 		set.Add(e)
 	}
 	return set
 }
 
 // Add adds e to s.
-func (s Set[E]) Add(e E) {
+func (s Set) Add(e string) {
 	s[e] = struct{}{}
 }
 
 // Contains returns true if e is an element of s, and false otherwise.
-func (s Set[E]) Contains(e E) bool {
+func (s Set) Contains(e string) bool {
 	_, found := s[e]
 	return found
 }
 
 // Size returns the cardinality of s.
-func (s Set[_]) Size() int {
+func (s Set) Size() int {
 	return len(s)
 }
 
-// ToSortedSlice returns a sorted slice containing the results.
-func (s Set[E]) ToSortedSlice() []E {
-	res := make([]E, 0, len(s))
+// ToSortedSlice returns a sorted slice of s's elements.
+func (s Set) ToSortedSlice() []string {
+	res := make([]string, 0, len(s))
 	for elem := range s {
 		res = append(res, elem)
 	}

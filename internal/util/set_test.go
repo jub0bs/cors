@@ -10,32 +10,29 @@ import (
 func TestSet(t *testing.T) {
 	cases := []struct {
 		desc  string
-		first string
-		rest  []string
+		elems []string
 		more  []string
 		want  []string
 	}{
 		{
 			desc:  "singleton set",
-			first: "foo",
+			elems: []string{"foo"},
 			want:  []string{"foo"},
 		}, {
 			desc:  "no dupes",
-			first: "foo",
-			rest:  []string{"bar", "baz"},
+			elems: []string{"foo", "bar", "baz"},
 			more:  []string{"qux", "quux"},
 			want:  []string{"bar", "baz", "foo", "quux", "qux"},
 		}, {
 			desc:  "some dupes",
-			first: "foo",
-			rest:  []string{"bar", "baz"},
+			elems: []string{"foo", "bar", "baz"},
 			more:  []string{"bar", "baz"},
 			want:  []string{"bar", "baz", "foo"},
 		},
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			set := util.NewSet(tc.first, tc.rest...)
+			set := util.NewSet(tc.elems...)
 			for _, s := range tc.more {
 				set.Add(s)
 			}
@@ -43,8 +40,7 @@ func TestSet(t *testing.T) {
 				const tmpl = "got a set of size %d; want %d"
 				t.Errorf(tmpl, size, len(tc.want))
 			}
-			all := append(tc.rest, tc.more...)
-			all = append(all, tc.first)
+			all := append(tc.elems, tc.more...)
 			for _, s := range all {
 				if !set.Contains(s) {
 					const tmpl = "%v does not contain %q, but it should"

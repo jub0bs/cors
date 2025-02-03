@@ -448,7 +448,7 @@ type ExtraConfig struct {
 
 type internalConfig struct {
 	corpus                     origins.Corpus // nil means all origins allowed
-	allowedMethods             util.Set[string]
+	allowedMethods             util.Set
 	allowedReqHdrs             headers.SortedSet
 	acah                       []string
 	preflightStatusMinus200    uint8 // range: [0,99]
@@ -606,7 +606,7 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 		return nil
 	}
 	var (
-		allowedMethods util.Set[string]
+		allowedMethods util.Set
 		errs           []error
 	)
 	for _, name := range names {
@@ -637,7 +637,7 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 			continue
 		}
 		if allowedMethods == nil {
-			allowedMethods = make(util.Set[string])
+			allowedMethods = make(util.Set)
 		}
 		allowedMethods.Add(name)
 	}
@@ -765,7 +765,7 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 		return nil
 	}
 	var (
-		exposedHeaders   util.Set[string]
+		exposedHeaders   util.Set
 		errs             []error
 		exposeAllResHdrs bool
 	)
@@ -811,7 +811,7 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 			continue
 		}
 		if exposedHeaders == nil {
-			exposedHeaders = make(util.Set[string])
+			exposedHeaders = make(util.Set)
 		}
 		exposedHeaders.Add(normalized)
 	}
