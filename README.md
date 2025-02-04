@@ -170,12 +170,11 @@ All source code is covered by the [MIT License][license].
 
 ## Additional resources
 
-- [_Fearless CORS: a design philosophy for CORS middleware libraries
-(and a Go implementation)_][fearless-cors] (blog post)
+- [_Fearless CORS: a design philosophy for CORS middleware libraries (and a Go implementation)_][fearless-cors] (blog post)
 - [_jub0bs/cors: a better CORS middleware library for Go_][a-better-cors-lib] (blog post)
 - [_Reconfigurable CORS middleware with jub0bs/cors_][reconfigurable] (blog post)
-- [_Useful Functional-Options Tricks for Better Libraries_
-(GopherCon Europe 2023)][funcopts] (video)
+- [_Programmatic handling of CORS-configuration errors with jub0bs/cors_][programmatic] (blog post)
+- [_Useful Functional-Options Tricks for Better Libraries_ (GopherCon Europe 2023)][funcopts] (video)
 - [github.com/jub0bs/fcors][fcors] (this library's predecessor)
 
 [a-better-cors-lib]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/
@@ -201,6 +200,7 @@ All source code is covered by the [MIT License][license].
 [pkgsite-index]: https://pkg.go.dev/github.com/jub0bs/cors#pkg-index
 [pkgsite]: https://pkg.go.dev/github.com/jub0bs/cors
 [pna]: https://pkg.go.dev/github.com/jub0bs/cors#hdr-PrivateNetworkAccess-ExtraConfig
+[programmatic]: https://jub0bs.com/posts/2025-01-28-programmatic-handling-of-cors-configuration-errors/
 [reconfigurable]: https://jub0bs.com/posts/2024-05-14-reconfigurable-cors-middleware/
 [rs-cors]: https://github.com/rs/cors
 [safe]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#10-render-insecure-configurations-impossible
