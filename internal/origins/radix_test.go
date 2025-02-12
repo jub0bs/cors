@@ -1,10 +1,16 @@
-package origins_test
+package origins
 
 import (
+	"math"
 	"slices"
 	"testing"
+)
 
-	"github.com/jub0bs/cors/internal/origins"
+var ( // compile-time checks
+	_ [wildcardPort - 1 - math.MaxUint16]struct{} // wildcardPort > math.MaxUint16
+	_ [math.MaxInt - wildcardPort]struct{}        // wildcardPort <= math.MaxInt
+	_ [portOffset - 1 - wildcardPort]struct{}     // portOffset > wildcardPort
+	_ [-(math.MinInt + portOffset)]struct{}       // portOffset >= math.MinInt
 )
 
 func TestRadix(t *testing.T) {
@@ -426,7 +432,7 @@ func TestRadix(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			var tree origins.Tree
+			var tree Tree
 			for _, pair := range tc.patterns {
 				tree.Insert(pair.key, pair.value)
 			}
