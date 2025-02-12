@@ -3,7 +3,7 @@ package origins
 import "strconv"
 
 // A Tree is radix tree whose edges are each labeled by a byte,
-// and whose conceptual leaf nodes each contain a set of ints.
+// and whose conceptual leaf nodes each contain two sets of ports.
 // The zero value of a Tree is an empty tree.
 //
 // The implementation draws heavy inspiration from
@@ -12,33 +12,32 @@ type Tree struct {
 	root node
 }
 
-// Insert inserts v in the tree according to keyPattern.
+// Insert inserts port in the tree according to hostPattern.
 // A leading * byte (0x2a) denotes a wildcard for any non-empty byte sequence.
 // A non-leading * has no special meaning and is treated as any other byte.
-// Sentinel value -1 represents a wildcard value that subsumes all others.
-func (t *Tree) Insert(keyPattern string, v int) {
+func (t *Tree) Insert(hostPattern string, port int) {
 	var hasLeadingAsterisk bool
 	// check for a leading asterisk
-	if b, rest, ok := splitAfterFirstByte(keyPattern); ok && b == '*' {
+	if b, rest, ok := splitAfterFirstByte(hostPattern); ok && b == '*' {
 		hasLeadingAsterisk = true
-		keyPattern = rest
+		hostPattern = rest
 	}
 	n := &t.root
-	// The key pattern is processed from right to left.
-	s := keyPattern
+	// The host pattern is processed from right to left.
+	s := hostPattern
 	for {
 		labelToChild, ok := lastByte(s)
 		if !ok { // s is empty
-			n.add(v, hasLeadingAsterisk)
+			n.add(port, hasLeadingAsterisk)
 			return
 		}
-		if n.wSet.Contains(v) {
+		if n.wSet.Contains(port) {
 			return
 		}
 		child := n.edges[labelToChild]
 		if child == nil { // No matching edge found; create one.
 			child = &node{suf: s}
-			child.add(v, hasLeadingAsterisk)
+			child.add(port, hasLeadingAsterisk)
 			n.upsertEdge(labelToChild, child)
 			return
 		}
@@ -72,28 +71,28 @@ func (t *Tree) Insert(keyPattern string, v int) {
 		child.upsertEdge(labelToGrandChild1, grandChild1)
 		labelToGrandChild2, ok := lastByte(prefixOfS)
 		if !ok {
-			child.add(v, hasLeadingAsterisk)
+			child.add(port, hasLeadingAsterisk)
 			return
 		}
 
 		// Add a second grandchild in child.
 		grandChild2 := &node{suf: prefixOfS}
-		grandChild2.add(v, hasLeadingAsterisk)
+		grandChild2.add(port, hasLeadingAsterisk)
 		child.upsertEdge(labelToGrandChild2, grandChild2)
 	}
 }
 
-// Contains reports whether t contains key-value pair (k,v).
-func (t *Tree) Contains(k string, v int) bool {
+// Contains reports whether t contains key-value pair (host,port).
+func (t *Tree) Contains(host string, port int) bool {
 	n := &t.root
 	for {
-		label, ok := lastByte(k)
+		label, ok := lastByte(host)
 		if !ok {
-			return n.set.Contains(v)
+			return n.set.Contains(port)
 		}
 
-		// k is not empty; check wildcard edge
-		if n.wSet.Contains(v) {
+		// host is not empty; check wildcard edge
+		if n.wSet.Contains(port) {
 			return true
 		}
 
@@ -103,12 +102,12 @@ func (t *Tree) Contains(k string, v int) bool {
 			return false
 		}
 
-		prefixOfK, _, suf := splitAtCommonSuffix(k, n.suf)
-		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of k
+		prefixOfHost, _, suf := splitAtCommonSuffix(host, n.suf)
+		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of host
 			return false
 		}
-		// n.suf is a suffix of k
-		k = prefixOfK
+		// n.suf is a suffix of host
+		host = prefixOfHost
 	}
 }
 
