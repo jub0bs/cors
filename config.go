@@ -447,7 +447,7 @@ type ExtraConfig struct {
 }
 
 type internalConfig struct {
-	corpus                     origins.Corpus // nil means all origins allowed
+	tree                       *origins.Tree // nil means all origins allowed
 	allowedMethods             util.Set
 	allowedReqHdrs             headers.SortedSet
 	acah                       []string
@@ -519,7 +519,7 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 		return err
 	}
 	var (
-		corpus         origins.Corpus
+		tree           *origins.Tree
 		discreteOrigin string
 		errs           []error
 		allowAnyOrigin bool
@@ -586,10 +586,10 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 				errs = append(errs, err)
 			}
 		}
-		if corpus == nil {
-			corpus = make(origins.Corpus)
+		if tree == nil {
+			tree = new(origins.Tree)
 		}
-		corpus.Add(&pattern)
+		tree.Insert(&pattern)
 	}
 	if len(errs) != 0 {
 		return errors.Join(errs...)
@@ -597,7 +597,7 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 	if allowAnyOrigin {
 		return nil
 	}
-	icfg.corpus = corpus
+	icfg.tree = tree
 	return nil
 }
 
@@ -865,10 +865,10 @@ func newConfig(icfg *internalConfig) *Config {
 	var cfg Config
 
 	// origins
-	if icfg.corpus == nil {
+	if icfg.tree == nil {
 		cfg.Origins = []string{"*"}
 	} else {
-		cfg.Origins = icfg.corpus.Elems()
+		cfg.Origins = icfg.tree.Elems()
 	}
 
 	// credentialed

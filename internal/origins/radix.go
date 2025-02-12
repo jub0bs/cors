@@ -2,40 +2,38 @@ package origins
 
 import (
 	"math"
+	"slices"
 	"strconv"
 )
 
-// A Tree is a radix tree that represents a set of (host, port) pairs.
+// A Tree is a radix tree that represents a set of Web origins.
 // The zero value of Tree is an empty tree.
 type Tree struct {
 	root node
 }
 
-// Insert inserts port in t according to hostPattern,
-// which is processed from right to left.
-// A leading * byte (0x2a) denotes a wildcard for any non-empty byte sequence.
-// A non-leading * has no special meaning and is treated as any other byte.
-func (t *Tree) Insert(hostPattern string, port int) {
+// Insert inserts p in t.
+func (t *Tree) Insert(p *Pattern) {
+	s := p.HostPattern.Value // non-empty by construction
 	var wildcardSubs bool
-	if b, rest, ok := splitAfterFirstByte(hostPattern); ok && b == '*' {
+	if s[0] == '*' {
 		wildcardSubs = true
-		hostPattern = rest
+		s = s[1:]
 	}
 	n := &t.root
-	s := hostPattern
 	for {
 		labelToChild, ok := lastByte(s)
 		if !ok { // s is empty
-			n.add(port, wildcardSubs)
+			n.add(p.Scheme, p.Port, wildcardSubs)
 			return
 		}
-		if n.contains(port, true) {
+		if n.contains(p.Scheme, p.Port, true) {
 			return
 		}
 		child := n.edges[labelToChild]
 		if child == nil { // No matching edge found; create one.
 			child = &node{suf: s}
-			child.add(port, wildcardSubs)
+			child.add(p.Scheme, p.Port, wildcardSubs)
 			n.upsertEdge(labelToChild, child)
 			return
 		}
@@ -69,33 +67,33 @@ func (t *Tree) Insert(hostPattern string, port int) {
 		child.upsertEdge(labelToGrandChild1, grandChild1)
 		labelToGrandChild2, ok := lastByte(prefixOfS)
 		if !ok {
-			child.add(port, wildcardSubs)
+			child.add(p.Scheme, p.Port, wildcardSubs)
 			return
 		}
 
 		// Add a second grandchild in child.
 		grandChild2 := &node{suf: prefixOfS}
-		grandChild2.add(port, wildcardSubs)
+		grandChild2.add(p.Scheme, p.Port, wildcardSubs)
 		child.upsertEdge(labelToGrandChild2, grandChild2)
 	}
 }
 
-// Contains reports whether t contains key-value pair (host, port).
-func (t Tree) Contains(host string, port int) bool {
+// Contains reports whether t contains o.
+func (t *Tree) Contains(o *Origin) bool {
+	host := o.Host.Value
 	n := &t.root
 	for {
 		label, ok := lastByte(host)
 		if !ok {
-			return n.contains(port, false)
+			return n.contains(o.Scheme, o.Port, false)
 		}
 
 		// host is not empty;
-		// check whether n contains port for wildcard subs
-		if n.contains(port, true) {
+		// check whether n contains port for wildcard subs.
+		if n.contains(o.Scheme, o.Port, true) {
 			return true
 		}
 
-		// try regular edges
 		n = n.edges[label]
 		if n == nil {
 			return false
@@ -108,13 +106,6 @@ func (t Tree) Contains(host string, port int) bool {
 		// n.suf is a suffix of host
 		host = prefixOfHost
 	}
-}
-
-func splitAfterFirstByte(str string) (byte, string, bool) {
-	if len(str) == 0 {
-		return 0, str, false
-	}
-	return str[0], str[1:], true
 }
 
 func lastByte(str string) (byte, bool) {
@@ -142,21 +133,31 @@ func splitAtCommonSuffix(a, b string) (string, string, string) {
 }
 
 // Elems returns a slice containing textual representations of t's elements.
-func (t Tree) Elems(dst *[]string, prefix string) {
-	t.root.elems(dst, prefix, "")
+func (t *Tree) Elems() []string {
+	var res []string
+	t.root.elems(&res, "")
+	slices.Sort(res)
+	return res
 }
 
 // A node represents a node of a Tree.
 type node struct {
 	// suf of this node (not restricted to ASCII or even valid UTF-8)
 	suf string
-	// ports (both for an exact match and for wildcard subs) in this node
-	ports ports
 	// edges to children of this node
 	edges edges
+	// ports (both for an exact match and for wildcard subs) in this node
+	portSchemes portSchemes
 }
 
-type ports = map[int]struct{}
+type edges = map[byte]*node
+
+type portSchemes = map[portScheme]struct{}
+
+type portScheme struct {
+	port   int
+	scheme string
+}
 
 const (
 	// a sentinel value that subsumes all other port numbers
@@ -165,30 +166,30 @@ const (
 	portOffset = wildcardPort + 1
 )
 
-func (n *node) add(port int, wildcardSubs bool) {
+func (n *node) add(scheme string, port int, wildcardSubs bool) {
 	wildcardPort := wildcardPort // shadows package-level constant
 	if wildcardSubs {
 		port -= portOffset
 		wildcardPort -= portOffset
 	}
-	if n.contains(wildcardPort, wildcardSubs) { // nothing to do
+	if n.contains(scheme, wildcardPort, wildcardSubs) { // nothing to do
 		return
 	}
-	if n.ports == nil {
-		n.ports = make(ports)
+	if n.portSchemes == nil {
+		n.portSchemes = make(portSchemes)
 	}
-	n.ports[port] = struct{}{}
+	n.portSchemes[portScheme{port, scheme}] = struct{}{}
 }
 
-func (n node) contains(port int, wildcardSubs bool) (found bool) {
+func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool) {
 	wildcardPort := wildcardPort // shadows package-level constant
 	if wildcardSubs {
 		port -= portOffset
 		wildcardPort -= portOffset
 	}
-	_, found = n.ports[port]
+	_, found = n.portSchemes[portScheme{port, scheme}]
 	if !found {
-		_, found = n.ports[wildcardPort]
+		_, found = n.portSchemes[portScheme{wildcardPort, scheme}]
 	}
 	return found
 }
@@ -201,29 +202,27 @@ func (n *node) upsertEdge(label byte, child *node) {
 	n.edges[label] = child
 }
 
-type edges = map[byte]*node
-
-// elems adds textual representations of n's elements to dst,
-// using prefix as prefix and using suf as a base suffix.
-func (n node) elems(dst *[]string, prefix, suf string) {
+// elems adds textual representations of n's elements
+// (using suf as base suffix) to dst.
+func (n *node) elems(dst *[]string, suf string) {
 	suf = n.suf + suf
-	for port := range n.ports {
-		prefix := prefix // shadows parameter
-		if port < 0 {
+	for pair := range n.portSchemes {
+		prefix := pair.scheme + schemeHostSep
+		if pair.port < 0 {
 			prefix += subdomainWildcard
-			port += portOffset
+			pair.port += portOffset
 		}
-		s := suf
-		switch port {
+		s := prefix + suf
+		switch pair.port {
 		case 0: // deliberately empty case
 		case wildcardPort:
 			s += ":" + portWildcard
 		default:
-			s += ":" + strconv.Itoa(port)
+			s += ":" + strconv.Itoa(pair.port)
 		}
-		*dst = append(*dst, prefix+s)
+		*dst = append(*dst, s)
 	}
 	for _, child := range n.edges {
-		child.elems(dst, prefix, suf)
+		child.elems(dst, suf)
 	}
 }

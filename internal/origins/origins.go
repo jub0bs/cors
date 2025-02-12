@@ -45,7 +45,7 @@ var zeroOrigin Origin
 
 // Parse parses str into an [Origin] structure.
 // It is lenient insofar as it performs just enough validation for
-// [Corpus.Contains] to know what to do with the resulting Origin value.
+// [Tree.Contains] to know what to do with the resulting Origin value.
 // In particular, the scheme and port of the resulting origin are guaranteed
 // to be valid, but its host isn't.
 func Parse(str string) (Origin, bool) {

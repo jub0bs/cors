@@ -96,7 +96,7 @@ func FuzzParsePattern(f *testing.F) {
 	})
 }
 
-func FuzzCorpus(f *testing.F) {
+func FuzzTree(f *testing.F) {
 	for _, c := range parsePatternCases {
 		f.Add(c.input, c.input)
 	}
@@ -108,13 +108,13 @@ func FuzzCorpus(f *testing.F) {
 		if err != nil {
 			t.Skip()
 		}
-		corpus := make(Corpus)
-		corpus.Add(&pattern)
+		tree := new(Tree)
+		tree.Insert(&pattern)
 		o, ok := Parse(origin)
-		if !ok || !corpus.Contains(&o) {
+		if !ok || !tree.Contains(&o) {
 			t.Skip()
 		}
-		const tmpl = "corpus built with pattern %q contains origin %q"
+		const tmpl = "tree built with pattern %q contains origin %q"
 		if pattern.Kind == PatternKindSubdomains {
 			if !strings.HasPrefix(longestCommonSuffix(raw, origin), ".") {
 				t.Errorf(tmpl, raw, origin)

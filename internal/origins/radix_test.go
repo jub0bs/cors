@@ -1,483 +1,455 @@
-package origins
+package origins_test
 
 import (
-	"math"
 	"slices"
 	"testing"
+
+	"github.com/jub0bs/cors/internal/origins"
 )
 
-var ( // compile-time checks
-	_ [wildcardPort - 1 - math.MaxUint16]struct{} // wildcardPort > math.MaxUint16
-	_ [math.MaxInt - wildcardPort]struct{}        // wildcardPort <= math.MaxInt
-	_ [portOffset - 1 - wildcardPort]struct{}     // portOffset > wildcardPort
-	_ [-(math.MinInt + portOffset)]struct{}       // portOffset >= math.MinInt
-)
-
-func TestRadix(t *testing.T) {
-	type Pair struct {
-		key   string
-		value int
-	}
-	type TestCase struct {
+func TestTree(t *testing.T) {
+	cases := []struct {
 		desc     string
-		patterns []Pair
+		patterns []string
+		accepts  []string
+		rejects  []string
 		elems    []string
-		accept   []Pair
-		reject   []Pair
-	}
-	cases := []TestCase{
+	}{
 		{
 			desc: "empty tree",
-			reject: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"kin", 0},
-				{"pin", 0},
-			},
-		}, {
-			desc: "single empty pattern",
-			patterns: []Pair{
-				{"", 0},
-			},
-			elems: []string{""},
-			accept: []Pair{
-				{"", 0},
-			},
-			reject: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"kin", 0},
-				{"pin", 0},
+			rejects: []string{
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
 			},
 		}, {
 			desc: "wildcard-free patterns",
-			patterns: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"kin", 0},
-				{"pin", 0},
+			patterns: []string{
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
 			},
 			elems: []string{
-				"cat",
-				"concat",
-				"kin",
-				"pin",
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
 			},
-			accept: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"kin", 0},
-				{"pin", 0},
+			accepts: []string{
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
 			},
-			reject: []Pair{
-				{"", 0},
-				// different value
-				{"cat", 1},
-				{"concat", 1},
-				{"kin", 1},
-				{"pin", 1},
-				// truncated key (at the end), same value
-				{"ca", 0},
-				{"con", 0},
-				{"ki", 0},
-				{"p", 0},
-				// truncated key (at the start), same value
-				{"at", 0},
-				{"ncat", 0},
-				{"in", 0},
-				{"n", 0},
-				// extended key, same value
-				{"copycat", 0},
-				{"string_concat", 0},
-				{"akin", 0},
-				{"bespin", 0},
+			rejects: []string{
+				// different scheme
+				"http://cat",
+				"http://concat",
+				"http://kin",
+				"http://pin",
+				// different port
+				"https://cat:1",
+				"https://concat:1",
+				"https://kin:1",
+				"https://pin:1",
+				// truncated host (at the end)
+				"https://ca",
+				"https://con",
+				"https://ki",
+				"https://p",
+				// truncated host (at the start)
+				"https://at",
+				"https://ncat",
+				"https://in",
+				"https://n",
+				// host prepended with rubbish
+				"https://copycat",
+				"https://stringconcat",
+				"https://akin",
+				"https://bespin",
 				// regression tests for GHSA-vhxv-fg4m-p2w8
-				{"pkin", 0},
-				{"kpin", 0},
+				"https://pkin",
+				"https://kpin",
 			},
 		}, {
 			desc: "duplicate patterns",
-			patterns: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"kin", 0},
-				{"pin", 0},
-				{"cat", 0},
-				{"concat", 0},
-				{"kin", 0},
-				{"pin", 0},
+			patterns: []string{
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
 			},
 			elems: []string{
-				"cat",
-				"concat",
-				"kin",
-				"pin",
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
 			},
-			accept: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"kin", 0},
-				{"pin", 0},
+			accepts: []string{
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
 			},
-			reject: []Pair{
-				{"", 0},
-				// different value
-				{"cat", 1},
-				{"concat", 1},
-				{"kin", 1},
-				{"pin", 1},
-				// truncated key (at the end), same value
-				{"ca", 0},
-				{"con", 0},
-				{"ki", 0},
-				{"p", 0},
-				// truncated key (at the start), same value
-				{"at", 0},
-				{"ncat", 0},
-				{"in", 0},
-				{"n", 0},
-				// extended key, same value
-				{"copycat", 0},
-				{"string_concat", 0},
-				{"akin", 0},
-				{"bespin", 0},
+			rejects: []string{
+				// different scheme
+				"http://cat",
+				"http://concat",
+				"http://kin",
+				"http://pin",
+				// different port
+				"https://cat:1",
+				"https://concat:1",
+				"https://kin:1",
+				"https://pin:1",
+				// truncated host (at the end)
+				"https://ca",
+				"https://con",
+				"https://ki",
+				"https://p",
+				// truncated host (at the start)
+				"https://at",
+				"https://ncat",
+				"https://in",
+				"https://n",
+				// host prepended with rubbish
+				"https://copycat",
+				"https://stringconcat",
+				"https://akin",
+				"https://bespin",
 				// regression tests for GHSA-vhxv-fg4m-p2w8
-				{"pkin", 0},
-				{"kpin", 0},
+				"https://pkin",
+				"https://kpin",
 			},
 		}, {
-			desc: "wildcard-free patterns with multiple values",
-			patterns: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"kin", 0},
-				{"pin", 0},
-				{"cat", 1},
-				{"concat", 1},
-				{"kin", 1},
-				{"pin", 1},
+			desc: "wildcard-free host patterns, multiple ports",
+			patterns: []string{
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
+				"https://cat:1",
+				"https://concat:1",
+				"https://kin:1",
+				"https://pin:1",
 			},
 			elems: []string{
-				"cat",
-				"cat:1",
-				"concat",
-				"concat:1",
-				"kin",
-				"kin:1",
-				"pin",
-				"pin:1",
+				"https://cat",
+				"https://cat:1",
+				"https://concat",
+				"https://concat:1",
+				"https://kin",
+				"https://kin:1",
+				"https://pin",
+				"https://pin:1",
 			},
-			accept: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"kin", 0},
-				{"pin", 0},
-				{"cat", 1},
-				{"concat", 1},
-				{"kin", 1},
-				{"pin", 1},
+			accepts: []string{
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
+				"https://cat:1",
+				"https://concat:1",
+				"https://kin:1",
+				"https://pin:1",
 			},
-			reject: []Pair{
-				{"", 0},
-				// different value
-				{"cat", 2},
-				{"concat", 2},
-				{"kin", 2},
-				{"pin", 2},
-				// truncated key (at the end), same value
-				{"ca", 0},
-				{"con", 0},
-				{"ki", 0},
-				{"p", 0},
-				{"ca", 1},
-				{"con", 1},
-				{"ki", 1},
-				{"p", 1},
-				// truncated key (at the start), same value
-				{"at", 0},
-				{"ncat", 0},
-				{"in", 0},
-				{"n", 1},
-				{"at", 1},
-				{"ncat", 1},
-				{"in", 1},
-				{"n", 1},
-				// extended key, same value
-				{"copycat", 0},
-				{"string_concat", 0},
-				{"akin", 0},
-				{"bespin", 0},
-				{"copycat", 1},
-				{"string_concat", 1},
-				{"akin", 1},
-				{"bespin", 1},
+			rejects: []string{
+				// different scheme
+				"http://cat",
+				"http://concat",
+				"http://kin",
+				"http://pin",
+				"http://cat:1",
+				"http://concat:1",
+				"http://kin:1",
+				"http://pin:1",
+				// different port
+				"https://cat:2",
+				"https://concat:2",
+				"https://kin:2",
+				"https://pin:2",
+				// truncated host (at the end)
+				"https://ca",
+				"https://con",
+				"https://ki",
+				"https://p",
+				"https://ca:1",
+				"https://con:1",
+				"https://ki:1",
+				"https://p:1",
+				// truncated host (at the start)
+				"https://at",
+				"https://ncat",
+				"https://in",
+				"https://n",
+				"https://at:1",
+				"https://ncat:1",
+				"https://in:1",
+				"https://n:1",
+				// host prepended with rubbish
+				"https://copycat",
+				"https://stringconcat",
+				"https://akin",
+				"https://bespin",
+				"https://copycat:1",
+				"https://stringconcat:1",
+				"https://akin:1",
+				"https://bespin:1",
 				// regression tests for GHSA-vhxv-fg4m-p2w8
-				{"pkin", 0},
-				{"kpin", 0},
-				{"pkin", 1},
-				{"kpin", 1},
+				"https://pkin",
+				"https://kpin",
+				"https://pkin:1",
+				"https://kpin:1",
 			},
 		}, {
 			desc: "wildcard-free patterns in reverse insertion order",
-			patterns: []Pair{
-				{"pin", 0},
-				{"kin", 0},
-				{"concat", 0},
-				{"cat", 0},
+			patterns: []string{
+				"https://pin",
+				"https://kin",
+				"https://concat",
+				"https://cat",
 			},
 			elems: []string{
-				"cat",
-				"concat",
-				"kin",
-				"pin",
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
 			},
-			accept: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"kin", 0},
-				{"pin", 0},
+			accepts: []string{
+				"https://cat",
+				"https://concat",
+				"https://kin",
+				"https://pin",
 			},
-			reject: []Pair{
-				{"", 0},
-				// different value
-				{"cat", 1},
-				{"concat", 1},
-				{"kin", 1},
-				{"pin", 1},
-				// truncated key (at the end), same value
-				{"ca", 0},
-				{"con", 0},
-				{"ki", 0},
-				{"p", 0},
-				// truncated key (at the start), same value
-				{"at", 0},
-				{"attle", 0},
-				{"in", 0},
-				{"n", 0},
-				// extended key, same value
-				{"copycat", 0},
-				{"string_concat", 0},
-				{"akin", 0},
-				{"bespin", 0},
+			rejects: []string{
+				// different scheme
+				"http://cat",
+				"http://concat",
+				"http://kin",
+				"http://pin",
+				// different port
+				"https://cat:1",
+				"https://concat:1",
+				"https://kin:1",
+				"https://pin:1",
+				// truncated host (at the end)
+				"https://ca",
+				"https://con",
+				"https://ki",
+				"https://p",
+				// truncated host (at the start)
+				"https://at",
+				"https://ncat",
+				"https://in",
+				"https://n",
+				// host prepended with rubbish
+				"https://copycat",
+				"https://stringconcat",
+				"https://akin",
+				"https://bespin",
 				// regression tests for GHSA-vhxv-fg4m-p2w8
-				{"kpin", 0},
-				{"pkin", 0},
+				"https://pkin",
+				"https://kpin",
 			},
 		}, {
 			desc: "some wildcard-full patterns",
-			patterns: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"*kin", 0},
-				{"akin", 0},
-				{"*kin", 1},
-				{"pin", 0},
+			patterns: []string{
+				"https://cat",
+				"https://concat",
+				"https://*.kin",
+				"https://a.kin",
+				"https://*.kin:1",
+				"https://pin",
 			},
 			elems: []string{
-				"*kin",
-				"*kin:1",
-				"cat",
-				"concat",
-				"pin",
+				"https://*.kin",
+				"https://*.kin:1",
+				"https://cat",
+				"https://concat",
+				"https://pin",
 			},
-			accept: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"akin", 0},
-				{"pin", 0},
-				// extended key, same value
-				{"napkin", 0},
-				{"napkin", 1},
+			accepts: []string{
+				"https://cat",
+				"https://concat",
+				"https://a.kin",
+				"https://pin",
+				// extended host, same port
+				"https://nap.kin",
+				"https://nap.kin:1",
 			},
-			reject: []Pair{
-				{"", 0},
-				{"cat", 1},
-				{"concat", 1},
-				{"kin", 1},
-				{"pin", 1},
-				// truncated key (at the end), same value
-				{"ca", 0},
-				{"conca", 0},
-				{"ki", 0},
-				{"p", 0},
-				// truncated key (at the start), same value
-				{"at", 0},
-				{"ncat", 0},
-				{"in", 0},
-				{"n", 0},
-				// extended key, same value
-				{"copycat", 0},
-				{"string_concat", 0},
-				{"bespin", 0},
-				// extended key, different value
-				{"napkin", 2},
-				{"napkin", 3},
+			rejects: []string{
+				// different scheme
+				"http://cat",
+				"http://concat",
+				"http://a.kin",
+				"http://pin",
+				"http://nap.kin",
+				"http://nap.kin:1",
+				// different port
+				"http://cat:1",
+				"http://concat:1",
+				"http://pin:1",
+				// truncated host (at the end)
+				"http://ca",
+				"http://conca",
+				"http://nap.ki",
+				"http://p",
+				// truncated host (at the start)
+				"http://at",
+				"http://ncat",
+				"http://in",
+				"http://n",
+				// host prepended with rubbish
+				"https://copycat",
+				"https://stringconcat",
+				"https://bespin",
+				// host prepended with rubbish, different port
+				"https://nap.kin:2",
+				"https://nap.kin:3",
 			},
 		}, {
-			desc: "patterns containing a non-trailing asterisk",
-			patterns: []Pair{
-				{"*k*n", 0},
-				{"pin", 0},
+			desc: "wildcard-free patterns and wildcard port",
+			patterns: []string{
+				"https://cat:*",
+				"https://cat",
+				"https://concat:*",
+				"https://kin",
+				"https://pin",
 			},
 			elems: []string{
-				"*k*n",
-				"pin",
+				"https://cat:*",
+				"https://concat:*",
+				"https://kin",
+				"https://pin",
 			},
-			accept: []Pair{
-				{"ak*n", 0},
-				{"napk*n", 0},
-				{"pin", 0},
+			accepts: []string{
+				"https://cat",
+				"https://concat",
+				"https://cat:1",
+				"https://concat:1",
+				"https://kin",
+				"https://pin",
 			},
-			reject: []Pair{
-				{"", 0},
-				{"kin", 0},
-				{"akin", 0},
-				{"k*n", 0},
-				{"pin", 1},
-			},
-		}, {
-			desc: "wildcard-free patterns and wildcard value",
-			patterns: []Pair{
-				{"cat", 1 << 16},
-				{"cat", 0},
-				{"concat", 1 << 16},
-				{"kin", 0},
-				{"pin", 0},
-			},
-			elems: []string{
-				"cat:*",
-				"concat:*",
-				"kin",
-				"pin",
-			},
-			accept: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"cat", 1},
-				{"concat", 1},
-				{"kin", 0},
-				{"pin", 0},
-			},
-			reject: []Pair{
-				{"", 0},
+			rejects: []string{
+				// different scheme
+				"http://cat",
+				"http://concat",
+				"http://cat:1",
+				"http://concat:1",
+				"http://kin",
+				"http://pin",
 				// different value
-				{"kin", 1},
-				{"pin", 1},
-				// truncated key (at the end), same value
-				{"ca", 0},
-				{"con", 0},
-				{"ki", 0},
-				{"p", 0},
-				// truncated key (at the start), same value
-				{"at", 0},
-				{"ncat", 0},
-				{"in", 0},
-				{"n", 0},
-				// extended key, same value
-				{"copycat", 0},
-				{"string_concat", 0},
-				{"akin", 0},
-				{"bespin", 0},
+				"http://kin:1",
+				"http://pin:1",
+				// truncated host (at the end)
+				"https://ca",
+				"https://con",
+				"https://ki",
+				"https://p",
+				// truncated host (at the start)
+				"https://at",
+				"https://ncat",
+				"https://in",
+				"https://n",
+				// host prepended with rubbish
+				"https://copycat",
+				"https://stringconcat",
+				"https://akin",
+				"https://bespin",
 				// regression tests for GHSA-vhxv-fg4m-p2w8
-				{"pkin", 0},
-				{"kpin", 0},
+				"https://pkin",
+				"https://kpin",
 			},
 		}, {
-			desc: "some wildcard-full patterns and wildcard value",
-			patterns: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"*kin", 1 << 16},
-				{"*kin", 0},
-				{"pin", 0},
+			desc: "some wildcard-full patterns and wildcard port",
+			patterns: []string{
+				"https://cat",
+				"https://concat",
+				"https://*.kin:*",
+				"https://*.kin",
+				"https://pin",
 			},
 			elems: []string{
-				"*kin:*",
-				"cat",
-				"concat",
-				"pin",
+				"https://*.kin:*",
+				"https://cat",
+				"https://concat",
+				"https://pin",
 			},
-			accept: []Pair{
-				{"cat", 0},
-				{"concat", 0},
-				{"pin", 0},
-				// extended key, arbitrary value
-				{"napkin", 1 << 16},
-				{"napkin", 0},
-				{"napkin", 1},
+			accepts: []string{
+				"https://cat",
+				"https://concat",
+				"https://pin",
+				// extended host, arbitrary port
+				"https://nap.kin",
+				"https://nap.kin:1",
+				"https://nap.kin:65355",
 			},
-			reject: []Pair{
-				{"", 0},
-				// different value
-				{"cat", 1},
-				{"concat", 1},
-				{"kin", 1},
-				{"pin", 1},
-				// truncated key (at the end), same value
-				{"ca", 0},
-				{"con", 0},
-				{"ki", 0},
-				{"p", 0},
-				// truncated key (at the start), same value
-				{"at", 0},
-				{"ncat", 0},
-				{"in", 0},
-				{"n", 0},
-				// extended key, same value
-				{"copycat", 0},
-				{"string_concat", 0},
-				{"bespin", 0},
+			rejects: []string{
+				// different scheme
+				"http://cat",
+				"http://concat",
+				"http://pin",
+				"http://nap.kin",
+				"http://nap.kin:1",
+				"http://nap.kin:65355",
+				// different port
+				"https://cat:1",
+				"https://concat:1",
+				"https://pin:1",
+				// truncated host (at the end)
+				"https://ca",
+				"https://con",
+				"https://nap.ki",
+				"https://p",
+				// truncated host (at the start)
+				"https://at",
+				"https://ncat",
+				"https://in",
+				"https://n",
+				// host prepended with rubbish
+				"https://copycat",
+				"https://stringconcat",
+				"https://bespin",
 			},
 		},
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			var tree Tree
-			for _, pair := range tc.patterns {
-				tree.Insert(pair.key, pair.value)
+			tree := new(origins.Tree)
+			for _, raw := range tc.patterns {
+				pattern, err := origins.ParsePattern(raw)
+				if err != nil {
+					t.Fatalf("origins.ParsePattern(%q): got non-nil error; want nil", raw)
+				}
+				tree.Insert(&pattern)
 			}
-			var elems []string
-			tree.Elems(&elems, "")
-			slices.Sort(elems)
+			for _, raw := range tc.accepts {
+				origin, ok := origins.Parse(raw)
+				if !ok {
+					t.Fatalf("origins.Parse(%q): got false; want true", raw)
+				}
+				if !tree.Contains(&origin) {
+					t.Errorf("tree.Contains(%q): got false; want true", raw)
+				}
+			}
+			for _, raw := range tc.rejects {
+				origin, ok := origins.Parse(raw)
+				if !ok {
+					t.Fatalf("origins.Parse(%q): got false; want true", raw)
+				}
+				if tree.Contains(&origin) {
+					t.Errorf("tree.Contains(%q): got true; want false", raw)
+				}
+			}
+			elems := tree.Elems()
 			if !slices.Equal(elems, tc.elems) {
-				t.Errorf("got %q; want %q", elems, tc.elems)
-			}
-			var (
-				topHeader    bool
-				acceptHeader bool
-			)
-			for _, pair := range tc.accept {
-				if !tree.Contains(pair.key, pair.value) {
-					if !topHeader {
-						t.Log("a radix tree composed of")
-						for _, pair := range tc.patterns {
-							t.Logf("\t- %v\n", pair)
-						}
-						topHeader = true
-					}
-					if !acceptHeader {
-						t.Log("does not (but should) contain")
-						acceptHeader = true
-					}
-					t.Errorf("\t- %v\n", pair)
-				}
-			}
-			var rejectHeader bool
-			for _, pair := range tc.reject {
-				if tree.Contains(pair.key, pair.value) {
-					if !topHeader {
-						t.Log("a radix tree composed of")
-						for _, pair := range tc.patterns {
-							t.Logf("\t- %v\n", pair)
-						}
-						topHeader = true
-					}
-					if !rejectHeader {
-						t.Log("does (but should not) contain")
-						rejectHeader = true
-					}
-					t.Errorf("\t- %v\n", pair)
-				}
+				t.Errorf("tree.Elems(): got %q; want %q", elems, tc.elems)
 			}
 		}
 		t.Run(tc.desc, f)
