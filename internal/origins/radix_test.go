@@ -332,9 +332,9 @@ func TestRadix(t *testing.T) {
 		}, {
 			desc: "wildcard-free patterns and wildcard value",
 			patterns: []Pair{
-				{"cat", -1},
+				{"cat", 1 << 16},
 				{"cat", 0},
-				{"concat", -1},
+				{"concat", 1 << 16},
 				{"kin", 0},
 				{"pin", 0},
 			},
@@ -381,7 +381,7 @@ func TestRadix(t *testing.T) {
 			patterns: []Pair{
 				{"cat", 0},
 				{"concat", 0},
-				{"*kin", -1},
+				{"*kin", 1 << 16},
 				{"*kin", 0},
 				{"pin", 0},
 			},
@@ -396,7 +396,7 @@ func TestRadix(t *testing.T) {
 				{"concat", 0},
 				{"pin", 0},
 				// extended key, arbitrary value
-				{"napkin", -1},
+				{"napkin", 1 << 16},
 				{"napkin", 0},
 				{"napkin", 1},
 			},

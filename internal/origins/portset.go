@@ -1,5 +1,7 @@
 package origins
 
+import "math"
+
 // A PortSet represents a set of ports.
 // The zero value of PortSet is an empty set of ports.
 type PortSet map[int]struct{}
@@ -30,6 +32,6 @@ func (ps PortSet) Contains(port int) (found bool) {
 }
 
 // wildcardPort is a sentinel value that subsumes all others.
-const wildcardPort = -1
+const wildcardPort = math.MaxUint16 + 1
 
 var wildcardPortSingleton = PortSet{wildcardPort: {}}

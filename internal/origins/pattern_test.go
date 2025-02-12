@@ -333,7 +333,7 @@ var parsePatternCases = []TestCase{
 				Value: "*.example.com",
 				Kind:  PatternKindSubdomains,
 			},
-			Port: -1,
+			Port: 1 << 16,
 		},
 	}, {
 		name:    "leading double asterisk",
