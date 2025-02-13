@@ -48,7 +48,7 @@ func (set SortedSet) Size() int {
 //   - sorted in lexicographical order,
 //   - unique.
 //
-// Accepts requires a preliminary call to method [SortedSet.Fix].
+// Precondition: [SortedSet.Fix] has already been called.
 //
 // This methods's parameter is a slice of strings rather than just a string
 // because, although [the Fetch standard] requires browsers to include at most
@@ -154,7 +154,7 @@ func cutAtComma(str string, n int) (before, after string, found bool) {
 // ToSortedSlice returns a slice containing set's elements sorted in
 // lexicographical order.
 //
-// ToSortedSlice requires a preliminary call to method [SortedSet.Fix].
+// Precondition: [SortedSet.Fix] has already been called.
 func (set SortedSet) ToSortedSlice() []string {
 	elems := make([]string, len(set.m))
 	for elem, i := range set.m {
