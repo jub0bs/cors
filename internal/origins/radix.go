@@ -31,8 +31,8 @@ func (t *Tree) Insert(p *Pattern) {
 		if n.contains(p.Scheme, p.Port, true) {
 			return
 		}
-		i := slices.Index(n.edges, labelToChild)
-		if i < 0 { // No matching edge found; create one.
+		i, found := slices.BinarySearch(n.edges, labelToChild)
+		if !found { // No matching edge found; create one.
 			child := &node{suf: s}
 			child.add(p.Scheme, p.Port, wildcardSubs)
 			n.upsertEdge(labelToChild, child)
@@ -96,8 +96,8 @@ func (t *Tree) Contains(o *Origin) bool {
 			return true
 		}
 
-		i := slices.Index(n.edges, label)
-		if i < 0 {
+		i, found := slices.BinarySearch(n.edges, label)
+		if !found {
 			return false
 		}
 		n = n.children[i]
@@ -156,7 +156,7 @@ type node struct {
 	children []*node
 	// schemes of this node
 	schemes []string
-	// ports associated to schemes ("parallels" schemes slice)
+	// ports associated to this node's schemes ("parallels" schemes slice)
 	ports [][]int
 }
 
@@ -176,14 +176,13 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 	if n.contains(scheme, port, wildcardSubs) {
 		return
 	}
-	i := slices.Index(n.schemes, scheme)
-	if i < 0 {
-		n.schemes = append(n.schemes, scheme)
-		n.ports = append(n.ports, []int{port})
+	i, found := slices.BinarySearch(n.schemes, scheme)
+	if !found {
+		n.schemes = insert(n.schemes, i, scheme)
+		n.ports = insert(n.ports, i, []int{port})
 		return
 	}
 	ports := n.ports[i]
-
 	if port == wildcardPort {
 		hasSameSignAsPort := func(p int) bool {
 			return cmp.Less(p, 0) == cmp.Less(port, 0)
@@ -191,7 +190,17 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 		ports = slices.DeleteFunc(ports, hasSameSignAsPort)
 	}
 	ports = append(ports, port)
+	slices.Sort(ports)
 	n.ports[i] = ports
+}
+
+func insert[T any](s []T, i int, v T) []T {
+	// see https://go.dev/wiki/SliceTricks#insert
+	var dummy T
+	s = append(s, dummy)
+	copy(s[i+1:], s[i:])
+	s[i] = v
+	return s
 }
 
 func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool) {
@@ -200,23 +209,24 @@ func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool)
 		port -= portOffset
 		wildcardPort -= portOffset
 	}
-	i := slices.Index(n.schemes, scheme) // we expect low cardinality, a linear scan should do
-	if i < 0 {
+	i, found := slices.BinarySearch(n.schemes, scheme)
+	if !found {
 		return
 	}
-	for _, p := range n.ports[i] {
-		if p == port || p == wildcardPort {
-			return true
-		}
+	ports := n.ports[i]
+	_, found = slices.BinarySearch(ports, port)
+	if found {
+		return
 	}
-	return false
+	_, found = slices.BinarySearch(ports, wildcardPort)
+	return
 }
 
 func (n *node) upsertEdge(label byte, child *node) {
-	i := slices.Index(n.edges, label)
-	if i < 0 {
-		n.edges = append(n.edges, label)
-		n.children = append(n.children, child)
+	i, found := slices.BinarySearch(n.edges, label)
+	if !found {
+		n.edges = insert(n.edges, i, label)
+		n.children = insert(n.children, i, child)
 		return
 	}
 	n.children[i] = child
@@ -226,9 +236,11 @@ func (n *node) upsertEdge(label byte, child *node) {
 // (using suf as base suffix) to dst.
 func (n *node) elems(dst *[]string, suf string) {
 	suf = n.suf + suf
-	for i, scheme := range n.schemes {
-		prefix := scheme + schemeHostSep
-		for _, port := range n.ports[i] {
+	// We iterate over n.ports rather than n.schemes in order to
+	// hoist most bounds checks out of the (outer) loop.
+	for i, ports := range n.ports {
+		prefix := n.schemes[i] + schemeHostSep
+		for _, port := range ports {
 			prefix := prefix // deliberate shadowing
 			if port < 0 {
 				prefix += subdomainWildcard
@@ -245,7 +257,7 @@ func (n *node) elems(dst *[]string, suf string) {
 			*dst = append(*dst, s)
 		}
 	}
-	for i := range n.edges {
-		n.children[i].elems(dst, suf)
+	for _, child := range n.children {
+		child.elems(dst, suf)
 	}
 }
