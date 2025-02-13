@@ -1,6 +1,7 @@
 package origins
 
 import (
+	"cmp"
 	"math"
 	"slices"
 	"strconv"
@@ -141,23 +142,20 @@ func (t *Tree) Elems() []string {
 }
 
 // A node represents a node of a Tree.
+// Invariant:
+//   - len(schemes) == len(ports)
 type node struct {
 	// suf of this node (not restricted to ASCII or even valid UTF-8)
 	suf string
 	// edges to children of this node
 	edges edges
-	// ports (both for an exact match and for wildcard subs) in this node
-	portSchemes portSchemes
+	// schemes of this node
+	schemes []string
+	// ports associated to schemes ("parallels" schemes slice)
+	ports [][]int
 }
 
 type edges = map[byte]*node
-
-type portSchemes = map[portScheme]struct{}
-
-type portScheme struct {
-	port   int
-	scheme string
-}
 
 const (
 	// a sentinel value that subsumes all other port numbers
@@ -172,13 +170,25 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 		port -= portOffset
 		wildcardPort -= portOffset
 	}
-	if n.contains(scheme, wildcardPort, wildcardSubs) { // nothing to do
+	if n.contains(scheme, port, wildcardSubs) {
 		return
 	}
-	if n.portSchemes == nil {
-		n.portSchemes = make(portSchemes)
+	i := slices.Index(n.schemes, scheme)
+	if i < 0 {
+		n.schemes = append(n.schemes, scheme)
+		n.ports = append(n.ports, []int{port})
+		return
 	}
-	n.portSchemes[portScheme{port, scheme}] = struct{}{}
+	ports := n.ports[i]
+
+	if port == wildcardPort {
+		hasSameSignAsPort := func(p int) bool {
+			return cmp.Less(p, 0) == cmp.Less(port, 0)
+		}
+		ports = slices.DeleteFunc(ports, hasSameSignAsPort)
+	}
+	ports = append(ports, port)
+	n.ports[i] = ports
 }
 
 func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool) {
@@ -187,11 +197,16 @@ func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool)
 		port -= portOffset
 		wildcardPort -= portOffset
 	}
-	_, found = n.portSchemes[portScheme{port, scheme}]
-	if !found {
-		_, found = n.portSchemes[portScheme{wildcardPort, scheme}]
+	i := slices.Index(n.schemes, scheme) // we expect low cardinality, a linear scan should do
+	if i < 0 {
+		return
 	}
-	return found
+	for _, p := range n.ports[i] {
+		if p == port || p == wildcardPort {
+			return true
+		}
+	}
+	return false
 }
 
 func (n *node) upsertEdge(label byte, child *node) {
@@ -206,21 +221,24 @@ func (n *node) upsertEdge(label byte, child *node) {
 // (using suf as base suffix) to dst.
 func (n *node) elems(dst *[]string, suf string) {
 	suf = n.suf + suf
-	for pair := range n.portSchemes {
-		prefix := pair.scheme + schemeHostSep
-		if pair.port < 0 {
-			prefix += subdomainWildcard
-			pair.port += portOffset
+	for i := range n.schemes {
+		prefix := n.schemes[i] + schemeHostSep
+		for _, port := range n.ports[i] {
+			prefix := prefix // deliberate shadowing
+			if port < 0 {
+				prefix += subdomainWildcard
+				port += portOffset
+			}
+			s := prefix + suf
+			switch port {
+			case 0: // deliberately empty case
+			case wildcardPort:
+				s += ":" + portWildcard
+			default:
+				s += ":" + strconv.Itoa(port)
+			}
+			*dst = append(*dst, s)
 		}
-		s := prefix + suf
-		switch pair.port {
-		case 0: // deliberately empty case
-		case wildcardPort:
-			s += ":" + portWildcard
-		default:
-			s += ":" + strconv.Itoa(pair.port)
-		}
-		*dst = append(*dst, s)
 	}
 	for _, child := range n.edges {
 		child.elems(dst, suf)

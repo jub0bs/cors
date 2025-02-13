@@ -316,8 +316,8 @@ func TestTree(t *testing.T) {
 		}, {
 			desc: "wildcard-free patterns and wildcard port",
 			patterns: []string{
-				"https://cat:*",
 				"https://cat",
+				"https://cat:*",
 				"https://concat:*",
 				"https://kin",
 				"https://pin",
@@ -371,8 +371,8 @@ func TestTree(t *testing.T) {
 			patterns: []string{
 				"https://cat",
 				"https://concat",
-				"https://*.kin:*",
 				"https://*.kin",
+				"https://*.kin:*",
 				"https://pin",
 			},
 			elems: []string{
