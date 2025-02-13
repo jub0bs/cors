@@ -80,6 +80,11 @@ func FuzzParsePattern(f *testing.F) {
 		if err != nil {
 			t.Skip()
 		}
+		if pattern.HostPattern.Value == "" {
+			const tmpl = "pattern %q should but does not result" +
+				" in a Pattern that whose host is empty"
+			t.Errorf(tmpl, raw)
+		}
 		if strings.HasSuffix(raw, ":*") {
 			if pattern.Port != wildcardPort {
 				const tmpl = "pattern %q should but does not result" +
@@ -103,32 +108,32 @@ func FuzzTree(f *testing.F) {
 	for _, c := range parseCases {
 		f.Add(c.input, c.input)
 	}
-	f.Fuzz(func(t *testing.T, raw, origin string) {
-		pattern, err := ParsePattern(raw)
+	f.Fuzz(func(t *testing.T, rawPattern, rawOrigin string) {
+		pattern, err := ParsePattern(rawPattern)
 		if err != nil {
 			t.Skip()
 		}
 		tree := new(Tree)
 		tree.Insert(&pattern)
-		o, ok := Parse(origin)
-		if !ok || !tree.Contains(&o) {
+		origin, ok := Parse(rawOrigin)
+		if !ok || !tree.Contains(&origin) {
 			t.Skip()
 		}
 		const tmpl = "tree built with pattern %q contains origin %q"
 		if pattern.Kind == PatternKindSubdomains {
-			if !strings.HasPrefix(longestCommonSuffix(raw, origin), ".") {
-				t.Errorf(tmpl, raw, origin)
+			if !strings.HasPrefix(longestCommonSuffix(rawPattern, rawOrigin), ".") {
+				t.Errorf(tmpl, rawPattern, rawOrigin)
 			}
 			return
 		}
 		if pattern.Port == wildcardPort {
-			if !strings.HasSuffix(longestCommonPrefix(raw, origin), ":") {
-				t.Errorf(tmpl, raw, origin)
+			if !strings.HasSuffix(longestCommonPrefix(rawPattern, rawOrigin), ":") {
+				t.Errorf(tmpl, rawPattern, rawOrigin)
 			}
 			return
 		}
-		if origin != raw {
-			t.Errorf(tmpl, raw, origin)
+		if rawOrigin != rawPattern {
+			t.Errorf(tmpl, rawPattern, rawOrigin)
 		}
 	})
 }
