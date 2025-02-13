@@ -31,13 +31,14 @@ func (t *Tree) Insert(p *Pattern) {
 		if n.contains(p.Scheme, p.Port, true) {
 			return
 		}
-		child := n.edges[labelToChild]
-		if child == nil { // No matching edge found; create one.
-			child = &node{suf: s}
+		i := slices.Index(n.edges, labelToChild)
+		if i < 0 { // No matching edge found; create one.
+			child := &node{suf: s}
 			child.add(p.Scheme, p.Port, wildcardSubs)
 			n.upsertEdge(labelToChild, child)
 			return
 		}
+		child := n.children[i]
 
 		prefixOfS, prefixOfChildSuf, suf := splitAtCommonSuffix(s, child.suf)
 		labelToGrandChild1, ok := lastByte(prefixOfChildSuf)
@@ -95,10 +96,11 @@ func (t *Tree) Contains(o *Origin) bool {
 			return true
 		}
 
-		n = n.edges[label]
-		if n == nil {
+		i := slices.Index(n.edges, label)
+		if i < 0 {
 			return false
 		}
+		n = n.children[i]
 
 		prefixOfHost, _, suf := splitAtCommonSuffix(host, n.suf)
 		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of host
@@ -142,20 +144,21 @@ func (t *Tree) Elems() []string {
 }
 
 // A node represents a node of a Tree.
-// Invariant:
+// Invariants:
+//   - len(edges) == len(children)
 //   - len(schemes) == len(ports)
 type node struct {
 	// suf of this node (not restricted to ASCII or even valid UTF-8)
 	suf string
 	// edges to children of this node
-	edges edges
+	edges []byte
+	// children of this node ("parallels" edges slice)
+	children []*node
 	// schemes of this node
 	schemes []string
 	// ports associated to schemes ("parallels" schemes slice)
 	ports [][]int
 }
-
-type edges = map[byte]*node
 
 const (
 	// a sentinel value that subsumes all other port numbers
@@ -210,19 +213,21 @@ func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool)
 }
 
 func (n *node) upsertEdge(label byte, child *node) {
-	if n.edges == nil {
-		n.edges = edges{label: child}
+	i := slices.Index(n.edges, label)
+	if i < 0 {
+		n.edges = append(n.edges, label)
+		n.children = append(n.children, child)
 		return
 	}
-	n.edges[label] = child
+	n.children[i] = child
 }
 
 // elems adds textual representations of n's elements
 // (using suf as base suffix) to dst.
 func (n *node) elems(dst *[]string, suf string) {
 	suf = n.suf + suf
-	for i := range n.schemes {
-		prefix := n.schemes[i] + schemeHostSep
+	for i, scheme := range n.schemes {
+		prefix := scheme + schemeHostSep
 		for _, port := range n.ports[i] {
 			prefix := prefix // deliberate shadowing
 			if port < 0 {
@@ -240,7 +245,7 @@ func (n *node) elems(dst *[]string, suf string) {
 			*dst = append(*dst, s)
 		}
 	}
-	for _, child := range n.edges {
-		child.elems(dst, suf)
+	for i := range n.edges {
+		n.children[i].elems(dst, suf)
 	}
 }
