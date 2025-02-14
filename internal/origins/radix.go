@@ -1,7 +1,6 @@
 package origins
 
 import (
-	"cmp"
 	"math"
 	"slices"
 	"strconv"
@@ -184,10 +183,7 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 	}
 	ports := n.ports[i]
 	if port == wildcardPort {
-		hasSameSignAsPort := func(p int) bool {
-			return cmp.Less(p, 0) == cmp.Less(port, 0)
-		}
-		ports = slices.DeleteFunc(ports, hasSameSignAsPort)
+		ports = deleteSameSign(ports, port)
 	}
 	ports = append(ports, port)
 	slices.Sort(ports)
@@ -201,6 +197,17 @@ func insert[T any](s []T, i int, v T) []T {
 	copy(s[i+1:], s[i:])
 	s[i] = v
 	return s
+}
+
+// deleteSameSign, if v is negative, removes all the negative values from s;
+// otherwise, it removes all the non-negative values from s.
+// Precondition: s is sorted in increasing order.
+func deleteSameSign(s []int, v int) []int {
+	i, _ := slices.BinarySearch(s, 0)
+	if v < 0 {
+		return s[i:]
+	}
+	return s[:i]
 }
 
 func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool) {
