@@ -246,20 +246,21 @@ func (n *node) elems(dst *[]string, suf string) {
 	// We iterate over n.ports rather than n.schemes in order to
 	// hoist most bounds checks out of the (outer) loop.
 	for i, ports := range n.ports {
-		prefix := n.schemes[i] + schemeHostSep
+		scheme := n.schemes[i]
 		for _, port := range ports {
-			prefix := prefix // deliberate shadowing
+			var maybeWildcard string
 			if port < 0 {
-				prefix += subdomainWildcard
+				maybeWildcard = subdomainWildcard
 				port += portOffset
 			}
-			s := prefix + suf
+			var s string
 			switch port {
-			case 0: // deliberately empty case
+			case 0:
+				s = scheme + schemeHostSep + maybeWildcard + suf
 			case wildcardPort:
-				s += ":" + portWildcard
+				s = scheme + schemeHostSep + maybeWildcard + suf + ":" + portWildcard
 			default:
-				s += ":" + strconv.Itoa(port)
+				s = scheme + schemeHostSep + maybeWildcard + suf + ":" + strconv.Itoa(port)
 			}
 			*dst = append(*dst, s)
 		}
