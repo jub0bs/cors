@@ -163,24 +163,17 @@ func fastParseHost(str string) (Host, string, bool) {
 // the unconsumed part of the input string, and a bool that indicates success
 // or failure.
 func parseScheme(str string) (string, string, bool) {
-	const maxLen = maxSchemeLen + 1 // +1 for colon
-	scheme := str[:min(maxLen, len(str))]
-	i := strings.IndexByte(scheme, ':')
-	if i == -1 {
+	// See https://www.rfc-editor.org/rfc/rfc3986.html#section-3.1.
+	if len(str) == 0 || !isLowerAlpha(str[0]) {
 		return "", str, false
 	}
-	scheme = scheme[:i] // truncate before colon
-	// For more about scheme validation,
-	// see https://www.rfc-editor.org/rfc/rfc3986.html#section-3.1.
-	if len(scheme) == 0 || !isLowerAlpha(scheme[0]) {
-		return "", str, false
-	}
-	for i := 1; i < len(scheme); i++ {
-		if !isSubsequentSchemeByte(scheme[i]) {
-			return "", scheme, false
+	i := 1
+	for end := min(maxSchemeLen, len(str)); i < end; i++ {
+		if !isSubsequentSchemeByte(str[i]) {
+			break
 		}
 	}
-	return scheme, str[i:], true
+	return str[:i], str[i:], true
 }
 
 func isLowerAlpha(b byte) bool {
