@@ -429,6 +429,11 @@ func TestTree(t *testing.T) {
 				}
 				tree.Insert(&pattern)
 			}
+			wantEmpty := len(tc.patterns) == 0
+			gotEmpty := tree.IsEmpty()
+			if gotEmpty != wantEmpty {
+				t.Fatalf("tree.IsEmpty(): got %t; want %t", gotEmpty, wantEmpty)
+			}
 			for _, raw := range tc.accepts {
 				origin, ok := origins.Parse(raw)
 				if !ok {

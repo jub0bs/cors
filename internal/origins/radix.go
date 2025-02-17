@@ -12,6 +12,11 @@ type Tree struct {
 	root node
 }
 
+// IsEmpty reports whether t is empty.
+func (t *Tree) IsEmpty() bool {
+	return t.root.schemes == nil && t.root.children == nil
+}
+
 // Insert inserts p in t.
 func (t *Tree) Insert(p *Pattern) {
 	s := p.HostPattern.Value // non-empty by construction

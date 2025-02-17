@@ -447,7 +447,7 @@ type ExtraConfig struct {
 }
 
 type internalConfig struct {
-	tree                       *origins.Tree // nil means all origins allowed
+	tree                       origins.Tree // empty means all origins allowed
 	allowedMethods             util.Set
 	allowedReqHdrs             headers.SortedSet
 	acah                       []string
@@ -458,7 +458,6 @@ type internalConfig struct {
 	allowAuthorization         bool
 	privateNetworkAccess       bool
 	privateNetworkAccessNoCors bool
-	_padding                   byte //lint:ignore U1000 (pad to 64 bytes)
 	acma                       []string
 	aceh                       string
 	subsOfPublicSuffixes       bool
@@ -519,7 +518,7 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 		return err
 	}
 	var (
-		tree           *origins.Tree
+		tree           origins.Tree
 		discreteOrigin string
 		errs           []error
 		allowAnyOrigin bool
@@ -585,9 +584,6 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 				}
 				errs = append(errs, err)
 			}
-		}
-		if tree == nil {
-			tree = new(origins.Tree)
 		}
 		tree.Insert(&pattern)
 	}
@@ -865,7 +861,7 @@ func newConfig(icfg *internalConfig) *Config {
 	var cfg Config
 
 	// origins
-	if icfg.tree == nil {
+	if icfg.tree.IsEmpty() {
 		cfg.Origins = []string{"*"}
 	} else {
 		cfg.Origins = icfg.tree.Elems()
