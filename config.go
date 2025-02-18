@@ -449,7 +449,7 @@ type ExtraConfig struct {
 type internalConfig struct {
 	tree                       origins.Tree // empty means all origins allowed
 	allowedMethods             util.Set
-	allowedReqHdrs             headers.SortedSet
+	allowedReqHdrs             util.SortedSet
 	acah                       []string
 	preflightStatusMinus200    uint8 // range: [0,99]
 	credentialed               bool
@@ -652,7 +652,7 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		return nil
 	}
 	var (
-		allowedHeaders headers.SortedSet
+		allowedHeaders util.SortedSet
 		errs           []error
 	)
 	for _, name := range names {
@@ -713,9 +713,8 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		return errors.Join(errs...)
 	}
 	if !icfg.asteriskReqHdrs && allowedHeaders.Size() != 0 {
-		allowedHeaders.Fix()
 		icfg.allowedReqHdrs = allowedHeaders
-		s := allowedHeaders.ToSortedSlice()
+		s := allowedHeaders.ToSlice()
 		// The elements of a header-field value may be separated simply by commas;
 		// since whitespace is optional, let's not use any.
 		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
@@ -885,7 +884,7 @@ func newConfig(icfg *internalConfig) *Config {
 	case icfg.asteriskReqHdrs:
 		cfg.RequestHeaders = []string{"*"}
 	case icfg.allowedReqHdrs.Size() > 0:
-		cfg.RequestHeaders = icfg.allowedReqHdrs.ToSortedSlice()
+		cfg.RequestHeaders = icfg.allowedReqHdrs.ToSlice()
 	}
 
 	// max age

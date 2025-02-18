@@ -1,26 +1,22 @@
 package headers_test
 
 import (
-	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jub0bs/cors/internal/headers"
+	"github.com/jub0bs/cors/internal/util"
 )
 
-func TestSortedSet(t *testing.T) {
+func TestCheck(t *testing.T) {
 	cases := []struct {
-		desc  string
-		elems []string
-		// expectations
-		size     int
-		slice    []string
+		desc     string
+		elems    []string
 		accepted [][]string
 		rejected [][]string
 	}{
 		{
 			desc: "empty set",
-			size: 0,
 			accepted: [][]string{
 				// some empty elements, possibly with OWS
 				{""},
@@ -40,8 +36,6 @@ func TestSortedSet(t *testing.T) {
 		}, {
 			desc:  "singleton set",
 			elems: []string{"x-foo"},
-			size:  1,
-			slice: []string{"x-foo"},
 			accepted: [][]string{
 				{"x-foo"},
 				// some empty elements, possibly with OWS
@@ -74,8 +68,6 @@ func TestSortedSet(t *testing.T) {
 		}, {
 			desc:  "no dupes",
 			elems: []string{"x-foo", "x-bar", "x-baz"},
-			size:  3,
-			slice: []string{"x-bar", "x-baz", "x-foo"},
 			accepted: [][]string{
 				{"x-bar"},
 				{"x-baz"},
@@ -128,8 +120,6 @@ func TestSortedSet(t *testing.T) {
 		}, {
 			desc:  "some dupes",
 			elems: []string{"x-foo", "x-bar", "x-foo"},
-			size:  2,
-			slice: []string{"x-bar", "x-foo"},
 			accepted: [][]string{
 				{"x-bar"},
 				{"x-foo"},
@@ -178,30 +168,19 @@ func TestSortedSet(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			elems := slices.Clone(tc.elems)
-			var set headers.SortedSet
+			var set util.SortedSet
 			for _, elem := range tc.elems {
 				set.Add(elem)
 			}
-			set.Fix()
-			size := set.Size()
-			if set.Size() != tc.size {
-				const tmpl = "NewSortedSet(%#v...).Size(): got %d; want %d"
-				t.Errorf(tmpl, elems, size, tc.size)
-			}
-			slice := set.ToSortedSlice()
-			if !slices.Equal(slice, tc.slice) {
-				const tmpl = "NewSortedSet(%#v...).ToSortedSet(): got %q; want %q"
-				t.Errorf(tmpl, elems, slice, tc.slice)
-			}
+			slice := set.ToSlice()
 			for _, a := range tc.accepted {
-				if !set.Accepts(a) {
+				if !headers.Check(set, a) {
 					const tmpl = "%q rejects %q, but should accept it"
 					t.Errorf(tmpl, slice, a)
 				}
 			}
 			for _, r := range tc.rejected {
-				if set.Accepts(r) {
+				if headers.Check(set, r) {
 					const tmpl = "%q accepts %q, but should reject it"
 					t.Errorf(tmpl, slice, r)
 				}

@@ -1,54 +1,16 @@
 package headers
 
 import (
-	"slices"
 	"strings"
+
+	"github.com/jub0bs/cors/internal/util"
 )
 
-// A SortedSet represents a mathematical set of strings sorted in
-// lexicographical order.
-// Each element has a unique position ranging from 0 (inclusive)
-// to the set's cardinality (exclusive).
-// The zero value represents an empty set.
-type SortedSet struct {
-	m      map[string]int
-	maxLen int
-}
-
-// Add adds e to set without enforcing set's invariants;
-// see method [SortedSet.Fix].
-func (set *SortedSet) Add(e string) {
-	if set.m == nil {
-		set.m = make(map[string]int)
-	}
-	set.m[e] = 0 // dummy value
-}
-
-// Fix restores set's invariants.
-func (set *SortedSet) Fix() {
-	elems := make([]string, 0, len(set.m))
-	for e := range set.m {
-		elems = append(elems, e)
-	}
-	slices.Sort(elems)
-	for i, s := range elems {
-		set.maxLen = max(set.maxLen, len(s))
-		set.m[s] = i
-	}
-}
-
-// Size returns the cardinality of set.
-func (set SortedSet) Size() int {
-	return len(set.m)
-}
-
-// Accepts reports whether values is a sequence of [list-based field values]
+// Check reports whether acrhs is a sequence of [list-based field values]
 // whose elements are
 //   - all members of set,
 //   - sorted in lexicographical order,
 //   - unique.
-//
-// Precondition: [SortedSet.Fix] has already been called.
 //
 // This methods's parameter is a slice of strings rather than just a string
 // because, although [the Fetch standard] requires browsers to include at most
@@ -78,10 +40,9 @@ func (set SortedSet) Size() int {
 // [list-based field values]: https://httpwg.org/specs/rfc9110.html#abnf.extension
 // [some reportedly do]: https://github.com/rs/cors/issues/184
 // [the Fetch standard]: https://fetch.spec.whatwg.org
-func (set SortedSet) Accepts(values []string) bool {
+func Check(set util.SortedSet, acrhs []string) bool {
 	// effectively constant
-	maxLen := MaxOWSBytes + set.maxLen + MaxOWSBytes + 1 // +1 for comma
-
+	maxLen := MaxOWSBytes + set.MaxLen() + MaxOWSBytes + 1 // +1 for comma
 	var (
 		posOfLastNameSeen = -1
 		name              string
@@ -89,11 +50,11 @@ func (set SortedSet) Accepts(values []string) bool {
 		emptyElements     int
 		ok                bool
 	)
-	for _, str := range values {
+	for _, acrh := range acrhs {
 		for {
-			// As a defense against maliciously long names in str, we process
-			// only a small number of str's leading bytes per iteration.
-			name, str, commaFound = cutAtComma(str, maxLen)
+			// As a defense against maliciously long names in acrh, we process
+			// only a small number of acrh's leading bytes per iteration.
+			name, acrh, commaFound = cutAtComma(acrh, maxLen)
 			name, ok = TrimOWS(name, MaxOWSBytes)
 			if !ok {
 				return false
@@ -106,25 +67,22 @@ func (set SortedSet) Accepts(values []string) bool {
 				if emptyElements > MaxEmptyElements {
 					return false
 				}
-				if !commaFound { // We have now exhausted the names in str.
+				if !commaFound { // We have now exhausted the names in acrh.
 					break
 				}
 				continue
 			}
-			pos, ok := set.m[name]
-			if !ok {
-				return false
-			}
-			// The names in str are expected to be sorted in lexicographical order
+			// The names in acrh are expected to be sorted in lexicographical order
 			// and to each appear at most once.
 			// Therefore, the positions (in set) of the names that
-			// appear in str should form a strictly increasing sequence.
+			// appear in acrh should form a strictly increasing sequence.
 			// If that's not actually the case, bail out.
-			if pos <= posOfLastNameSeen {
+			i := set.IndexAfter(posOfLastNameSeen, name)
+			if i < 0 {
 				return false
 			}
-			posOfLastNameSeen = pos
-			if !commaFound { // We have now exhausted the names in str.
+			posOfLastNameSeen = i
+			if !commaFound { // We have now exhausted the names in acrh.
 				break
 			}
 		}
@@ -137,10 +95,10 @@ const (
 	MaxEmptyElements = 16 // number of empty list elements tolerated
 )
 
-// cutAtComma slices s around the first comma that appears among (up to) the
-// first n bytes of s, returning the parts of s before and after the comma.
-// The found result reports whether a comma appears in that portion of s.
-// If no comma appears in that portion of s, cutAtComma returns s, "", false.
+// cutAtComma slices str around the first comma that appears among (up to) the
+// first n bytes of str, returning the parts of str before and after the comma.
+// The found result reports whether a comma appears in that portion of str.
+// If no comma appears in that portion of str, cutAtComma returns str, "", false.
 func cutAtComma(str string, n int) (before, after string, found bool) {
 	// Note: this implementation draws inspiration from strings.Cut's.
 	end := min(len(str), n)
@@ -149,16 +107,4 @@ func cutAtComma(str string, n int) (before, after string, found bool) {
 		return str[:i], after, true
 	}
 	return str, "", false
-}
-
-// ToSortedSlice returns a slice containing set's elements sorted in
-// lexicographical order.
-//
-// Precondition: [SortedSet.Fix] has already been called.
-func (set SortedSet) ToSortedSlice() []string {
-	elems := make([]string, len(set.m))
-	for elem, i := range set.m {
-		elems[i] = elem // safe indexing, by construction of SortedSet
-	}
-	return elems
 }

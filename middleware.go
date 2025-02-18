@@ -499,7 +499,7 @@ func (icfg *internalConfig) processACRH(
 		if icfg.allowedReqHdrs.Size() == 0 {
 			return false
 		}
-		if !icfg.allowedReqHdrs.Accepts(acrh) {
+		if !headers.Check(icfg.allowedReqHdrs, acrh) {
 			return false
 		}
 		// We can simply reflect all the ACRH field lines as ACAH field lines
