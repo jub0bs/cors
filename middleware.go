@@ -496,7 +496,7 @@ func (icfg *internalConfig) processACRH(
 		return true
 	}
 	if !debug {
-		if icfg.allowedReqHdrs.Size() == 0 {
+		if icfg.allowedReqHdrs.Size() == 0 { // micro-optimization
 			return false
 		}
 		if !headers.Check(icfg.allowedReqHdrs, acrh) {
