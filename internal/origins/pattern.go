@@ -41,7 +41,8 @@ type Pattern struct {
 	HostPattern
 	// Port is the origin pattern's port number (if any).
 	// 0 is used as a sentinel value marking the absence of an explicit port.
-	// -1 is used as a sentinel value to indicate that all ports are allowed.
+	// wildcardPort is used as a sentinel value to indicate that all ports are
+	// allowed.
 	Port int
 }
 
