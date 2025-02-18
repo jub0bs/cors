@@ -139,30 +139,21 @@ func FuzzTree(f *testing.F) {
 }
 
 func longestCommonPrefix(a, b string) string {
-	if len(b) < len(a) {
-		a, b = b, a
-	}
-	b = b[:len(a)] // hoist bounds check on b out of the loop
 	var i int
-	for ; i < len(a); i++ {
-		if a[i] != b[i] {
-			break
-		}
+	for m := min(len(a), len(b)); i < m && a[i] == b[i]; i++ {
+		// deliberately empty body
 	}
 	return a[:i]
 }
 
 func longestCommonSuffix(a, b string) string {
-	if len(b) < len(a) {
-		a, b = b, a
-	}
-	b = b[len(b)-len(a):]
+	m := min(len(a), len(b))
+	a = a[len(a)-m:]
+	b = b[len(b)-m:]
 	_ = b[:len(a)] // hoist bounds check on b out of the loop
 	i := len(a) - 1
-	for ; 0 <= i; i-- {
-		if a[i] != b[i] {
-			break
-		}
+	for ; 0 <= i && a[i] == b[i]; i-- {
+		// deliberately empty body
 	}
 	return a[i+1:]
 }
