@@ -632,9 +632,6 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 			errs = append(errs, err)
 			continue
 		}
-		if allowedMethods == nil {
-			allowedMethods = make(util.Set)
-		}
 		allowedMethods.Add(name)
 	}
 	if len(errs) != 0 {
@@ -804,9 +801,6 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 		if headers.IsSafelistedResponseHeaderName(normalized) {
 			// silently tolerate safelisted response-header names
 			continue
-		}
-		if exposedHeaders == nil {
-			exposedHeaders = make(util.Set)
 		}
 		exposedHeaders.Add(normalized)
 	}

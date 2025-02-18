@@ -36,7 +36,7 @@ func TestIsForbiddenRequestHeaderName(t *testing.T) {
 // involving a http.Header and one of those names would yield
 // unexpected results.
 func TestThatAllDiscreteForbiddenRequestHeaderNamesAreByteLowercase(t *testing.T) {
-	for name := range discreteForbiddenRequestHeaderNames {
+	for _, name := range discreteForbiddenRequestHeaderNames.ToSlice() {
 		if util.ByteLowercase(name) != name {
 			t.Errorf("forbidden header name %q is not byte-lowercase", name)
 		}
@@ -74,7 +74,7 @@ func TestIsProhibitedRequestHeaderName(t *testing.T) {
 // involving a http.Header and one of those names would yield
 // unexpected results.
 func TestThatAllProhibitedRequestHeaderNamesAreByteLowercase(t *testing.T) {
-	for name := range prohibitedRequestHeaderNames {
+	for _, name := range prohibitedRequestHeaderNames.ToSlice() {
 		if util.ByteLowercase(name) != name {
 			t.Errorf("prohibited header name %q is not byte-lowercase", name)
 		}

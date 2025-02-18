@@ -61,7 +61,7 @@ func TestIsForbidden(t *testing.T) {
 // This check is important because IsForbidden normalizes its argument
 // by byte-uppercasing it.
 func TestThatAllForbiddenMethodsAreByteUppercase(t *testing.T) {
-	for method := range byteUppercasedForbiddenMethods {
+	for _, method := range byteUppercasedForbiddenMethods.ToSlice() {
 		if util.ByteUppercase(method) != method {
 			t.Errorf("forbidden method %q is not byte-uppercase", method)
 		}
