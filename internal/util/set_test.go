@@ -47,7 +47,7 @@ func TestSet(t *testing.T) {
 					t.Errorf(tmpl, set, s)
 				}
 			}
-			slice := set.ToSortedSlice()
+			slice := set.ToSlice()
 			if !slices.Equal(slice, tc.want) {
 				t.Errorf("got %q; want %q", slice, tc.want)
 			}

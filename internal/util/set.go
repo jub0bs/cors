@@ -5,7 +5,7 @@ import "slices"
 // A Set represents a set of strings.
 type Set map[string]struct{}
 
-// NewSet returns a Set that contains all of elems,
+// NewSet returns a Set that contains all of elems
 // but no other elements.
 func NewSet(elems ...string) Set {
 	set := make(Set)
@@ -15,24 +15,24 @@ func NewSet(elems ...string) Set {
 	return set
 }
 
-// Add adds e to s.
-func (s Set) Add(e string) {
-	s[e] = struct{}{}
+// Add adds e to set.
+func (set Set) Add(e string) {
+	set[e] = struct{}{}
 }
 
-// Contains returns true if e is an element of s, and false otherwise.
-func (s Set) Contains(e string) bool {
-	_, found := s[e]
+// Contains reports whether e is an element of set.
+func (set Set) Contains(e string) bool {
+	_, found := set[e]
 	return found
 }
 
-// Size returns the cardinality of s.
-func (s Set) Size() int {
-	return len(s)
+// Size returns the cardinality of set.
+func (set Set) Size() int {
+	return len(set)
 }
 
-// ToSortedSlice returns a sorted slice of s's elements.
-func (s Set) ToSortedSlice() []string {
+// ToSlice returns a slice of set's elements sorted in lexicographical order.
+func (s Set) ToSlice() []string {
 	res := make([]string, 0, len(s))
 	for elem := range s {
 		res = append(res, elem)

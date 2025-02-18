@@ -821,7 +821,7 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 		// The elements of a header-field value may be separated simply by commas;
 		// since whitespace is optional, let's not use any.
 		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
-		icfg.aceh = strings.Join(exposedHeaders.ToSortedSlice(), headers.ValueSep)
+		icfg.aceh = strings.Join(exposedHeaders.ToSlice(), headers.ValueSep)
 	}
 	return nil
 }
@@ -875,7 +875,7 @@ func newConfig(icfg *internalConfig) *Config {
 	case icfg.allowAnyMethod:
 		cfg.Methods = []string{"*"}
 	case icfg.allowedMethods.Size() > 0:
-		cfg.Methods = icfg.allowedMethods.ToSortedSlice()
+		cfg.Methods = icfg.allowedMethods.ToSlice()
 	}
 
 	// request headers
