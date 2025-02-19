@@ -81,6 +81,7 @@ func (t *Tree) Insert(p *Pattern) {
 		grandChild2 := &node{suf: prefixOfS}
 		grandChild2.add(p.Scheme, p.Port, wildcardSubs)
 		child.upsertEdge(labelToGrandChild2, grandChild2)
+		return
 	}
 }
 
