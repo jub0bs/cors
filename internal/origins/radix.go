@@ -278,7 +278,7 @@ func (n *node) elems(dst *[]string, suf string) {
 			*dst = append(*dst, s)
 		}
 	}
-	for _, child := range n.children {
-		child.elems(dst, suf)
+	for i := range n.children {
+		n.children[i].elems(dst, suf)
 	}
 }
