@@ -37,12 +37,12 @@ func (t *Tree) Insert(p *Pattern) {
 		}
 		i, found := slices.BinarySearch(n.edges, labelToChild)
 		if !found { // No matching edge found; create one.
-			child := &node{suf: s}
+			child := node{suf: s}
 			child.add(p.Scheme, p.Port, wildcardSubs)
 			n.upsertEdge(labelToChild, child)
 			return
 		}
-		child := n.children[i]
+		child := &n.children[i]
 
 		prefixOfS, prefixOfChildSuf, suf := splitAtCommonSuffix(s, child.suf)
 		labelToGrandChild1, ok := lastByte(prefixOfChildSuf)
@@ -62,12 +62,16 @@ func (t *Tree) Insert(p *Pattern) {
 		//                       grandChild2
 
 		// Create a first grandchild on the basis of the current child.
-		grandChild1 := child
-		grandChild1.suf = prefixOfChildSuf
+		grandChild1 := node{
+			suf:      prefixOfChildSuf,
+			edges:    child.edges,
+			children: child.children,
+			schemes:  child.schemes,
+			ports:    child.ports,
+		}
 
 		// Replace child in n.
-		child = &node{suf: suf}
-		n.upsertEdge(labelToChild, child)
+		child = n.upsertEdge(labelToChild, node{suf: suf})
 
 		// Add a first grandchild in child.
 		child.upsertEdge(labelToGrandChild1, grandChild1)
@@ -78,7 +82,7 @@ func (t *Tree) Insert(p *Pattern) {
 		}
 
 		// Add a second grandchild in child.
-		grandChild2 := &node{suf: prefixOfS}
+		grandChild2 := node{suf: prefixOfS}
 		grandChild2.add(p.Scheme, p.Port, wildcardSubs)
 		child.upsertEdge(labelToGrandChild2, grandChild2)
 		return
@@ -105,7 +109,7 @@ func (t *Tree) Contains(o *Origin) bool {
 		if !found {
 			return false
 		}
-		n = n.children[i]
+		n = &n.children[i]
 
 		prefixOfHost, _, suf := splitAtCommonSuffix(host, n.suf)
 		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of host
@@ -158,7 +162,7 @@ type node struct {
 	// edges to children of this node
 	edges []byte
 	// children of this node ("parallels" edges slice)
-	children []*node
+	children []node
 	// schemes of this node
 	schemes []string
 	// ports associated to this node's schemes ("parallels" schemes slice)
@@ -235,14 +239,17 @@ func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool)
 	return
 }
 
-func (n *node) upsertEdge(label byte, child *node) {
+// upsertEdge updates or inserts child in n down an edge labeled by label
+// and returns a pointer to the corresponding child in n.
+func (n *node) upsertEdge(label byte, child node) *node {
 	i, found := slices.BinarySearch(n.edges, label)
 	if !found {
 		n.edges = insert(n.edges, i, label)
 		n.children = insert(n.children, i, child)
-		return
+		return &n.children[i]
 	}
 	n.children[i] = child
+	return &n.children[i]
 }
 
 // elems adds textual representations of n's elements
@@ -271,7 +278,7 @@ func (n *node) elems(dst *[]string, suf string) {
 			*dst = append(*dst, s)
 		}
 	}
-	for _, child := range n.children {
-		child.elems(dst, suf)
+	for i := range n.children {
+		n.children[i].elems(dst, suf)
 	}
 }
