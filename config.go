@@ -464,7 +464,7 @@ type internalConfig struct {
 	insecureOrigins            bool
 }
 
-type corpus []*origins.Pattern
+type corpus []origins.Pattern
 
 func (c corpus) isEmpty() bool {
 	return len(c) == 0
@@ -533,7 +533,7 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 		return err
 	}
 	var (
-		corpus         []*origins.Pattern
+		corpus         corpus
 		discreteOrigin string
 		errs           []error
 		allowAnyOrigin bool
@@ -600,7 +600,7 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 				errs = append(errs, err)
 			}
 		}
-		corpus = append(corpus, &pattern)
+		corpus = append(corpus, pattern)
 	}
 	if len(errs) != 0 {
 		return errors.Join(errs...)
@@ -875,7 +875,7 @@ func newConfig(icfg *internalConfig) *Config {
 		// placeholder
 		var tree origins.Tree
 		for _, p := range icfg.corpus {
-			tree.Insert(p)
+			tree.Insert(&p)
 		}
 		cfg.Origins = tree.Elems()
 	}
