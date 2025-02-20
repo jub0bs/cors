@@ -46,6 +46,19 @@ type Pattern struct {
 	Port int
 }
 
+func (p *Pattern) Matches(o *Origin) bool {
+	if p.Scheme != o.Scheme {
+		return false
+	}
+	if p.Port != wildcardPort && p.Port != o.Port {
+		return false
+	}
+	if p.Kind == PatternKindSubdomains {
+		return strings.HasSuffix(o.Host.Value, p.HostPattern.Value[1:])
+	}
+	return p.Value == o.Value
+}
+
 // IsDeemedInsecure reports whether all of the following conditions are
 // fulfilled:
 //   - p's scheme is not https,

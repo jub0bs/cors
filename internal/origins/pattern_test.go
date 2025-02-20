@@ -358,6 +358,68 @@ var parsePatternCases = []TestCase{
 	},
 }
 
+func TestParsePattern(t *testing.T) {
+	cases := []struct {
+		desc    string
+		pattern string
+		origin  string
+		want    bool
+	}{
+		{
+			desc:    "exact match",
+			pattern: "https://example.com:3999",
+			origin:  "https://example.com:3999",
+			want:    true,
+		}, {
+			desc:    "different schemes",
+			pattern: "https://example.com:3999",
+			origin:  "http://example.com:3999",
+			want:    false,
+		}, {
+			desc:    "different ports",
+			pattern: "https://example.com:3999",
+			origin:  "https://example.com:3998",
+			want:    false,
+		}, {
+			desc:    "subdomain",
+			pattern: "https://example.com:3999",
+			origin:  "https://foo.example.com:3999",
+			want:    false,
+		}, {
+			desc:    "wildcard subs",
+			pattern: "https://*.example.com:3999",
+			origin:  "https://foo.example.com:3999",
+			want:    true,
+		}, {
+			desc:    "wildcard ports",
+			pattern: "https://example.com:*",
+			origin:  "https://example.com:3999",
+			want:    true,
+		}, {
+			desc:    "wildcard subs and ports",
+			pattern: "https://*.example.com:*",
+			origin:  "https://foo.example.com:3999",
+			want:    true,
+		},
+	}
+	for _, tc := range cases {
+		f := func(t *testing.T) {
+			p, err := ParsePattern(tc.pattern)
+			if err != nil {
+				t.Fatal(err)
+			}
+			o, ok := Parse(tc.origin)
+			if !ok {
+				t.Fatal("invalid origin")
+			}
+			if got := p.Matches(&o); got != tc.want {
+				t.Errorf("got %t; want %t", got, tc.want)
+			}
+		}
+		t.Run(tc.desc, f)
+	}
+}
+
 func TestParseSpec(t *testing.T) {
 	for _, c := range parsePatternCases {
 		f := func(t *testing.T) {
