@@ -38,6 +38,9 @@ func (set SortedSet) MaxLen() int {
 //
 // Precondition: n < set.Size().
 func (set SortedSet) IndexAfter(n int, e string) int {
+	if set.maxLen < len(e) {
+		return -1
+	}
 	start := n + 1
 	i, found := slices.BinarySearch(set.elems[start:], e)
 	if !found {
