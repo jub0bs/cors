@@ -12,32 +12,37 @@ func TestSortedSet(t *testing.T) {
 		desc  string
 		elems []string
 		// expectations
-		size   int
-		maxLen int
-		slice  []string
+		size     int
+		maxLen   int
+		notElems []string
+		slice    []string
 	}{
 		{
-			desc:   "empty set",
-			size:   0,
-			maxLen: 0,
+			desc:     "empty set",
+			size:     0,
+			maxLen:   0,
+			notElems: []string{"x-foo"},
 		}, {
-			desc:   "singleton set",
-			elems:  []string{"x-foo"},
-			size:   1,
-			maxLen: 5,
-			slice:  []string{"x-foo"},
+			desc:     "singleton set",
+			elems:    []string{"x-foo"},
+			size:     1,
+			maxLen:   5,
+			notElems: []string{"x-bar", "x-baz", "x-qux", "x-quux"},
+			slice:    []string{"x-foo"},
 		}, {
-			desc:   "no dupes",
-			elems:  []string{"x-foo", "x-bar", "x-baz"},
-			size:   3,
-			maxLen: 5,
-			slice:  []string{"x-bar", "x-baz", "x-foo"},
+			desc:     "no dupes",
+			elems:    []string{"x-foo", "x-bar", "x-baz"},
+			size:     3,
+			maxLen:   5,
+			notElems: []string{"x-qux", "x-quux"},
+			slice:    []string{"x-bar", "x-baz", "x-foo"},
 		}, {
-			desc:   "some dupes",
-			elems:  []string{"x-foo", "x-bar", "x-foo"},
-			size:   2,
-			maxLen: 5,
-			slice:  []string{"x-bar", "x-foo"},
+			desc:     "some dupes",
+			elems:    []string{"x-foo", "x-bar", "x-foo"},
+			size:     2,
+			maxLen:   5,
+			notElems: []string{"x-baz", "x-qux", "x-quux"},
+			slice:    []string{"x-bar", "x-foo"},
 		},
 	}
 	for _, tc := range cases {
@@ -54,6 +59,16 @@ func TestSortedSet(t *testing.T) {
 			if got := set.MaxLen(); got != tc.maxLen {
 				const tmpl = "newSortedSet(%#v...).MaxLen(): got %d; want %d"
 				t.Errorf(tmpl, tc.elems, got, tc.maxLen)
+			}
+			for _, e := range tc.notElems {
+				for n := -1; n < size; n++ {
+					const want = -1
+					got := set.IndexAfter(n, e)
+					if got != want {
+						const tmpl = "newSortedSet(%#v...).IndexAfter(%d, %q): got %d; want %d"
+						t.Errorf(tmpl, tc.elems, n, e, got, want)
+					}
+				}
 			}
 			s := set.ToSlice()
 			if !slices.Equal(s, tc.slice) {
