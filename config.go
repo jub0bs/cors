@@ -874,9 +874,9 @@ func newConfig(icfg *internalConfig) *Config {
 	// request headers
 	switch {
 	case !icfg.credentialed && icfg.asteriskReqHdrs && icfg.allowAuthorization:
-		cfg.RequestHeaders = []string{"*", headers.Authorization}
+		cfg.RequestHeaders = []string{headers.ValueWildcard, headers.Authorization}
 	case icfg.asteriskReqHdrs:
-		cfg.RequestHeaders = []string{"*"}
+		cfg.RequestHeaders = []string{headers.ValueWildcard}
 	case icfg.allowedReqHdrs.Size() > 0:
 		cfg.RequestHeaders = icfg.allowedReqHdrs.ToSlice()
 	}
