@@ -271,9 +271,9 @@ func (n *node) elems(dst *[]string, suf string) {
 			case 0:
 				s = scheme + schemeHostSep + maybeWildcard + suf
 			case wildcardPort:
-				s = scheme + schemeHostSep + maybeWildcard + suf + ":" + portWildcard
+				s = scheme + schemeHostSep + maybeWildcard + suf + string(hostPortSep) + portWildcard
 			default:
-				s = scheme + schemeHostSep + maybeWildcard + suf + ":" + strconv.Itoa(port)
+				s = scheme + schemeHostSep + maybeWildcard + suf + string(hostPortSep) + strconv.Itoa(port)
 			}
 			*dst = append(*dst, s)
 		}
