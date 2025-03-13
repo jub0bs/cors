@@ -744,7 +744,7 @@ func (icfg *internalConfig) validateMaxAge(delta int) error {
 	case delta == disableCaching:
 		icfg.acma = []string{"0"}
 		return nil
-	case delta == 0: // leave cfg.ACMA at nil
+	case delta == 0:
 		return nil
 	default:
 		icfg.acma = []string{strconv.Itoa(delta)}
