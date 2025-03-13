@@ -358,7 +358,7 @@ var parsePatternCases = []TestCase{
 	},
 }
 
-func TestParseSpec(t *testing.T) {
+func TestParsePattern(t *testing.T) {
 	for _, c := range parsePatternCases {
 		f := func(t *testing.T) {
 			o, err := ParsePattern(c.input)
@@ -415,12 +415,12 @@ func TestIsDeemedInsecure(t *testing.T) {
 	}
 	for _, c := range cases {
 		f := func(t *testing.T) {
-			spec, err := ParsePattern(c.pattern)
+			pattern, err := ParsePattern(c.pattern)
 			if err != nil {
 				t.Errorf("got %v; want non-nil error", err)
 				return
 			}
-			got := spec.IsDeemedInsecure()
+			got := pattern.IsDeemedInsecure()
 			if got != c.want {
 				t.Errorf("got %t; want %t", got, c.want)
 			}
@@ -454,12 +454,12 @@ func TestHostIsEffectiveTLD(t *testing.T) {
 	}
 	for _, c := range cases {
 		f := func(t *testing.T) {
-			spec, err := ParsePattern(c.pattern)
+			pattern, err := ParsePattern(c.pattern)
 			if err != nil {
 				t.Errorf("got %v; want non-nil error", err)
 				return
 			}
-			eTLD, isETLD := spec.HostIsEffectiveTLD()
+			eTLD, isETLD := pattern.HostIsEffectiveTLD()
 			if eTLD != c.eTLD || isETLD != c.isETLD {
 				t.Errorf("got %s, %t; want %s, %t", eTLD, isETLD, c.eTLD, c.isETLD)
 			}
