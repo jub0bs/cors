@@ -53,11 +53,11 @@ func TestSortedSet(t *testing.T) {
 			}
 			size := set.Size()
 			if size != tc.size {
-				const tmpl = "newSortedSet(%#v...).Size(): got %d; want %d"
+				const tmpl = "SortedSet built from %#v: Size(): got %d; want %d"
 				t.Errorf(tmpl, tc.elems, size, tc.size)
 			}
 			if got := set.MaxLen(); got != tc.maxLen {
-				const tmpl = "newSortedSet(%#v...).MaxLen(): got %d; want %d"
+				const tmpl = "SortedSet built from %#v: MaxLen(): got %d; want %d"
 				t.Errorf(tmpl, tc.elems, got, tc.maxLen)
 			}
 			for _, e := range tc.notElems {
@@ -65,14 +65,14 @@ func TestSortedSet(t *testing.T) {
 					const want = -1
 					got := set.IndexAfter(n, e)
 					if got != want {
-						const tmpl = "newSortedSet(%#v...).IndexAfter(%d, %q): got %d; want %d"
+						const tmpl = "SortedSet built from %#v: IndexAfter(%d, %q): got %d; want %d"
 						t.Errorf(tmpl, tc.elems, n, e, got, want)
 					}
 				}
 			}
 			s := set.ToSlice()
 			if !slices.Equal(s, tc.slice) {
-				const tmpl = "newSortedSet(%#v...).ToSlice(): got %q; want %q"
+				const tmpl = "SortedSet built from %#v: ToSlice(): got %q; want %q"
 				t.Errorf(tmpl, tc.elems, s, tc.slice)
 			}
 			for pos, e := range s {
@@ -83,7 +83,7 @@ func TestSortedSet(t *testing.T) {
 					}
 					got := set.IndexAfter(n, e)
 					if got != want {
-						const tmpl = "newSortedSet(%#v...).IndexAfter(%d, %q): got %d; want %d"
+						const tmpl = "SortedSet built from %#v: IndexAfter(%d, %q): got %d; want %d"
 						t.Errorf(tmpl, tc.elems, n, e, got, want)
 					}
 				}
