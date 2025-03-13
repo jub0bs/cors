@@ -1,9 +1,5 @@
 package headers
 
-import "github.com/jub0bs/cors/internal/util"
-
-var owsSet = util.MakeASCIISet("\t ") // see https://httpwg.org/specs/rfc9110.html#whitespace
-
 // TrimOWS trims up to n bytes of [optional whitespace (OWS)]
 // from the start of and/or the end of s.
 // If no more than n bytes of OWS are found at the start of s
@@ -34,11 +30,7 @@ func trimLeftOWS(s string, n int) (string, bool) {
 		if i > n {
 			return sCopy, false
 		}
-		if !owsSet.Contains(s[0]) {
-			// Note: We could simply test s[0] == '\t' || s[0] == ' ',
-			// but relying on an asciiSet allows us to
-			//  - use one indexing operation instead of two comparisons, and
-			//  - not favor one OWS byte (e.g. '\t') over the other (e.g. ' ').
+		if !isOWS(s[0]) {
 			break
 		}
 		s = s[1:]
@@ -54,12 +46,18 @@ func trimRightOWS(s string, n int) (string, bool) {
 		if i > n {
 			return sCopy, false
 		}
-		if !owsSet.Contains(s[len(s)-1]) {
-			// see implementation comment trimLeftOWS
+		if !isOWS(s[len(s)-1]) {
 			break
 		}
 		s = s[:len(s)-1]
 		i++
 	}
 	return s, true
+}
+
+// see https://httpwg.org/specs/rfc9110.html#whitespace
+func isOWS(b byte) bool {
+	// Relying on an asciiSet here is tempting,
+	// but is slower than the simpler approach for such a small character set.
+	return b == '\t' || b == ' '
 }
