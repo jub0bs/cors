@@ -55,7 +55,7 @@ for favoring libraries like the more popular [rs/cors][rs-cors]:
 go get github.com/jub0bs/cors
 ```
 
-This library requires [Go 1.23][go1.23] or above.
+This library requires [Go 1.23.0][go1.23] or above.
 
 ## Example
 
