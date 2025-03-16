@@ -103,7 +103,7 @@ func ParsePattern(str string) (Pattern, error) {
 		}
 		return zeroPattern, err
 	}
-	str, ok = consume(schemeHostSep, str)
+	str, ok = strings.CutPrefix(str, schemeHostSep)
 	if !ok {
 		err := &cfgerrors.UnacceptableOriginPatternError{
 			Value:  full,
@@ -124,7 +124,7 @@ func ParsePattern(str string) (Pattern, error) {
 	}
 	var port int // assume no port
 	if len(str) > 0 {
-		str, ok = consume(string(hostPortSep), str)
+		str, ok = strings.CutPrefix(str, string(hostPortSep))
 		if !ok {
 			err := &cfgerrors.UnacceptableOriginPatternError{
 				Value:  full,
@@ -285,7 +285,7 @@ func (hp *HostPattern) hostOnly() string {
 // the unconsumed part of the input string, and a bool that indicates
 // success or failure.
 func parsePortPattern(str string) (port int, rest string, ok bool) {
-	if rest, ok = consume(portWildcard, str); ok {
+	if rest, ok = strings.CutPrefix(str, portWildcard); ok {
 		return wildcardPort, rest, true
 	}
 	return parsePort(str)

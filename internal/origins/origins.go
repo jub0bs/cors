@@ -57,7 +57,7 @@ func Parse(str string) (Origin, bool) {
 	if !ok {
 		return zeroOrigin, false
 	}
-	str, ok = consume(schemeHostSep, str)
+	str, ok = strings.CutPrefix(str, schemeHostSep)
 	if !ok {
 		return zeroOrigin, false
 	}
@@ -67,7 +67,7 @@ func Parse(str string) (Origin, bool) {
 	}
 	var port int // assume no port at first
 	if len(str) > 0 {
-		str, ok = consume(string(hostPortSep), str)
+		str, ok = strings.CutPrefix(str, string(hostPortSep))
 		if !ok {
 			return zeroOrigin, false
 		}
@@ -240,13 +240,3 @@ func isNonZeroDigit(b byte) bool {
 }
 
 var nonzeroDigits = util.MakeASCIISet("123456789")
-
-// consume checks whether target is a prefix of str.
-// If so, it consumes target in s, and returns the remainder of str and true.
-// Otherwise, it returns str and false.
-func consume(target, str string) (rest string, ok bool) {
-	if !strings.HasPrefix(str, target) {
-		return str, false
-	}
-	return str[len(target):], true
-}
