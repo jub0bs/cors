@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.7] (2025-03-13)
 
+### Changed
+
 - **Performance**: minor improvements
 - **Dependencies**: update to golang.org/x/net v0.37.0
 
 ## [0.5.6] (2025-02-18)
+
+### Changed
 
 - **Performance**: Middleware initialization now requires less heap allocation.
 - **Performance**: Middleware's Config method now requires less heap allocation.
@@ -18,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation**: minor improvements
 
 ## [0.5.5] (2025-02-13)
+
+### Changed
 
 - **Performance**: Middleware initialization now requires less heap allocation.
 - **Performance**: Middleware's Config method now requires less heap allocation.
