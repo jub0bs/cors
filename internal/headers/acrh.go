@@ -99,9 +99,9 @@ const (
 // first n bytes of str, returning the parts of str before and after the comma.
 // The found result reports whether a comma appears in that portion of str.
 // If no comma appears in that portion of str, cutAtComma returns str, "", false.
-func cutAtComma(str string, n int) (before, after string, found bool) {
+func cutAtComma(str string, n uint) (before, after string, found bool) {
 	// Note: this implementation draws inspiration from strings.Cut's.
-	end := min(len(str), n)
+	end := min(uint(len(str)), n)
 	if i := strings.IndexByte(str[:end], ','); i >= 0 {
 		after = str[i+1:] // deal with this first to save one bounds check
 		return str[:i], after, true

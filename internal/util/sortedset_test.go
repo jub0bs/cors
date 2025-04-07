@@ -13,7 +13,7 @@ func TestSortedSet(t *testing.T) {
 		elems []string
 		// expectations
 		size     int
-		maxLen   int
+		maxLen   uint
 		notElems []string
 		slice    []string
 	}{

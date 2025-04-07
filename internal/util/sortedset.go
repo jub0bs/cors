@@ -8,7 +8,7 @@ import "slices"
 // The zero value represents an empty set.
 type SortedSet struct {
 	elems  []string // invariant: sorted
-	maxLen int
+	maxLen uint
 }
 
 // Add adds e to set.
@@ -19,7 +19,7 @@ func (set *SortedSet) Add(e string) {
 	}
 	set.elems = append(set.elems, e)
 	slices.Sort(set.elems)
-	set.maxLen = max(set.maxLen, len(e))
+	set.maxLen = max(set.maxLen, uint(len(e)))
 }
 
 // Size returns the cardinality of set.
@@ -29,7 +29,7 @@ func (set SortedSet) Size() int {
 
 // MaxLen returns the length of set's longest element,
 // or 0 if set is empty.
-func (set SortedSet) MaxLen() int {
+func (set SortedSet) MaxLen() uint {
 	return set.maxLen
 }
 
@@ -38,7 +38,7 @@ func (set SortedSet) MaxLen() int {
 //
 // Precondition: n < set.Size().
 func (set SortedSet) IndexAfter(n int, e string) int {
-	if set.maxLen < len(e) {
+	if set.maxLen < uint(len(e)) {
 		return -1
 	}
 	start := n + 1
