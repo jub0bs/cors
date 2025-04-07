@@ -54,7 +54,7 @@ func Check(set util.SortedSet, acrhs []string) bool {
 		for {
 			// As a defense against maliciously long names in acrh, we process
 			// only a small number of acrh's leading bytes per iteration.
-			name, acrh, commaFound = cutAtComma(acrh, maxLen)
+			name, acrh, commaFound = cutAtComma(acrh, uint(maxLen))
 			name, ok = TrimOWS(name, MaxOWSBytes)
 			if !ok {
 				return false
@@ -99,11 +99,11 @@ const (
 // first n bytes of str, returning the parts of str before and after the comma.
 // The found result reports whether a comma appears in that portion of str.
 // If no comma appears in that portion of str, cutAtComma returns str, "", false.
-func cutAtComma(str string, n int) (before, after string, found bool) {
+func cutAtComma(str string, n uint) (before, after string, found bool) {
 	// Note: this implementation draws inspiration from strings.Cut's.
-	end := min(len(str), n)
+	end := int(min(uint(len(str)), n)) // saves one bounds check
 	if i := strings.IndexByte(str[:end], ','); i >= 0 {
-		after = str[i+1:] // deal with this first to save one bounds check
+		after = str[i+1:] // deal with this first to save one more bounds check
 		return str[:i], after, true
 	}
 	return str, "", false
