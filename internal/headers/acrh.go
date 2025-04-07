@@ -1,10 +1,6 @@
 package headers
 
-import (
-	"strings"
-
-	"github.com/jub0bs/cors/internal/util"
-)
+import "github.com/jub0bs/cors/internal/util"
 
 // Check reports whether acrhs is a sequence of [list-based field values]
 // whose elements are
@@ -54,7 +50,7 @@ func Check(set util.SortedSet, acrhs []string) bool {
 		for {
 			// As a defense against maliciously long names in acrh, we process
 			// only a small number of acrh's leading bytes per iteration.
-			name, acrh, commaFound = cutAtComma(acrh, maxLen)
+			name, acrh, commaFound = cutAtComma(acrh, uint(maxLen))
 			name, ok = TrimOWS(name, MaxOWSBytes)
 			if !ok {
 				return false
@@ -100,11 +96,10 @@ const (
 // The found result reports whether a comma appears in that portion of str.
 // If no comma appears in that portion of str, cutAtComma returns str, "", false.
 func cutAtComma(str string, n uint) (before, after string, found bool) {
-	// Note: this implementation draws inspiration from strings.Cut's.
-	end := min(uint(len(str)), n)
-	if i := strings.IndexByte(str[:end], ','); i >= 0 {
-		after = str[i+1:] // deal with this first to save one bounds check
-		return str[:i], after, true
+	for i := range min(uint(len(str)), n) {
+		if str[i] == ',' {
+			return str[:i], str[i+1:], true
+		}
 	}
 	return str, "", false
 }
