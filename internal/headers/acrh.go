@@ -54,7 +54,7 @@ func Check(set util.SortedSet, acrhs []string) bool {
 		for {
 			// As a defense against maliciously long names in acrh, we process
 			// only a small number of acrh's leading bytes per iteration.
-			name, acrh, commaFound = cutAtComma(acrh, uint(maxLen))
+			name, acrh, commaFound = cutAtComma(acrh, maxLen)
 			name, ok = TrimOWS(name, MaxOWSBytes)
 			if !ok {
 				return false
