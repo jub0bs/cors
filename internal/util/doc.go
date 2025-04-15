@@ -1,2 +1,2 @@
-// Package util provides various things used by other packages in this module.
+// Package util implements sorted and unsorted sets of strings.
 package util
