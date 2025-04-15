@@ -57,7 +57,5 @@ func trimRightOWS(s string, n int) (string, bool) {
 
 // see https://httpwg.org/specs/rfc9110.html#whitespace
 func isOWS(b byte) bool {
-	// Relying on an asciiSet here is tempting,
-	// but is slower than the simpler approach for such a small character set.
 	return b == '\t' || b == ' '
 }

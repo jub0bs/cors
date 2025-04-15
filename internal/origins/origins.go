@@ -1,10 +1,6 @@
 package origins
 
-import (
-	"strings"
-
-	"github.com/jub0bs/cors/internal/util"
-)
+import "strings"
 
 const (
 	schemeHostSep = "://"     // scheme-host separator
@@ -177,24 +173,38 @@ func parseScheme(str string) (string, string, bool) {
 }
 
 func isLowerAlpha(b byte) bool {
-	return lowerAlpha.Contains(b)
+	// see https://go.googlesource.com/go/+/refs/tags/go1.24.2/src/net/textproto/reader.go#678
+	const mask = (1<<26 - 1) << 'a'
+	return ((uint64(1)<<b)&(mask&(1<<64-1)) |
+		(uint64(1)<<(b-64))&(mask>>64)) != 0
 }
-
-var lowerAlpha = util.MakeASCIISet("abcdefghijklmnopqrstuvwxyz")
 
 func isSubsequentSchemeByte(b byte) bool {
-	return laterSchemeBytes.Contains(b)
+	// see https://go.googlesource.com/go/+/refs/tags/go1.24.2/src/net/textproto/reader.go#678
+	const mask = 0 |
+		1<<'+' |
+		1<<'-' |
+		1<<'.' |
+		(1<<10-1)<<'0' |
+		(1<<26-1)<<'a' |
+		1<<'-' |
+		1<<'_'
+	return ((uint64(1)<<b)&(mask&(1<<64-1)) |
+		(uint64(1)<<(b-64))&(mask>>64)) != 0
 }
-
-var laterSchemeBytes = util.MakeASCIISet("+-.0123456789abcdefghijklmnopqrstuvwxyz-_")
 
 // isASCIILabelByte returns true if b is an (ASCII) lowercase letter, digit,
 // hyphen (0x2D), or underscore (0x5F).
 func isASCIILabelByte(b byte) bool {
-	return asciiLabelBytes.Contains(b)
+	// see https://go.googlesource.com/go/+/refs/tags/go1.24.2/src/net/textproto/reader.go#678
+	const mask = 0 |
+		(1<<10-1)<<'0' |
+		(1<<26-1)<<'a' |
+		1<<'-' |
+		1<<'_'
+	return ((uint64(1)<<b)&(mask&(1<<64-1)) |
+		(uint64(1)<<(b-64))&(mask>>64)) != 0
 }
-
-var asciiLabelBytes = util.MakeASCIISet("0123456789abcdefghijklmnopqrstuvwxyz-_")
 
 // parsePort parses a port number. It returns the port number, the unconsumed
 // part of the input string, and a bool that indicates success or failure.
@@ -228,15 +238,17 @@ func intFromDigit(b byte) int {
 // isDigit returns true if b is in the 0x30-0x39 ASCII range,
 // and false otherwise.
 func isDigit(b byte) bool {
-	return digits.Contains(b)
+	// see https://go.googlesource.com/go/+/refs/tags/go1.24.2/src/net/textproto/reader.go#678
+	const mask = (1<<10 - 1) << '0'
+	return ((uint64(1)<<b)&(mask&(1<<64-1)) |
+		(uint64(1)<<(b-64))&(mask>>64)) != 0
 }
-
-var digits = util.MakeASCIISet("0123456789")
 
 // isNonZeroDigit returns true if b is in the 0x31-0x39 ASCII range,
 // and false otherwise.
 func isNonZeroDigit(b byte) bool {
-	return nonzeroDigits.Contains(b)
+	// see https://go.googlesource.com/go/+/refs/tags/go1.24.2/src/net/textproto/reader.go#678
+	const mask = (1<<9 - 1) << '1'
+	return ((uint64(1)<<b)&(mask&(1<<64-1)) |
+		(uint64(1)<<(b-64))&(mask>>64)) != 0
 }
-
-var nonzeroDigits = util.MakeASCIISet("123456789")
