@@ -1,10 +1,6 @@
 package headers
 
-import (
-	"strings"
-
-	"github.com/jub0bs/cors/internal/util"
-)
+import "strings"
 
 // IsForbiddenRequestHeaderName reports whether name is a
 // forbidden request-header name [per the Fetch standard].
@@ -14,38 +10,36 @@ import (
 // [byte-lowercase]: https://infra.spec.whatwg.org/#byte-lowercase
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#forbidden-header-name
 func IsForbiddenRequestHeaderName(name string) bool {
-	if discreteForbiddenRequestHeaderNames.Contains(name) {
+	switch name {
+	case "accept-charset",
+		"accept-encoding",
+		"access-control-request-headers",
+		"access-control-request-method",
+		// see https://wicg.github.io/private-network-access/#forbidden-header-names
+		"access-control-request-private-network",
+		"connection",
+		"content-length",
+		"cookie",
+		"cookie2",
+		"date",
+		"dnt",
+		"expect",
+		"host",
+		"keep-alive",
+		"origin",
+		"referer",
+		"set-cookie",
+		"te",
+		"trailer",
+		"transfer-encoding",
+		"upgrade",
+		"via":
 		return true
+	default:
+		return strings.HasPrefix(name, "proxy-") ||
+			strings.HasPrefix(name, "sec-")
 	}
-	return strings.HasPrefix(name, "proxy-") ||
-		strings.HasPrefix(name, "sec-")
 }
-
-var discreteForbiddenRequestHeaderNames = util.NewSet(
-	"accept-charset",
-	"accept-encoding",
-	util.ByteLowercase(ACRH),
-	util.ByteLowercase(ACRM),
-	// see https://wicg.github.io/private-network-access/#forbidden-header-names
-	util.ByteLowercase(ACRPN),
-	"connection",
-	"content-length",
-	"cookie",
-	"cookie2",
-	"date",
-	"dnt",
-	"expect",
-	"host",
-	"keep-alive",
-	util.ByteLowercase(Origin),
-	"referer",
-	"set-cookie",
-	"te",
-	"trailer",
-	"transfer-encoding",
-	"upgrade",
-	"via",
-)
 
 // IsProhibitedRequestHeaderName reports whether name is a prohibited
 // request-header name. Attempts to allow such request headers almost
@@ -55,15 +49,16 @@ var discreteForbiddenRequestHeaderNames = util.NewSet(
 //
 // [byte-lowercase]: https://infra.spec.whatwg.org/#byte-lowercase
 func IsProhibitedRequestHeaderName(name string) bool {
-	return prohibitedRequestHeaderNames.Contains(name)
+	switch name {
+	case "access-control-allow-origin",
+		"access-control-allow-credentials",
+		"access-control-allow-methods",
+		"access-control-allow-headers",
+		"access-control-allow-private-network",
+		"access-control-max-age",
+		"access-control-expose-headers":
+		return true
+	default:
+		return false
+	}
 }
-
-var prohibitedRequestHeaderNames = util.NewSet(
-	util.ByteLowercase(ACAO),
-	util.ByteLowercase(ACAC),
-	util.ByteLowercase(ACAM),
-	util.ByteLowercase(ACAH),
-	util.ByteLowercase(ACAPN),
-	util.ByteLowercase(ACMA),
-	util.ByteLowercase(ACEH),
-)
