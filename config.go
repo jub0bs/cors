@@ -670,7 +670,7 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		// before writing them to the ACRH header; see
 		// https://fetch.spec.whatwg.org/#cors-unsafe-request-header-names,
 		// step 6.
-		normalized := util.ByteLowercase(name)
+		normalized := strings.ToLower(name)
 		if normalized == headers.Authorization {
 			if icfg.allowAuthorization {
 				continue
@@ -779,7 +779,7 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 			errs = append(errs, err)
 			continue
 		}
-		normalized := util.ByteLowercase(name)
+		normalized := strings.ToLower(name)
 		if headers.IsForbiddenResponseHeaderName(normalized) {
 			err := &cfgerrors.UnacceptableHeaderNameError{
 				Value:  name,

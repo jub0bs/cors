@@ -2,9 +2,8 @@ package headers
 
 import (
 	"net/http"
+	"strings"
 	"testing"
-
-	"github.com/jub0bs/cors/internal/util"
 )
 
 // This check is important because, otherwise, index expressions
@@ -36,7 +35,7 @@ func TestThatAllRelevantHeaderNamesAreInCanonicalFormat(t *testing.T) {
 // http.Header key; however, for consistency, we prefer consistently writing
 // byte-lowercase header values in CORS response headers.
 func TestThatAuthorizationHeaderIsByteLowercase(t *testing.T) {
-	if util.ByteLowercase(Authorization) != Authorization {
+	if strings.ToLower(Authorization) != Authorization {
 		t.Errorf("%q is not byte-lowercase", Authorization)
 	}
 }

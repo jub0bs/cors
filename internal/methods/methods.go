@@ -2,8 +2,8 @@ package methods
 
 import (
 	"net/http"
+	"strings"
 
-	"github.com/jub0bs/cors/internal/util"
 	"golang.org/x/net/http/httpguts"
 )
 
@@ -20,7 +20,7 @@ func IsValid(name string) bool {
 //
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#forbidden-method
 func IsForbidden(name string) bool {
-	switch uppercase := util.ByteUppercase(name); uppercase {
+	switch uppercase := strings.ToUpper(name); uppercase {
 	case http.MethodConnect,
 		http.MethodTrace,
 		"TRACK":
@@ -49,7 +49,7 @@ func IsSafelisted(name string) bool {
 //
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#concept-method-normalize
 func Normalize(method string) string {
-	switch uppercase := util.ByteUppercase(method); uppercase {
+	switch uppercase := strings.ToUpper(method); uppercase {
 	case http.MethodDelete,
 		http.MethodGet,
 		http.MethodHead,
