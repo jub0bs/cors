@@ -3,6 +3,7 @@ package origins
 import (
 	"net/netip"
 	"strings"
+	"sync"
 
 	"github.com/jub0bs/cors/cfgerrors"
 	"golang.org/x/net/idna"
@@ -245,6 +246,7 @@ func parseHostPattern(str, full string) (HostPattern, string, error) {
 		pattern.Value = ipStr
 		return pattern, str, nil
 	}
+	profileOnce.Do(initProfile)
 	_, err := profile.ToASCII(host.Value)
 	if err != nil {
 		err := &cfgerrors.UnacceptableOriginPatternError{
@@ -264,12 +266,19 @@ func (hp *HostPattern) IsIP() bool {
 	return hp.Kind == PatternKindLoopbackIP || hp.Kind == PatternKindNonLoopbackIP
 }
 
-var profile = idna.New(
-	idna.BidiRule(),
-	idna.ValidateLabels(true),
-	idna.StrictDomainName(true),
-	idna.VerifyDNSLength(true),
+var (
+	profileOnce sync.Once     // guards init of profile via initProfile
+	profile     *idna.Profile // lazily initialized
 )
+
+func initProfile() {
+	profile = idna.New(
+		idna.BidiRule(),
+		idna.ValidateLabels(true),
+		idna.StrictDomainName(true),
+		idna.VerifyDNSLength(true),
+	)
+}
 
 // hostOnly returns strictly the host part of the pattern,
 // without any leading wildcard character sequence.
