@@ -1,9 +1,9 @@
-package methods
+package methods_test
 
 import (
 	"testing"
 
-	"github.com/jub0bs/cors/internal/util"
+	"github.com/jub0bs/cors/internal/methods"
 )
 
 func TestIsValid(t *testing.T) {
@@ -17,7 +17,7 @@ func TestIsValid(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			got := IsValid(tc.name)
+			got := methods.IsValid(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
@@ -48,23 +48,13 @@ func TestIsForbidden(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			got := IsForbidden(tc.name)
+			got := methods.IsForbidden(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
 			}
 		}
 		t.Run(tc.name, f)
-	}
-}
-
-// This check is important because IsForbidden normalizes its argument
-// by byte-uppercasing it.
-func TestThatAllForbiddenMethodsAreByteUppercase(t *testing.T) {
-	for _, method := range byteUppercasedForbiddenMethods.ToSlice() {
-		if util.ByteUppercase(method) != method {
-			t.Errorf("forbidden method %q is not byte-uppercase", method)
-		}
 	}
 }
 
@@ -85,7 +75,7 @@ func TestIsSafelisted(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			got := IsSafelisted(tc.name)
+			got := methods.IsSafelisted(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
@@ -122,7 +112,7 @@ func TestNormalize(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			got := Normalize(tc.name)
+			got := methods.Normalize(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %q; want %q"
 				t.Errorf(tmpl, tc.name, got, tc.want)

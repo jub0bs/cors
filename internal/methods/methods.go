@@ -20,47 +20,44 @@ func IsValid(name string) bool {
 //
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#forbidden-method
 func IsForbidden(name string) bool {
-	return byteUppercasedForbiddenMethods.Contains(util.ByteUppercase(name))
+	switch uppercase := util.ByteUppercase(name); uppercase {
+	case http.MethodConnect,
+		http.MethodTrace,
+		"TRACK":
+		return true
+	default:
+		return false
+	}
 }
-
-// Note: because users are more likely to submit methods in uppercase,
-// we store them in the same case with the hope to save a few allocations.
-var byteUppercasedForbiddenMethods = util.NewSet(
-	"CONNECT",
-	"TRACE",
-	"TRACK",
-)
 
 // IsSafelisted reports whether name is a safelisted method,
 // [per the Fetch standard].
 //
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#cors-safelisted-method
 func IsSafelisted(name string) bool {
-	return safelistedMethods.Contains(name)
+	switch name {
+	case http.MethodGet,
+		http.MethodHead,
+		http.MethodPost:
+		return true
+	default:
+		return false
+	}
 }
-
-var safelistedMethods = util.NewSet(
-	http.MethodGet,
-	http.MethodHead,
-	http.MethodPost,
-)
 
 // Normalize normalizes method, [per the Fetch standard].
 //
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#concept-method-normalize
 func Normalize(method string) string {
-	uppercase := util.ByteUppercase(method)
-	if browserNormalizedMethods.Contains(uppercase) {
+	switch uppercase := util.ByteUppercase(method); uppercase {
+	case http.MethodDelete,
+		http.MethodGet,
+		http.MethodHead,
+		http.MethodOptions,
+		http.MethodPost,
+		http.MethodPut:
 		return uppercase
+	default:
+		return method
 	}
-	return method
 }
-
-var browserNormalizedMethods = util.NewSet(
-	http.MethodDelete,
-	http.MethodGet,
-	http.MethodHead,
-	http.MethodOptions,
-	http.MethodPost,
-	http.MethodPut,
-)

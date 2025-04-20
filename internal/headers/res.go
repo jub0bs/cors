@@ -1,7 +1,5 @@
 package headers
 
-import "github.com/jub0bs/cors/internal/util"
-
 // IsForbiddenResponseHeaderName reports whether name is a
 // forbidden response-header name [per the Fetch standard].
 //
@@ -10,13 +8,14 @@ import "github.com/jub0bs/cors/internal/util"
 // [byte-lowercase]: https://infra.spec.whatwg.org/#byte-lowercase
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#forbidden-response-header-name
 func IsForbiddenResponseHeaderName(name string) bool {
-	return forbiddenResponseHeaderNames.Contains(name)
+	switch name {
+	case "set-cookie",
+		"set-cookie2":
+		return true
+	default:
+		return false
+	}
 }
-
-var forbiddenResponseHeaderNames = util.NewSet(
-	"set-cookie",
-	"set-cookie2",
-)
 
 // IsProhibitedResponseHeaderName reports whether name is a prohibited
 // response-header name. Attempts to expose such response headers almost
@@ -26,19 +25,20 @@ var forbiddenResponseHeaderNames = util.NewSet(
 //
 // [byte-lowercase]: https://infra.spec.whatwg.org/#byte-lowercase
 func IsProhibitedResponseHeaderName(name string) bool {
-	return prohibitedResponseHeaderNames.Contains(name)
+	switch name {
+	case "origin",
+		"access-control-request-method",
+		"access-control-request-headers",
+		"access-control-request-private-network",
+		"access-control-allow-methods",
+		"access-control-allow-headers",
+		"access-control-max-age",
+		"access-control-allow-private-network":
+		return true
+	default:
+		return false
+	}
 }
-
-var prohibitedResponseHeaderNames = util.NewSet(
-	util.ByteLowercase(Origin),
-	util.ByteLowercase(ACRM),
-	util.ByteLowercase(ACRH),
-	util.ByteLowercase(ACRPN),
-	util.ByteLowercase(ACAM),
-	util.ByteLowercase(ACAH),
-	util.ByteLowercase(ACMA),
-	util.ByteLowercase(ACAPN),
-)
 
 // IsSafelistedResponseHeaderName reports whether name is a
 // safelisted response-header name [per the Fetch standard].
@@ -48,15 +48,16 @@ var prohibitedResponseHeaderNames = util.NewSet(
 // [byte-lowercase]: https://infra.spec.whatwg.org/#byte-lowercase
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#cors-safelisted-response-header-name
 func IsSafelistedResponseHeaderName(name string) bool {
-	return safelistedResponseHeaderNames.Contains(name)
+	switch name {
+	case "cache-control",
+		"content-language",
+		"content-length",
+		"content-type",
+		"expires",
+		"last-modified",
+		"pragma":
+		return true
+	default:
+		return false
+	}
 }
-
-var safelistedResponseHeaderNames = util.NewSet(
-	"cache-control",
-	"content-language",
-	"content-length",
-	"content-type",
-	"expires",
-	"last-modified",
-	"pragma",
-)
