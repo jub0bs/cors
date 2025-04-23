@@ -7,6 +7,7 @@ import (
 )
 
 func TestTrimOWS(t *testing.T) {
+	const maxOWSBytes = 1
 	cases := []struct {
 		desc string
 		s    string
@@ -57,10 +58,10 @@ func TestTrimOWS(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			const maxOWSBytes = 1
 			got, ok := headers.TrimOWS(tc.s, maxOWSBytes)
 			if ok != tc.ok || got != tc.want {
-				t.Errorf("util.TrimOWS(%q): got %q, %t; want %q, %t", tc.s, got, ok, tc.want, tc.ok)
+				const tmpl = "headers.TrimOWS(%q, %d): got %q, %t; want %q, %t"
+				t.Errorf(tmpl, tc.s, maxOWSBytes, got, ok, tc.want, tc.ok)
 			}
 		}
 		t.Run(tc.desc, f)
