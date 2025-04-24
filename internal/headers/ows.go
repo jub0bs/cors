@@ -8,49 +8,25 @@ package headers
 // Otherwise, it returns some unspecified string and false.
 //
 // [optional whitespace (OWS)]: https://httpwg.org/specs/rfc9110.html#whitespace
-func TrimOWS(s string, n int) (string, bool) {
-	if s == "" {
-		return s, true
-	}
-	s, ok := trimRightOWS(s, n)
-	if !ok {
-		return "", false
-	}
-	s, ok = trimLeftOWS(s, n)
-	if !ok {
-		return "", false
-	}
-	return s, true
-}
-
-func trimLeftOWS(s string, n int) (string, bool) {
-	var i int
-	for len(s) > 0 {
-		if i > n {
-			return "", false
-		}
-		if !isOWS(s[0]) {
+func TrimOWS(s string, n int) (_ string, _ bool) {
+	for i := range len(s) {
+		if !isOWS(s[i]) {
+			s = s[i:]
 			break
 		}
-		s = s[1:]
-		i++
-	}
-	return s, true
-}
-
-func trimRightOWS(s string, n int) (string, bool) {
-	var i int
-	for len(s) > 0 {
-		if i > n {
-			return "", false
+		if i >= n {
+			return
 		}
-		if !isOWS(s[len(s)-1]) {
-			break
-		}
-		s = s[:len(s)-1]
-		i++
 	}
-	return s, true
+	for i := len(s); i > 0; i-- {
+		if !isOWS(s[i-1]) {
+			return s[:i], true
+		}
+		if i <= len(s)-n {
+			return
+		}
+	}
+	return "", true
 }
 
 // see https://httpwg.org/specs/rfc9110.html#whitespace
