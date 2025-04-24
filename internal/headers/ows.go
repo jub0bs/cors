@@ -5,30 +5,29 @@ package headers
 // If no more than n bytes of OWS are found at the start of s
 // and no more than n bytes of OWS are found at the end of s,
 // it returns the trimmed result and true.
-// Otherwise, it returns the original string and false.
+// Otherwise, it returns some unspecified string and false.
 //
 // [optional whitespace (OWS)]: https://httpwg.org/specs/rfc9110.html#whitespace
-func TrimOWS(s string, n int) (trimmed string, ok bool) {
+func TrimOWS(s string, n int) (string, bool) {
 	if s == "" {
 		return s, true
 	}
-	trimmed, ok = trimRightOWS(s, n)
+	s, ok := trimRightOWS(s, n)
 	if !ok {
-		return s, false
+		return "", false
 	}
-	trimmed, ok = trimLeftOWS(trimmed, n)
+	s, ok = trimLeftOWS(s, n)
 	if !ok {
-		return s, false
+		return "", false
 	}
-	return trimmed, true
+	return s, true
 }
 
 func trimLeftOWS(s string, n int) (string, bool) {
-	sCopy := s
 	var i int
 	for len(s) > 0 {
 		if i > n {
-			return sCopy, false
+			return "", false
 		}
 		if !isOWS(s[0]) {
 			break
@@ -40,11 +39,10 @@ func trimLeftOWS(s string, n int) (string, bool) {
 }
 
 func trimRightOWS(s string, n int) (string, bool) {
-	sCopy := s
 	var i int
 	for len(s) > 0 {
 		if i > n {
-			return sCopy, false
+			return "", false
 		}
 		if !isOWS(s[len(s)-1]) {
 			break

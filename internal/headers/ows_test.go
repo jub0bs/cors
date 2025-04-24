@@ -37,17 +37,14 @@ var trimOWStests = []struct {
 	}, {
 		desc: "too much leading OWS",
 		s:    " \tfoo\t",
-		want: " \tfoo\t",
 		ok:   false,
 	}, {
 		desc: "too much trailing OWS",
 		s:    " foo\t ",
-		want: " foo\t ",
 		ok:   false,
 	}, {
 		desc: "too much leading and trailing OWS",
 		s:    " \tfoo\t ",
-		want: " \tfoo\t ",
 		ok:   false,
 	}, {
 		desc: "non-OWS whitespace",
@@ -61,7 +58,13 @@ func TestTrimOWS(t *testing.T) {
 	for _, tc := range trimOWStests {
 		f := func(t *testing.T) {
 			got, ok := headers.TrimOWS(tc.s, maxOWSBytes)
-			if ok != tc.ok || got != tc.want {
+			if !tc.ok && ok {
+				// In cases where TrimOWS must fail, its string result is
+				// unspecified.
+				const tmpl = "headers.TrimOWS(%q, %d): got _, %t; want _, %t"
+				t.Fatalf(tmpl, tc.s, maxOWSBytes, ok, tc.ok)
+			}
+			if tc.ok && (!ok || got != tc.want) {
 				const tmpl = "headers.TrimOWS(%q, %d): got %q, %t; want %q, %t"
 				t.Errorf(tmpl, tc.s, maxOWSBytes, got, ok, tc.want, tc.ok)
 			}
