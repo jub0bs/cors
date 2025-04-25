@@ -21,7 +21,7 @@ jobs:
       - name: Display Go version
         run: go version
       - name: Test
-        run: go test -v -coverprofile=cover.out ./...
+        run: go test -v -shuffle=on -coverprofile=cover.out ./...
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5.4.0
         with:
@@ -68,11 +68,11 @@ jobs:
       - name: Run Benchmark (old)
         run: |
           cd old
-          go test -run=^$ -bench=. -count=10 . -benchtime=500ms > bench.out
+          go test -shuffle=on -run=^$ -bench=. -count=10 . -benchtime=500ms > bench.out
       - name: Run Benchmark (new)
         run: |
           cd new
-          go test -run=^$ -bench=. -count=10 . -benchtime=500ms > bench.out
+          go test -shuffle=on -run=^$ -bench=. -count=10 . -benchtime=500ms > bench.out
       - name: Run benchinit (new)
         run: |
           cd new
