@@ -57,8 +57,14 @@ jobs:
         uses: actions/setup-go@v5.4.0
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Install benchinit
+        run: go install mvdan.cc/benchinit@latest
       - name: Install benchstat
         run: go install golang.org/x/perf/cmd/benchstat@latest
+      - name: Run benchinit (old)
+        run: |
+          cd old
+          benchinit -count=20 ./... > bench_init.out
       - name: Run Benchmark (old)
         run: |
           cd old
@@ -67,6 +73,13 @@ jobs:
         run: |
           cd new
           go test -run=^$ -bench=. -count=10 . -benchtime=500ms > bench.out
+      - name: Run benchinit (new)
+        run: |
+          cd new
+          benchinit -count=20 ./... > bench_init.out
+      - name: Run benchstat for package initialization
+        run: |
+          benchstat old/bench_init.out new/bench_init.out
       - name: Run benchstat for middleware initialization
         run: |
           benchstat -filter "/type:init" old/bench.out new/bench.out
