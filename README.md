@@ -55,7 +55,8 @@ for favoring libraries like the more popular [rs/cors][rs-cors]:
 go get github.com/jub0bs/cors
 ```
 
-This library requires [Go 1.23.0][go1.23] or above.
+This library requires [Go 1.23.0][go1.23] or above. Note that it only
+[supports][release-policy] the two most recent minor versions of Go.
 
 ## Example
 
@@ -202,6 +203,7 @@ All source code is covered by the [MIT License][license].
 [pna]: https://pkg.go.dev/github.com/jub0bs/cors#hdr-PrivateNetworkAccess-ExtraConfig
 [programmatic]: https://jub0bs.com/posts/2025-01-28-programmatic-handling-of-cors-configuration-errors/
 [reconfigurable]: https://jub0bs.com/posts/2024-05-14-reconfigurable-cors-middleware/
+[release-policy]: https://go.dev/doc/devel/release#policy
 [rs-cors]: https://github.com/rs/cors
 [safe]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#10-render-insecure-configurations-impossible
 [validation]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#5-validate-configuration-and-fail-fast
