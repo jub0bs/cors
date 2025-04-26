@@ -48,11 +48,11 @@ func IsSafelisted(name string) bool {
 	}
 }
 
-// Normalize normalizes method, [per the Fetch standard].
+// Normalize normalizes name, [per the Fetch standard].
 //
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#concept-method-normalize
-func Normalize(method string) string {
-	switch uppercase := strings.ToUpper(method); uppercase {
+func Normalize(name string) string {
+	switch uppercase := strings.ToUpper(name); uppercase {
 	case http.MethodDelete,
 		http.MethodGet,
 		http.MethodHead,
@@ -61,6 +61,6 @@ func Normalize(method string) string {
 		http.MethodPut:
 		return uppercase
 	default:
-		return method
+		return name
 	}
 }
