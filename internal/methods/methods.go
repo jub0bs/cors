@@ -48,6 +48,8 @@ func IsSafelisted(name string) bool {
 
 // Normalize normalizes name, [per the Fetch standard].
 //
+// Precondition: name is a valid method.
+//
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#concept-method-normalize
 func Normalize(name string) string {
 	switch uppercase := strings.ToUpper(name); uppercase {
