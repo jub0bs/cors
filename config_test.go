@@ -938,6 +938,9 @@ type errorMatcher struct {
 	err     error
 }
 
+// newErrorMatcher returns an errorMatcher that matches an error whose dynamic
+// value is a pointer to a value equal to the value that ptrToTargetValue
+// points to.
 func newErrorMatcher[T comparable, P errPtrRcvr[T]](ptrToTargetValue P) *errorMatcher {
 	pred := func(err error) bool {
 		ptr, ok := err.(P)
@@ -955,6 +958,7 @@ func newErrorMatcher[T comparable, P errPtrRcvr[T]](ptrToTargetValue P) *errorMa
 	}
 }
 
+// An errPtrRcvr[T] is an error of dynamic type *T.
 type errPtrRcvr[T any] interface {
 	error
 	*T
