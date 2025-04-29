@@ -4,6 +4,7 @@ import (
 	"math"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // A Tree is a radix tree that represents a set of Web origins.
@@ -20,11 +21,7 @@ func (t *Tree) IsEmpty() bool {
 // Insert inserts p in t.
 func (t *Tree) Insert(p *Pattern) {
 	s := p.HostPattern.Value // non-empty by construction
-	var wildcardSubs bool
-	if s[0] == '*' {
-		wildcardSubs = true
-		s = s[1:]
-	}
+	s, wildcardSubs := strings.CutPrefix(s, "*")
 	n := &t.root
 	for {
 		labelToChild, ok := lastByte(s)
