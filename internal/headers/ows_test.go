@@ -51,6 +51,16 @@ var trimOWStests = []struct {
 		s:    "\nfoo\t",
 		want: "\nfoo",
 		ok:   true,
+	}, {
+		desc: "a tolerated amount of OWS and nothing else",
+		s:    "\t ",
+		want: "",
+		ok:   true,
+	}, {
+		desc: "a tolerated amount of OWS around non-OWS",
+		s:    " a ",
+		want: "a",
+		ok:   true,
 	},
 }
 

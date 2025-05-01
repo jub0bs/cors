@@ -10,20 +10,20 @@ package headers
 // [optional whitespace (OWS)]: https://httpwg.org/specs/rfc9110.html#whitespace
 func TrimOWS(s string, n int) (_ string, _ bool) {
 	for i := range len(s) {
+		if i > n {
+			return
+		}
 		if !isOWS(s[i]) {
 			s = s[i:]
 			break
 		}
-		if i >= n {
-			return
-		}
 	}
 	for i := len(s); i > 0; i-- {
+		if i < len(s)-n {
+			return
+		}
 		if !isOWS(s[i-1]) {
 			return s[:i], true
-		}
-		if i <= len(s)-n {
-			return
 		}
 	}
 	return "", true
