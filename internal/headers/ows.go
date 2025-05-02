@@ -15,15 +15,16 @@ func TrimOWS(s string, n int) (_ string, _ bool) {
 		}
 		if !isOWS(s[i]) {
 			s = s[i:]
-			break
-		}
-	}
-	for i := len(s); i > 0; i-- {
-		if i < len(s)-n {
-			return
-		}
-		if !isOWS(s[i-1]) {
-			return s[:i], true
+			for i = len(s); i > 0; i-- {
+				if i < len(s)-n {
+					return
+				}
+				if !isOWS(s[i-1]) {
+					s = s[:i]
+					break
+				}
+			}
+			return s, true
 		}
 	}
 	return "", true
