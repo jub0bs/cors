@@ -20,66 +20,76 @@ import "github.com/jub0bs/cors/internal/util"
 // in the value of the ACRH field, some intermediaries may well alter this
 // list-based field's value by sprinkling optional whitespace (OWS) around
 // the value's elements.
-// [RFC 9110] (section 5.6.1.2) requires recipients to tolerate arbitrary long
+// [RFC 9110] requires recipients to tolerate arbitrary long
 // OWS around elements of a list-based field value,
 // but adherence to this requirement leads to non-negligible performance
 // degradation in CORS middleware in the face of adversarial (spoofed)
 // CORS-preflight requests.
-// Therefore, this method only tolerates a small number (1) of OWS bytes
-// before and/or after each element. This divergence from RFC 9110 is expected
+// Therefore, this method only tolerates a small total (2) of OWS bytes
+// before and after each element. This deviation from RFC 9110 is expected
 // to strike a good balance between interoperability and performance.
 //
-// Moreover, this method tolerates a small number (16) of empty list elements,
-// in accordance with [RFC 9110]'s recommendation (section 5.6.1.2).
+// This method also tolerates a small number (16) of empty list elements,
+// in accordance with [RFC 9110].
 //
-// [RFC 9110]: https://httpwg.org/specs/rfc9110.html
+// [RFC 9110]: https://httpwg.org/specs/rfc9110.html#abnf.extension.recipient
 // [list-based field values]: https://httpwg.org/specs/rfc9110.html#abnf.extension
 // [some reportedly do]: https://github.com/rs/cors/issues/184
 // [the Fetch standard]: https://fetch.spec.whatwg.org
 func Check(set util.SortedSet, acrhs []string) bool {
-	// effectively constant
-	maxLen := MaxOWSBytes + set.MaxLen() + MaxOWSBytes + 1 // +1 for comma
 	var (
-		posOfLastNameSeen = -1
-		name              string
-		commaFound        bool
-		emptyElements     int
-		ok                bool
+		// position in set of the last name encountered in ACRH
+		pos = -1
+		// total number of empty field lines and empty list elements
+		emptyElements uint
 	)
 	for _, acrh := range acrhs {
-		for {
-			// As a defense against maliciously long names in acrh, we process
-			// only a small number of acrh's leading bytes per iteration.
-			name, acrh, commaFound = cutAtComma(acrh, uint(maxLen))
-			name, ok = TrimOWS(name, MaxOWSBytes)
-			if !ok {
+		if acrh == "" { // empty ACRH field line
+			if emptyElements >= MaxEmptyElements {
 				return false
 			}
-			if name == "" {
-				// RFC 9110 requires recipients to tolerate
-				// "a reasonable number of empty list elements"; see
-				// https://httpwg.org/specs/rfc9110.html#abnf.extension.recipient.
-				emptyElements++
-				if emptyElements > MaxEmptyElements {
+			emptyElements++
+			continue
+		}
+		// acrh is not empty
+		for looping := true; looping; {
+			var (
+				name      string
+				owsBudget uint = MaxOWSBytes
+			)
+			acrh, owsBudget = consumeOWS(acrh, owsBudget)
+			name, acrh = scanName(acrh, set.MaxLen())
+			acrh, _ = consumeOWS(acrh, owsBudget)
+			// Before processing name, let's perform some sanity checks.
+			switch {
+			case len(acrh) == 0:
+				// name is the last element in this list-based field line;
+				// stop the inner loop after the current iteration.
+				looping = false
+			case acrh[0] != ',':
+				// If acrh isn't empty and doesn't start by a comma,
+				// this field line either contains more OWS than we tolerate
+				// or it is not well-formed. Fail.
+				return false
+			default: // A comma was found at the start of acrh; consume it.
+				acrh = acrh[1:]
+			}
+			// Now let's process name.
+			if name == "" { // empty list element
+				if emptyElements >= MaxEmptyElements {
 					return false
 				}
-				if !commaFound { // We have now exhausted the names in acrh.
-					break
-				}
+				emptyElements++
 				continue
 			}
-			// The names in acrh are expected to be sorted in lexicographical order
-			// and to each appear at most once.
-			// Therefore, the positions (in set) of the names that
-			// appear in acrh should form a strictly increasing sequence.
-			// If that's not actually the case, bail out.
-			i := set.IndexAfter(posOfLastNameSeen, name)
-			if i < 0 {
+			// The names in ACRH are expected to be sorted in lexicographical
+			// order and to each appear at most once.
+			// Therefore, the positions (in set) of the names that appear in
+			// ACRH should form a strictly increasing sequence.
+			// If that's not actually the case, fail.
+			pos = set.IndexAfter(pos, name)
+			if pos < 0 {
 				return false
-			}
-			posOfLastNameSeen = i
-			if !commaFound { // We have now exhausted the names in acrh.
-				break
 			}
 		}
 	}
@@ -87,19 +97,31 @@ func Check(set util.SortedSet, acrhs []string) bool {
 }
 
 const (
-	MaxOWSBytes      = 1  // number of leading/trailing OWS bytes tolerated
-	MaxEmptyElements = 16 // number of empty list elements tolerated
+	MaxOWSBytes      = 2  // tolerated total of leading & trailing OWS bytes per element
+	MaxEmptyElements = 16 // tolerated total of empty elements
 )
 
-// cutAtComma slices str around the first comma that appears among (up to) the
-// first n bytes of str, returning the parts of str before and after the comma.
-// The found result reports whether a comma appears in that portion of str.
-// If no comma appears in that portion of str, cutAtComma returns str, "", false.
-func cutAtComma(str string, n uint) (before, after string, found bool) {
-	for i := range min(uint(len(str)), n) {
-		if str[i] == ',' {
-			return str[:i], str[i+1:], true
+func consumeOWS(s string, budget uint) (string, uint) {
+	for len(s) > 0 && isOWS(s[0]) && budget > 0 {
+		s = s[1:]
+		budget--
+	}
+	return s, budget
+}
+
+// Note: name is not guaranteed to be a valid token.
+func scanName(s string, maxLen uint) (name, rest string) {
+	for i := range uint(len(s)) {
+		// As a defense against maliciously long names,
+		// we scan at most maxLen bytes.
+		if isOWS(s[i]) || s[i] == ',' || i > maxLen {
+			return s[:i], s[i:]
 		}
 	}
-	return str, "", false
+	return s, ""
+}
+
+// see https://httpwg.org/specs/rfc9110.html#whitespace
+func isOWS(b byte) bool {
+	return b == '\t' || b == ' '
 }

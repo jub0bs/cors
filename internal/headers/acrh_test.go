@@ -38,6 +38,10 @@ func TestCheck(t *testing.T) {
 			elems: []string{"x-foo"},
 			accepted: [][]string{
 				{"x-foo"},
+				// some OWS
+				{" x-foo "},
+				{"  x-foo"},
+				{"x-foo  "},
 				// some empty elements, possibly with OWS
 				{""},
 				{","},
@@ -53,10 +57,10 @@ func TestCheck(t *testing.T) {
 				{"x-bar"},
 				{"x-bar,x-foo"},
 				// too much OWS
-				{"x-foo  "},
+				{"x-foo   "},
 				{" x-foo  "},
-				{"  x-foo  "},
-				{"x-foo\t\t"},
+				{"  x-foo "},
+				{" x-foo\t\t"},
 				{"\tx-foo\t\t"},
 				{"\t\tx-foo\t\t"},
 				// too many empty elements
@@ -102,12 +106,12 @@ func TestCheck(t *testing.T) {
 				{"x-qux,x-foo"},
 				{"x-quxbaz,x-foo"},
 				// too much OWS
-				{"x-bar  "},
-				{" x-baz  "},
-				{"  x-foo  "},
-				{"x-bar\t\t,x-baz"},
+				{" x-bar  "},
+				{"  x-baz "},
+				{"   x-foo"},
+				{" x-bar\t\t,x-baz"},
 				{"x-bar,\tx-foo\t\t"},
-				{"\t\tx-baz,x-foo\t\t"},
+				{"\t\tx-baz, x-foo\t\t"},
 				{" x-bar\t,\tx-baz\t ,x-foo"},
 				// too many empty elements
 				{"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+2) + "x-foo"},
