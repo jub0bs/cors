@@ -1,6 +1,7 @@
 package headers_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/jub0bs/cors/internal/headers"
@@ -28,6 +29,26 @@ var trimOWStests = []struct {
 		desc: "internal OWS",
 		s:    "foo  \t\tbar",
 		want: "foo  \t\tbar",
+		ok:   true,
+	}, {
+		desc: "leading OWS",
+		s:    "\tfoo",
+		want: "foo",
+		ok:   true,
+	}, {
+		desc: "trailing OWS",
+		s:    "foo\t",
+		want: "foo",
+		ok:   true,
+	}, {
+		desc: "leading OWS with just 1 char",
+		s:    "\tf",
+		want: "f",
+		ok:   true,
+	}, {
+		desc: "trailing OWS with just 1 char",
+		s:    "f\t",
+		want: "f",
 		ok:   true,
 	}, {
 		desc: "leading and trailing OWS",
@@ -81,6 +102,29 @@ func TestTrimOWS(t *testing.T) {
 		}
 		t.Run(tc.desc, f)
 	}
+}
+
+func FuzzTrimOS(f *testing.F) {
+	for _, tc := range trimOWStests {
+		f.Add(tc.s, maxOWSBytes)
+	}
+	f.Fuzz(func(t *testing.T, s string, maxOWS int) {
+		if maxOWS < 0 {
+			t.SkipNow()
+		}
+		r, ok := headers.TrimOWS(s, maxOWS)
+		if ok {
+			if len(r) > len(s) {
+				t.Fatalf("invalid len: %q -> %q", s, r)
+			}
+			if len(r)-len(s) > 2*maxOWS {
+				t.Fatalf("invalid len: too many chars removed")
+			}
+			if !strings.Contains(s, r) {
+				t.Fatalf("invalid output: not a substring")
+			}
+		}
+	})
 }
 
 func BenchmarkTrimOWS(b *testing.B) {
