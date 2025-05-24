@@ -138,13 +138,9 @@ func TestPackageNamePrefixInErrorMessages(t *testing.T) {
 		&cfgerrors.PreflightSuccessStatusOutOfBoundsError{Value: 300, Default: 204, Min: 200, Max: 299},
 		//
 		&cfgerrors.IncompatibleOriginPatternError{Value: "*", Reason: "credentialed"},
-		&cfgerrors.IncompatibleOriginPatternError{Value: "*", Reason: "pna"},
 		&cfgerrors.IncompatibleOriginPatternError{Value: "http://example.com", Reason: "credentialed"},
-		&cfgerrors.IncompatibleOriginPatternError{Value: "http://example.com", Reason: "pna"},
 		&cfgerrors.IncompatibleOriginPatternError{Value: "https://*.com", Reason: "psl"},
 		&cfgerrors.IncompatibleOriginPatternError{Reason: "unknown"},
-		//
-		new(cfgerrors.IncompatiblePrivateNetworkAccessModesError),
 		//
 		new(cfgerrors.IncompatibleWildcardResponseHeaderNameError),
 	}
@@ -164,6 +160,5 @@ var (
 	_ map[cfgerrors.MaxAgeOutOfBoundsError]struct{}
 	_ map[cfgerrors.PreflightSuccessStatusOutOfBoundsError]struct{}
 	_ map[cfgerrors.IncompatibleOriginPatternError]struct{}
-	_ map[cfgerrors.IncompatiblePrivateNetworkAccessModesError]struct{}
 	_ map[cfgerrors.IncompatibleWildcardResponseHeaderNameError]struct{}
 )

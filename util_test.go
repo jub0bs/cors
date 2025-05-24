@@ -18,19 +18,17 @@ const (
 	headerOrigin = "Origin"
 
 	// preflight-only request headers
-	headerACRPN = "Access-Control-Request-Private-Network"
-	headerACRM  = "Access-Control-Request-Method"
-	headerACRH  = "Access-Control-Request-Headers"
+	headerACRM = "Access-Control-Request-Method"
+	headerACRH = "Access-Control-Request-Headers"
 
 	// common response headers
 	headerACAO = "Access-Control-Allow-Origin"
 	headerACAC = "Access-Control-Allow-Credentials"
 
 	// preflight-only response headers
-	headerACAPN = "Access-Control-Allow-Private-Network"
-	headerACAM  = "Access-Control-Allow-Methods"
-	headerACAH  = "Access-Control-Allow-Headers"
-	headerACMA  = "Access-Control-Max-Age"
+	headerACAM = "Access-Control-Allow-Methods"
+	headerACAH = "Access-Control-Allow-Headers"
+	headerACMA = "Access-Control-Max-Age"
 
 	// actual-only response headers
 	headerACEH = "Access-Control-Expose-Headers"
@@ -39,11 +37,9 @@ const (
 )
 
 const (
-	varyPreflightValue = headerACRH + ", " + headerACRM + ", " +
-		headerACRPN + ", " + headerOrigin
-
-	wildcard        = "*"
-	wildcardAndAuth = "*,authorization"
+	varyPreflightValue = headerACRH + ", " + headerACRM + ", " + headerOrigin
+	wildcard           = "*"
+	wildcardAndAuth    = "*,authorization"
 )
 
 type MiddlewareTestCase struct {
@@ -239,9 +235,6 @@ func isListBasedField(name string) bool {
 	case "Access-Control-Allow-Headers":
 		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
 		return true
-	case "Access-Control-Allow-Private-Network":
-		// see https://wicg.github.io/private-network-access/
-		return false
 	default: // assume singleton field
 		return false
 	}

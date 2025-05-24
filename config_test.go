@@ -61,7 +61,7 @@ func TestPossibilityToMarshalConfig(t *testing.T) {
 		MaxAgeInSeconds: 30,
 		ResponseHeaders: []string{"X-Response-Time"},
 		ExtraConfig: cors.ExtraConfig{
-			PrivateNetworkAccess: true,
+			PreflightSuccessStatus: 299,
 		},
 	}
 	enc := json.NewEncoder(io.Discard)
@@ -98,7 +98,7 @@ func TestConfig(t *testing.T) {
 				ResponseHeaders: []string{"*"},
 			},
 		}, {
-			desc: "discrete methods discrete headers zero max age PNAnoCORS",
+			desc: "discrete methods discrete headers zero max age",
 			cfg: &cors.Config{
 				Origins: []string{
 					"https://example.com",
@@ -116,18 +116,12 @@ func TestConfig(t *testing.T) {
 					"X-baR",
 					"x-foo",
 				},
-				ExtraConfig: cors.ExtraConfig{
-					PrivateNetworkAccessInNoCORSModeOnly: true,
-				},
 			},
 			want: &cors.Config{
 				Origins:         []string{"https://example.com"},
 				RequestHeaders:  []string{"authorization", "x-bar", "x-foo"},
 				MaxAgeInSeconds: -1,
 				ResponseHeaders: []string{"x-bar", "x-foo"},
-				ExtraConfig: cors.ExtraConfig{
-					PrivateNetworkAccessInNoCORSModeOnly: true,
-				},
 			},
 		}, {
 			desc: "credentialed all req headers",
@@ -153,7 +147,6 @@ func TestConfig(t *testing.T) {
 				},
 				ExtraConfig: cors.ExtraConfig{
 					PreflightSuccessStatus:             279,
-					PrivateNetworkAccess:               true,
 					DangerouslyTolerateInsecureOrigins: true,
 				},
 			},
@@ -169,7 +162,6 @@ func TestConfig(t *testing.T) {
 				ResponseHeaders: []string{"x-bar", "x-foo"},
 				ExtraConfig: cors.ExtraConfig{
 					PreflightSuccessStatus:             279,
-					PrivateNetworkAccess:               true,
 					DangerouslyTolerateInsecureOrigins: true,
 				},
 			},
@@ -365,14 +357,6 @@ func assertConfigEqual(t *testing.T, got, want *cors.Config) {
 	if got.PreflightSuccessStatus != want.PreflightSuccessStatus {
 		const tmpl = "PreflightSuccessStatus: got %d; want %d"
 		t.Errorf(tmpl, got.PreflightSuccessStatus, want.PreflightSuccessStatus)
-	}
-	if got.PrivateNetworkAccess != want.PrivateNetworkAccess {
-		const tmpl = "PrivateNetworkAccess: got %t; want %t"
-		t.Errorf(tmpl, got.PrivateNetworkAccess, want.PrivateNetworkAccess)
-	}
-	if got.PrivateNetworkAccessInNoCORSModeOnly != want.PrivateNetworkAccessInNoCORSModeOnly {
-		const tmpl = "PrivateNetworkAccessInNoCORSModeOnly: got %t; want %t"
-		t.Errorf(tmpl, got.PrivateNetworkAccessInNoCORSModeOnly, want.PrivateNetworkAccessInNoCORSModeOnly)
 	}
 	if got.DangerouslyTolerateInsecureOrigins != want.DangerouslyTolerateInsecureOrigins {
 		const tmpl = "DangerouslyTolerateInsecureOrigins: got %t; want %t"
@@ -669,31 +653,22 @@ func TestIncorrectConfig(t *testing.T) {
 				}),
 			},
 		}, {
-			desc: "wildcard origin with PrivateNetworkAccess",
+			desc: "insecure origin with Credentialed without DangerouslyTolerateInsecureOrigins",
 			cfg: &cors.Config{
-				Origins: []string{"*"},
-				ExtraConfig: cors.ExtraConfig{
-					PrivateNetworkAccess: true,
+				Origins: []string{
+					"http://example.com:6060",
+					"http://*.example.com:6060",
 				},
+				Credentialed: true,
 			},
 			want: []*errorMatcher{
 				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "*",
-					Reason: "pna",
+					Value:  "http://example.com:6060",
+					Reason: "credentialed",
 				}),
-			},
-		}, {
-			desc: "wildcard origin with PrivateNetworkAccessInNoCORSModeOnly",
-			cfg: &cors.Config{
-				Origins: []string{"*"},
-				ExtraConfig: cors.ExtraConfig{
-					PrivateNetworkAccessInNoCORSModeOnly: true,
-				},
-			},
-			want: []*errorMatcher{
 				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "*",
-					Reason: "pna",
+					Value:  "http://*.example.com:6060",
+					Reason: "credentialed",
 				}),
 			},
 		}, {
@@ -716,108 +691,6 @@ func TestIncorrectConfig(t *testing.T) {
 				}),
 			},
 		}, {
-			desc: "insecure origin with PrivateNetworkAccess without DangerouslyTolerateInsecureOrigins",
-			cfg: &cors.Config{
-				Origins: []string{
-					"http://example.com:6060",
-					"http://*.example.com:6060",
-				},
-				ExtraConfig: cors.ExtraConfig{
-					PrivateNetworkAccess: true,
-				},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://example.com:6060",
-					Reason: "pna",
-				}),
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://*.example.com:6060",
-					Reason: "pna",
-				}),
-			},
-		}, {
-			desc: "insecure origin with PrivateNetworkAccessInNoCORSModeOnly without DangerouslyTolerateInsecureOrigins",
-			cfg: &cors.Config{
-				Origins: []string{
-					"http://example.com:6060",
-					"http://*.example.com:6060",
-				},
-				ExtraConfig: cors.ExtraConfig{
-					PrivateNetworkAccessInNoCORSModeOnly: true,
-				},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://example.com:6060",
-					Reason: "pna",
-				}),
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://*.example.com:6060",
-					Reason: "pna",
-				}),
-			},
-		}, {
-			desc: "insecure origin with Credentialed and PrivateNetworkAccess without DangerouslyTolerateInsecureOrigins",
-			cfg: &cors.Config{
-				Origins: []string{
-					"http://example.com:6060",
-					"http://*.example.com:6060",
-				},
-				Credentialed: true,
-				ExtraConfig: cors.ExtraConfig{
-					PrivateNetworkAccess: true,
-				},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://example.com:6060",
-					Reason: "credentialed",
-				}),
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://*.example.com:6060",
-					Reason: "credentialed",
-				}),
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://example.com:6060",
-					Reason: "pna",
-				}),
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://*.example.com:6060",
-					Reason: "pna",
-				}),
-			},
-		}, {
-			desc: "insecure origin with Credentialed and PrivateNetworkAccessInNoCORSModeOnly without DangerouslyTolerateInsecureOrigins",
-			cfg: &cors.Config{
-				Origins: []string{
-					"http://example.com:6060",
-					"http://*.example.com:6060",
-				},
-				Credentialed: true,
-				ExtraConfig: cors.ExtraConfig{
-					PrivateNetworkAccessInNoCORSModeOnly: true,
-				},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://example.com:6060",
-					Reason: "credentialed",
-				}),
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://*.example.com:6060",
-					Reason: "credentialed",
-				}),
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://example.com:6060",
-					Reason: "pna",
-				}),
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://*.example.com:6060",
-					Reason: "pna",
-				}),
-			},
-		}, {
 			desc: "wildcard pattern encompassing subdomains of a public suffix without DangerouslyTolerateSubdomainsOfPublicSuffixes",
 			cfg: &cors.Config{
 				Origins: []string{"https://*.com"},
@@ -827,18 +700,6 @@ func TestIncorrectConfig(t *testing.T) {
 					Value:  "https://*.com",
 					Reason: "psl",
 				}),
-			},
-		}, {
-			desc: "conjunct use of PrivateNetworkAccess and PrivateNetworkAccessInNoCORSModeOnly",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				ExtraConfig: cors.ExtraConfig{
-					PrivateNetworkAccess:                 true,
-					PrivateNetworkAccessInNoCORSModeOnly: true,
-				},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(new(cfgerrors.IncompatiblePrivateNetworkAccessModesError)),
 			},
 		}, {
 			desc: "wildcard response-header name with Credentialed",

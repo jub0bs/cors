@@ -165,9 +165,6 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
 		// see the implementation comment in handleCORSPreflight
 		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
 	}
-	if icfg.privateNetworkAccessNoCors {
-		return
-	}
 	if !icfg.tree.IsEmpty() {
 		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
 		// Note that we deliberately list "Origin" in the Vary header of responses
@@ -207,7 +204,6 @@ func (icfg *internalConfig) handleCORSPreflight(
 	//
 	//   - Access-Control-Request-Headers
 	//   - Access-Control-Request-Methods
-	//   - Access-Control-Request-Private-Network
 	//   - Origin
 	vary, found := resHdrs[headers.Vary]
 	if !found { // fast path
@@ -220,7 +216,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// allocations on average; see https://go.dev/play/p/RQdNE-pPCQq.
 	// Therefore, using a different data structure for accumulating response
 	// headers provides no performance advantage; a simple http.Header will do.
-	const bufSizeHint = 5 // enough to hold ACAO, ACAC, ACAPN, ACAM, and ACAH
+	const bufSizeHint = 4 // enough to hold ACAO, ACAC, ACAM, and ACAH
 	buf := make(http.Header, bufSizeHint)
 
 	// When debug is on and a preflight step fails,
@@ -246,15 +242,6 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// (see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7)
 	// if the response status is not an ok status
 	// (see https://fetch.spec.whatwg.org/#ok-status).
-	if !icfg.processACRPN(buf, reqHdrs) {
-		if debug {
-			maps.Copy(resHdrs, buf)
-			w.WriteHeader(int(icfg.preflightStatusMinus200) + 200)
-			return
-		}
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
 
 	if !icfg.processACRM(buf, acrm, acrmSgl) {
 		if debug {
@@ -310,23 +297,6 @@ func (icfg *internalConfig) processOriginForPreflight(
 	return true
 }
 
-func (icfg *internalConfig) processACRPN(buf, reqHdrs http.Header) bool {
-	// See https://wicg.github.io/private-network-access/#cors-preflight.
-	//
-	// PNA-compliant browsers send at most one ACRPN header;
-	// see https://wicg.github.io/private-network-access/#fetching
-	// (step 10.2.1.1).
-	acrpn, _, found := headers.First(reqHdrs, headers.ACRPN)
-	if !found || acrpn != headers.ValueTrue { // no request for PNA
-		return true
-	}
-	if icfg.privateNetworkAccess || icfg.privateNetworkAccessNoCors {
-		buf[headers.ACAPN] = headers.TrueSgl
-		return true
-	}
-	return false
-}
-
 // Note: only for _non-preflight_ CORS requests
 func (icfg *internalConfig) handleCORSActual(
 	w http.ResponseWriter,
@@ -335,14 +305,6 @@ func (icfg *internalConfig) handleCORSActual(
 	isOPTIONS bool,
 ) {
 	resHdrs := w.Header()
-	// see https://wicg.github.io/private-network-access/#shortlinks
-	if icfg.privateNetworkAccessNoCors {
-		if isOPTIONS {
-			// see the implementation comment in handleCORSPreflight
-			resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
-		}
-		return
-	}
 	switch {
 	case isOPTIONS:
 		// see the implementation comment in handleCORSPreflight

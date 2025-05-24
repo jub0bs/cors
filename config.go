@@ -36,8 +36,7 @@ import (
 // may be able to gain a foothold on those origins
 // and mount [cross-origin attacks] against your users from there.
 // Therefore, you should (in general) exercise caution when deciding which
-// origins to allow. In particular,
-// if you enable [credentialed access] and/or [Private-Network Access],
+// origins to allow. In particular, if you enable [credentialed access],
 // you should only allow Web origins you absolutely trust.
 //
 // Omitting to specify at least one origin pattern is prohibited;
@@ -144,8 +143,7 @@ import (
 //
 // Origin patterns whose scheme is not https and whose host is neither localhost
 // nor a [loopback IP address] are deemed insecure;
-// as such, they are by default prohibited when credentialed access and/or
-// some form of [Private-Network Access] is enabled.
+// as such, they are by default prohibited when credentialed access is enabled.
 // If, even in such cases,
 // you deliberately wish to allow some insecure origins,
 // you must also set the ExtraConfig.DangerouslyTolerateInsecureOrigins field.
@@ -256,7 +254,6 @@ import (
 //   - Access-Control-Allow-Headers
 //   - Access-Control-Allow-Methods
 //   - Access-Control-Allow-Origin
-//   - Access-Control-Allow-Private-Network
 //   - Access-Control-Expose-Headers
 //   - Access-Control-Max-Age
 //
@@ -308,7 +305,6 @@ import (
 //
 //   - Access-Control-Request-Headers
 //   - Access-Control-Request-Method
-//   - Access-Control-Request-Private-Network
 //   - Origin
 //
 // [ASCII serialized form]: https://html.spec.whatwg.org/multipage/browsers.html#ascii-serialisation-of-an-origin
@@ -319,7 +315,6 @@ import (
 // [GET]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/GET
 // [HEAD]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/HEAD
 // [POST]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST
-// [Private-Network Access]: https://wicg.github.io/private-network-access/
 // [Web origins]: https://developer.mozilla.org/en-US/docs/Glossary/Origin
 // [cap the max-age value]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#delta-seconds
 // [compressed form]: https://datatracker.ietf.org/doc/html/rfc5952
@@ -369,45 +364,12 @@ type Config struct {
 // If some of your clients rely on such non-compliant user agents,
 // you should set a custom preflight-success status of 200.
 //
-// # PrivateNetworkAccess
-//
-// PrivateNetworkAccess configures a CORS middleware to enable
-// [Private-Network Access], which is a W3C initiative that
-// strengthens the [Same-Origin Policy] by denying clients
-// in more public networks (e.g. the public Internet) access
-// to less public networks (e.g. localhost)
-// and provides a server-side opt-in mechanism for allowing such access.
-//
-// This setting applies to all the origins allowed in the configuration
-// of the desired middleware.
-//
-// For [security reasons], PrivateNetworkAccess cannot be set when the
-// single-asterisk origin pattern is specified in the Config.Origins field.
-//
-// At most one of PrivateNetworkAccess and PrivateNetworkAccessInNoCORSModeOnly
-// can be set.
-//
-// # PrivateNetworkAccessInNoCORSModeOnly
-//
-// PrivateNetworkAccessInNoCORSModeOnly configures a CORS middleware to
-// enable [Private-Network Access] in [no-cors mode] only.
-// One use case for this setting is given in the
-// [link-shortening-service example] of the Private-Network Access draft.
-//
-// For [security reasons], PrivateNetworkAccessInNoCORSModeOnly cannot be set
-// when the single-asterisk origin pattern is specified
-// in the Config.Origins field.
-//
-// At most one of PrivateNetworkAccess and PrivateNetworkAccessInNoCORSModeOnly
-// can be set.
-//
 // # DangerouslyTolerateInsecureOrigins
 //
 // DangerouslyTolerateInsecureOrigins enables you to allow insecure origins
 // (i.e. origins whose scheme is not https and whose host is neither localhost
 // nor a [loopback IP address]),
-// which are by default prohibited when credentialed access and/or
-// some form of [Private-Network Access] is enabled.
+// which are by default prohibited when credentialed access is enabled.
 //
 // Be aware that allowing insecure origins exposes your clients to
 // some [active network attacks],
@@ -426,42 +388,36 @@ type Config struct {
 //
 // [204]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/204
 // [2xx range]: https://fetch.spec.whatwg.org/#ok-status
-// [Private-Network Access]: https://wicg.github.io/private-network-access/
-// [Same-Origin Policy]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 // [active network attacks]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
-// [link-shortening-service example]: https://wicg.github.io/private-network-access/#shortlinks
 // [loopback IP address]: https://www.rfc-editor.org/rfc/rfc5735#section-3
-// [no-cors mode]: https://fetch.spec.whatwg.org/#concept-request-mode
 // [public suffix]: https://publicsuffix.org/
-// [security reasons]: https://developer.chrome.com/blog/private-network-access-preflight/#no-cors_mode
 // [the Fetch standard]: https://fetch.spec.whatwg.org
 // [the talk he gave at AppSec EU 2017]: https://www.youtube.com/watch?v=wgkj4ZgxI4c&t=1305s
+//
+// [Same-Origin Policy]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
+// [no-cors mode]: https://fetch.spec.whatwg.org/#concept-request-mode
 type ExtraConfig struct {
 	_ [0]func() // precludes comparability and unkeyed struct literals
 
 	PreflightSuccessStatus                        int
-	PrivateNetworkAccess                          bool
-	PrivateNetworkAccessInNoCORSModeOnly          bool
 	DangerouslyTolerateInsecureOrigins            bool
 	DangerouslyTolerateSubdomainsOfPublicSuffixes bool
 }
 
 type internalConfig struct {
-	tree                       origins.Tree // empty means all origins allowed
-	allowedMethods             util.Set
-	allowedReqHdrs             util.SortedSet
-	acah                       []string
-	preflightStatusMinus200    uint8 // range: [0,99]
-	credentialed               bool
-	allowAnyMethod             bool
-	asteriskReqHdrs            bool
-	allowAuthorization         bool
-	privateNetworkAccess       bool
-	privateNetworkAccessNoCors bool
-	acma                       []string
-	aceh                       string
-	subsOfPublicSuffixes       bool
-	insecureOrigins            bool
+	tree                    origins.Tree // empty means all origins allowed
+	allowedMethods          util.Set
+	allowedReqHdrs          util.SortedSet
+	acah                    []string
+	preflightStatusMinus200 uint8 // range: [0,99]
+	credentialed            bool
+	allowAnyMethod          bool
+	asteriskReqHdrs         bool
+	allowAuthorization      bool
+	subsOfPublicSuffixes    bool
+	insecureOrigins         bool
+	acma                    []string
+	aceh                    string
 }
 
 func newInternalConfig(cfg *Config) (*internalConfig, error) {
@@ -477,12 +433,6 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	if err := icfg.validatePreflightStatus(cfg.PreflightSuccessStatus); err != nil {
 		errs = append(errs, err)
 	}
-	if cfg.PrivateNetworkAccess && cfg.PrivateNetworkAccessInNoCORSModeOnly {
-		err := new(cfgerrors.IncompatiblePrivateNetworkAccessModesError)
-		errs = append(errs, err)
-	}
-	icfg.privateNetworkAccess = cfg.PrivateNetworkAccess
-	icfg.privateNetworkAccessNoCors = cfg.PrivateNetworkAccessInNoCORSModeOnly
 	icfg.insecureOrigins = cfg.DangerouslyTolerateInsecureOrigins
 	icfg.subsOfPublicSuffixes = cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes
 
@@ -523,22 +473,12 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 		errs           []error
 		allowAnyOrigin bool
 	)
-	pna := icfg.privateNetworkAccess || icfg.privateNetworkAccessNoCors
 	for _, raw := range patterns {
 		if raw == headers.ValueWildcard {
 			if icfg.credentialed {
 				err := &cfgerrors.IncompatibleOriginPatternError{
 					Value:  "*",
 					Reason: "credentialed",
-				}
-				errs = append(errs, err)
-			}
-			if pna {
-				// see note in
-				// https://developer.chrome.com/blog/private-network-access-preflight/#no-cors_mode
-				err := &cfgerrors.IncompatibleOriginPatternError{
-					Value:  "*",
-					Reason: "pna",
 				}
 				errs = append(errs, err)
 			}
@@ -554,7 +494,7 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 			// We require ExtraConfig.DangerouslyTolerateInsecureOrigins to
 			// be set only when
 			// - users specify one or more insecure origin patterns, and
-			// - enable credentialed access and/or some form of PNA.
+			// - enable credentialed access.
 			// In all other cases, insecure origins like http://example.com are
 			// indeed no less insecure than * is, which itself doesn't require
 			// ExtraConfig.DangerouslyTolerateInsecureOrigins to be set.
@@ -562,13 +502,6 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 				err := &cfgerrors.IncompatibleOriginPatternError{
 					Value:  raw,
 					Reason: "credentialed",
-				}
-				errs = append(errs, err)
-			}
-			if pna {
-				err := &cfgerrors.IncompatibleOriginPatternError{
-					Value:  raw,
-					Reason: "pna",
 				}
 				errs = append(errs, err)
 			}
@@ -900,8 +833,6 @@ func newConfig(icfg *internalConfig) *Config {
 	if icfg.preflightStatusMinus200+200 != defaultPreflightStatus {
 		cfg.ExtraConfig.PreflightSuccessStatus = int(icfg.preflightStatusMinus200) + 200
 	}
-	cfg.ExtraConfig.PrivateNetworkAccess = icfg.privateNetworkAccess
-	cfg.ExtraConfig.PrivateNetworkAccessInNoCORSModeOnly = icfg.privateNetworkAccessNoCors
 	cfg.ExtraConfig.DangerouslyTolerateInsecureOrigins = icfg.insecureOrigins
 	cfg.ExtraConfig.DangerouslyTolerateSubdomainsOfPublicSuffixes = icfg.subsOfPublicSuffixes
 	return &cfg
