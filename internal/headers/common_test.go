@@ -12,12 +12,10 @@ import (
 func TestThatAllRelevantHeaderNamesAreInCanonicalFormat(t *testing.T) {
 	headerNames := []string{
 		Origin,
-		ACRPN,
 		ACRM,
 		ACRH,
 		ACAO,
 		ACAC,
-		ACAPN,
 		ACAM,
 		ACAH,
 		ACMA,

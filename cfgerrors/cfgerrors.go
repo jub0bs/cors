@@ -116,14 +116,8 @@ func (err *PreflightSuccessStatusOutOfBoundsError) Error() string {
 // with other elements of the configuration. Five cases are possible:
 //   - Value == "*" and Reason == "credentialed": the wildcard origin was
 //     specified and credentialed access was enabled.
-//   - Value == "*" and Reason == "pna": the wildcard origin was
-//     specified and Private-Network Access was enabled.
 //   - Value != "*" and Reason == "credentialed": an insecure origin pattern
 //     was specified and credentialed access was enabled without also setting
-//     [github.com/jub0bs/cors.ExtraConfig.DangerouslyTolerateInsecureOriginPatterns].
-//   - Value != "*" and Reason == "pna": an insecure origin pattern was
-//     specified and one form of Private-Network Access was enabled without also
-//     setting
 //     [github.com/jub0bs/cors.ExtraConfig.DangerouslyTolerateInsecureOriginPatterns].
 //   - Reason == "psl": an origin pattern that encompasses arbitrary subdomains
 //     of a public suffix was specified without also setting
@@ -132,20 +126,15 @@ func (err *PreflightSuccessStatusOutOfBoundsError) Error() string {
 // For more details, see [github.com/jub0bs/cors.Config.Origins].
 type IncompatibleOriginPatternError struct {
 	Value  string // "*" | some other origin pattern
-	Reason string // credentialed | pna | psl
+	Reason string // credentialed | psl
 }
 
 func (err *IncompatibleOriginPatternError) Error() string {
 	switch {
 	case err.Value == "*" && err.Reason == "credentialed":
 		return "cors: for security reasons, you cannot both allow all origins and enable credentialed access"
-	case err.Value == "*" && err.Reason == "pna":
-		return "cors: for security reasons, you cannot both allow all origins and enable Private-Network Access"
 	case err.Reason == "credentialed":
 		const tmpl = "cors: for security reasons, insecure origin patterns like %q are by default prohibited when credentialed access is enabled"
-		return fmt.Sprintf(tmpl, err.Value)
-	case err.Reason == "pna":
-		const tmpl = "cors: for security reasons, insecure origin patterns like %q are by default prohibited when Private-Network Access is enabled"
 		return fmt.Sprintf(tmpl, err.Value)
 	case err.Reason == "psl":
 		const tmpl = "cors: for security reasons, origin patterns like %q that encompass subdomains of a public suffix are by default prohibited"
@@ -155,16 +144,6 @@ func (err *IncompatibleOriginPatternError) Error() string {
 		// compiler happy.
 		return "cors: unknown issue"
 	}
-}
-
-// An IncompatiblePrivateNetworkAccessModesError indicates an attempt
-// to enable both forms of Private-Network Access. For more details,
-// see [github.com/jub0bs/cors.ExtraConfig.PrivateNetworkAccess] and
-// [github.com/jub0bs/cors.ExtraConfig.PrivateNetworkAccessInNoCORSModeOnly].
-type IncompatiblePrivateNetworkAccessModesError struct{}
-
-func (*IncompatiblePrivateNetworkAccessModesError) Error() string {
-	return "cors: at most one form of Private-Network Access can be enabled"
 }
 
 // An IncompatibleWildcardResponseHeaderNameError indicates an attempt

@@ -15,8 +15,6 @@ func IsForbiddenRequestHeaderName(name string) bool {
 		"accept-encoding",
 		"access-control-request-headers",
 		"access-control-request-method",
-		// see https://wicg.github.io/private-network-access/#forbidden-header-names
-		"access-control-request-private-network",
 		"connection",
 		"content-length",
 		"cookie",
@@ -54,7 +52,6 @@ func IsProhibitedRequestHeaderName(name string) bool {
 		"access-control-allow-credentials",
 		"access-control-allow-methods",
 		"access-control-allow-headers",
-		"access-control-allow-private-network",
 		"access-control-max-age",
 		"access-control-expose-headers":
 		return true

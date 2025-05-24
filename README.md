@@ -36,7 +36,6 @@ libraries by providing the following features:
 - [a useful debug mode][debug];
 - [on-the-fly, concurrency-safe middleware reconfigurability][reconfigurable];
 - [strong performance guarantees][benchmark-results];
-- [support for Private-Network Access][pna];
 - full compliance with [the Fetch standard][fetch].
 
 Despite all of this library's goodness, here are some valid reasons
@@ -200,7 +199,6 @@ All source code is covered by the [MIT License][license].
 [origin-patterns]: https://pkg.go.dev/github.com/jub0bs/cors#hdr-Origins-Config
 [pkgsite-index]: https://pkg.go.dev/github.com/jub0bs/cors#pkg-index
 [pkgsite]: https://pkg.go.dev/github.com/jub0bs/cors
-[pna]: https://pkg.go.dev/github.com/jub0bs/cors#hdr-PrivateNetworkAccess-ExtraConfig
 [programmatic]: https://jub0bs.com/posts/2025-01-28-programmatic-handling-of-cors-configuration-errors/
 [reconfigurable]: https://jub0bs.com/posts/2024-05-14-reconfigurable-cors-middleware/
 [release-policy]: https://go.dev/doc/devel/release#policy

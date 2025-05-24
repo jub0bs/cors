@@ -28,11 +28,9 @@ func IsProhibitedResponseHeaderName(name string) bool {
 	case "origin",
 		"access-control-request-method",
 		"access-control-request-headers",
-		"access-control-request-private-network",
 		"access-control-allow-methods",
 		"access-control-allow-headers",
-		"access-control-max-age",
-		"access-control-allow-private-network":
+		"access-control-max-age":
 		return true
 	default:
 		return false

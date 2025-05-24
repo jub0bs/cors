@@ -12,19 +12,17 @@ const (
 	Origin = "Origin"
 
 	// preflight-only request headers
-	ACRPN = "Access-Control-Request-Private-Network"
-	ACRM  = "Access-Control-Request-Method"
-	ACRH  = "Access-Control-Request-Headers"
+	ACRM = "Access-Control-Request-Method"
+	ACRH = "Access-Control-Request-Headers"
 
 	// common response headers
 	ACAO = "Access-Control-Allow-Origin"
 	ACAC = "Access-Control-Allow-Credentials"
 
 	// preflight-only response headers
-	ACAPN = "Access-Control-Allow-Private-Network"
-	ACAM  = "Access-Control-Allow-Methods"
-	ACAH  = "Access-Control-Allow-Headers"
-	ACMA  = "Access-Control-Max-Age"
+	ACAM = "Access-Control-Allow-Methods"
+	ACAH = "Access-Control-Allow-Headers"
+	ACMA = "Access-Control-Max-Age"
 
 	// actual-only response headers
 	ACEH = "Access-Control-Expose-Headers"
@@ -37,7 +35,7 @@ const Authorization = "authorization" // note: byte-lowercase
 const (
 	ValueTrue        = "true"
 	ValueWildcard    = "*"
-	ValueVaryOptions = ACRH + ", " + ACRM + ", " + ACRPN + ", " + Origin
+	ValueVaryOptions = ACRH + ", " + ACRM + ", " + Origin
 )
 
 const ValueSep = ","
