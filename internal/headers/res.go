@@ -9,8 +9,7 @@ package headers
 // [per the Fetch standard]: https://fetch.spec.whatwg.org/#forbidden-response-header-name
 func IsForbiddenResponseHeaderName(name string) bool {
 	switch name {
-	case "set-cookie",
-		"set-cookie2":
+	case "set-cookie", "set-cookie2":
 		return true
 	default:
 		return false
