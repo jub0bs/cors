@@ -243,7 +243,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
-[0.7.0]: https://github.com/jub0bs/cors/compare/v0.0.6...v0.7.0
+[0.7.0]: https://github.com/jub0bs/cors/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/jub0bs/cors/compare/v0.5.9...v0.6.0
 [0.5.9]: https://github.com/jub0bs/cors/compare/v0.5.8...v0.5.9
 [0.5.8]: https://github.com/jub0bs/cors/compare/v0.5.7...v0.5.8
