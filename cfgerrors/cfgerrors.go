@@ -113,7 +113,7 @@ func (err *PreflightSuccessStatusOutOfBoundsError) Error() string {
 }
 
 // An IncompatibleOriginPatternError indicates an origin pattern that conflicts
-// with other elements of the configuration. Five cases are possible:
+// with other elements of the configuration. Three cases are possible:
 //   - Value == "*" and Reason == "credentialed": the wildcard origin was
 //     specified and credentialed access was enabled.
 //   - Value != "*" and Reason == "credentialed": an insecure origin pattern
