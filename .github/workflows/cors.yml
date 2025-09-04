@@ -70,11 +70,11 @@ jobs:
       - name: Run Benchmark (old)
         run: |
           cd old
-          go test -shuffle=on -run=^$ -bench=. -count=10 . -benchtime=500ms > bench.out
+          go test -shuffle=on -run=^$ -bench=. -count=10 -benchtime=500ms . ./cfgerrors > bench.out
       - name: Run Benchmark (new)
         run: |
           cd new
-          go test -shuffle=on -run=^$ -bench=. -count=10 . -benchtime=500ms > bench.out
+          go test -shuffle=on -run=^$ -bench=. -count=10 -benchtime=500ms . ./cfgerrors > bench.out
       - name: Run benchinit (new)
         run: |
           cd new
@@ -91,3 +91,6 @@ jobs:
       - name: Run benchstat for middleware execution
         run: |
           benchstat -filter "/type:exec" old/bench.out new/bench.out
+      - name: Run benchstat for cfgerrors.All
+        run: |
+          benchstat -filter '.name:All' old/bench.out new/bench.out

@@ -10,58 +10,61 @@ import (
 	"github.com/jub0bs/cors/cfgerrors"
 )
 
-func TestAll(t *testing.T) {
-	cases := []struct {
-		desc      string
-		err       error
-		want      []error
-		breakWhen func(error) bool
-	}{
-		{
-			desc: "singleton",
-			err:  err0,
-			want: []error{
-				err0,
-			},
-			breakWhen: alwaysFalse,
-		}, {
-			desc: "multi-error no break",
-			err:  err4,
-			want: []error{
-				err2,
-				err3,
-			},
-			breakWhen: alwaysFalse,
-		}, {
-			desc: "multi-error break early",
-			err:  err4,
-			want: []error{
-				err2,
-			},
-			breakWhen: equal(err3),
-		}, {
-			desc: "single joined error no break",
-			err:  err1,
-			want: []error{
-				err0,
-			},
-			breakWhen: alwaysFalse,
-		}, {
-			desc:      "single joined error break early",
-			err:       err1,
-			want:      []error{},
-			breakWhen: equal(err0),
-		}, {
-			desc:      "complex error tree no break",
-			err:       err5,
-			breakWhen: alwaysFalse,
-			want: []error{
-				err0,
-				err2,
-				err3,
-			},
+type TestCase struct {
+	desc      string
+	err       error
+	want      []error
+	breakWhen func(error) bool
+}
+
+var cases = []TestCase{
+	{
+		desc: "singleton",
+		err:  err0,
+		want: []error{
+			err0,
 		},
-	}
+		breakWhen: alwaysFalse,
+	}, {
+		desc: "multi-error no break",
+		err:  err4,
+		want: []error{
+			err2,
+			err3,
+		},
+		breakWhen: alwaysFalse,
+	}, {
+		desc: "multi-error break early",
+		err:  err4,
+		want: []error{
+			err2,
+		},
+		breakWhen: equal(err3),
+	}, {
+		desc: "single joined error no break",
+		err:  err1,
+		want: []error{
+			err0,
+		},
+		breakWhen: alwaysFalse,
+	}, {
+		desc:      "single joined error break early",
+		err:       err1,
+		want:      []error{},
+		breakWhen: equal(err0),
+	}, {
+		desc:      "complex error tree no break",
+		err:       err5,
+		breakWhen: alwaysFalse,
+		want: []error{
+			err0,
+			err2,
+			err3,
+		},
+	},
+}
+
+func TestAll(t *testing.T) {
 	for _, tc := range cases {
 		f := func(t *testing.T) {
 			got := cfgerrors.All(tc.err)
@@ -70,6 +73,22 @@ func TestAll(t *testing.T) {
 		t.Run(tc.desc, f)
 	}
 }
+
+func BenchmarkAll(b *testing.B) {
+	for _, bc := range cases {
+		f := func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				for errSink = range cfgerrors.All(bc.err) {
+					// deliberately empty
+				}
+			}
+		}
+		b.Run(bc.desc, f)
+	}
+}
+
+var errSink error
 
 var (
 	err0 = errors.New("err0")
