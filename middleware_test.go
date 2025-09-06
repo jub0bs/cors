@@ -1880,16 +1880,8 @@ func TestReconfigure(t *testing.T) {
 				t.Fatal("unexpected absence of failure to reconfigure CORS middleware")
 			}
 			currentDebug := mw.Debug()
-			if mwtc.cfg == nil {
-				if currentDebug {
-					// Reconfiguring a middleware with a nil config should unset
-					// its debug mode.
-					const tmpl = "unexpected debug mode: got %t; want false"
-					t.Fatalf(tmpl, currentDebug)
-				}
-			} else if currentDebug != oldDebug {
-				// Reconfiguring a middleware with a non-nil config should
-				// preserve its debug mode.
+			if currentDebug != oldDebug {
+				// Reconfiguring a middleware should preserve its debug mode.
 				const tmpl = "unexpected debug mode: got %t; want %t"
 				t.Fatalf(tmpl, currentDebug, oldDebug)
 			}
