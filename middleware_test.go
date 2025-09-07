@@ -1866,65 +1866,68 @@ func TestReconfigure(t *testing.T) {
 	}
 	var mw cors.Middleware
 	for _, mwtc := range cases {
-		err := mw.Reconfigure(mwtc.cfg)
-		if err != nil && !mwtc.invalid {
-			t.Fatalf("failure to reconfigure CORS middleware: %v", err)
-		}
-		if err == nil && mwtc.invalid {
-			t.Fatal("unexpected absence of failure to reconfigure CORS middleware")
-		}
-		if mwtc.debug {
-			mw.SetDebug(true)
-		}
-		for _, tc := range mwtc.cases {
-			f := func(t *testing.T) {
-				// --- arrange ---
-				innerHandler := mwtc.newHandler()
-				handler := mw.Wrap(innerHandler)
-				if outerMiddleware := mwtc.outerMw; outerMiddleware != nil {
-					handler = outerMiddleware.Wrap(handler)
-				}
-				req := newRequest(tc.reqMethod, tc.reqHeaders)
-				rec := httptest.NewRecorder()
-
-				// --- act ---
-				handler.ServeHTTP(rec, req)
-				res := rec.Result()
-
-				// --- assert ---
-				spy, ok := innerHandler.(*spyHandler)
-				if !ok {
-					t.Fatalf("handler is not a *spyHandler")
-				}
-				if tc.preflight { // preflight request
-					if spy.called.Load() {
-						t.Error("wrapped handler was called, but it should not have been")
+		f := func(t *testing.T) {
+			err := mw.Reconfigure(mwtc.cfg)
+			if err != nil && !mwtc.invalid {
+				t.Fatalf("failure to reconfigure CORS middleware: %v", err)
+			}
+			if err == nil && mwtc.invalid {
+				t.Fatal("unexpected absence of failure to reconfigure CORS middleware")
+			}
+			if mwtc.debug {
+				mw.SetDebug(true)
+			}
+			for _, tc := range mwtc.cases {
+				f := func(t *testing.T) {
+					// --- arrange ---
+					innerHandler := mwtc.newHandler()
+					handler := mw.Wrap(innerHandler)
+					if outerMiddleware := mwtc.outerMw; outerMiddleware != nil {
+						handler = outerMiddleware.Wrap(handler)
 					}
-					assertPreflightStatus(t, spy.statusCode, res.StatusCode, &mwtc, &tc)
+					req := newRequest(tc.reqMethod, tc.reqHeaders)
+					rec := httptest.NewRecorder()
+
+					// --- act ---
+					handler.ServeHTTP(rec, req)
+					res := rec.Result()
+
+					// --- assert ---
+					spy, ok := innerHandler.(*spyHandler)
+					if !ok {
+						t.Fatalf("handler is not a *spyHandler")
+					}
+					if tc.preflight { // preflight request
+						if spy.called.Load() {
+							t.Error("wrapped handler was called, but it should not have been")
+						}
+						assertPreflightStatus(t, spy.statusCode, res.StatusCode, &mwtc, &tc)
+						assertResponseHeaders(t, res.Header, tc.respHeaders)
+						if mwtc.outerMw != nil {
+							assertResponseHeaders(t, res.Header, mwtc.outerMw.hdrs)
+						}
+						assertNoMoreResponseHeaders(t, res.Header)
+						assertBody(t, res.Body, "")
+						return
+					} // non-preflight request
+					if !spy.called.Load() {
+						t.Error("wrapped handler wasn't called, but it should have been")
+					}
+					if res.StatusCode != spy.statusCode {
+						const tmpl = "got status code %d; want %d"
+						t.Errorf(tmpl, res.StatusCode, spy.statusCode)
+					}
+					assertResponseHeaders(t, res.Header, spy.respHeaders)
 					assertResponseHeaders(t, res.Header, tc.respHeaders)
 					if mwtc.outerMw != nil {
 						assertResponseHeaders(t, res.Header, mwtc.outerMw.hdrs)
 					}
 					assertNoMoreResponseHeaders(t, res.Header)
-					assertBody(t, res.Body, "")
-					return
-				} // non-preflight request
-				if !spy.called.Load() {
-					t.Error("wrapped handler wasn't called, but it should have been")
+					assertBody(t, res.Body, spy.body)
 				}
-				if res.StatusCode != spy.statusCode {
-					const tmpl = "got status code %d; want %d"
-					t.Errorf(tmpl, res.StatusCode, spy.statusCode)
-				}
-				assertResponseHeaders(t, res.Header, spy.respHeaders)
-				assertResponseHeaders(t, res.Header, tc.respHeaders)
-				if mwtc.outerMw != nil {
-					assertResponseHeaders(t, res.Header, mwtc.outerMw.hdrs)
-				}
-				assertNoMoreResponseHeaders(t, res.Header)
-				assertBody(t, res.Body, spy.body)
+				t.Run(tc.desc, f)
 			}
-			t.Run(tc.desc, f)
 		}
+		t.Run(mwtc.desc, f)
 	}
 }
