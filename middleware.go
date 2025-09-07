@@ -3,7 +3,7 @@ package cors
 import (
 	"maps"
 	"net/http"
-	"sync"
+	"sync/atomic"
 
 	"github.com/jub0bs/cors/internal/headers"
 	"github.com/jub0bs/cors/internal/methods"
@@ -32,7 +32,6 @@ import (
 // the middleware includes enough contextual information about the
 // preflight failure in the response for browsers to produce
 // a helpful CORS error message.
-// The debug mode of a passthrough middleware is invariably off.
 //
 // A Middleware must not be copied after first use.
 //
@@ -44,9 +43,8 @@ import (
 //
 // [CORS-preflight]: https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
 type Middleware struct {
-	mu    sync.RWMutex // guards the other fields
-	icfg  *internalConfig
-	debug bool
+	icfg  atomic.Pointer[internalConfig]
+	debug atomic.Bool
 }
 
 // NewMiddleware creates a CORS middleware that behaves in accordance with cfg.
@@ -68,15 +66,15 @@ func NewMiddleware(cfg Config) (*Middleware, error) {
 		return nil, err
 	}
 	var m Middleware
-	m.icfg = icfg
+	m.icfg.Store(icfg)
 	return &m, nil
 }
 
-// Reconfigure reconfigures m in accordance with cfg.
+// Reconfigure reconfigures m in accordance with cfg,
+// leaving m's debug mode unchanged.
 // If cfg is nil, it turns m into a passthrough middleware.
 // If *cfg is invalid, it leaves m unchanged and returns some non-nil error.
-// Otherwise, it successfully reconfigures m, leaves m's debug mode unchanged,
-// and returns a nil error.
+// Otherwise, it successfully reconfigures m and returns a nil error.
 // The following statement is guaranteed to be a no-op
 // (albeit a relatively expensive one):
 //
@@ -104,28 +102,14 @@ func (m *Middleware) Reconfigure(cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	m.mu.Lock()
-	{
-		m.icfg = icfg
-		// If the desired middleware is passthrough, unset m's debug mode;
-		// otherwise, leave it unchanged.
-		m.debug = cfg != nil && m.debug
-	}
-	m.mu.Unlock()
+	m.icfg.Store(icfg)
 	return nil
 }
 
 // Wrap applies the CORS middleware to the specified handler.
 func (m *Middleware) Wrap(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var icfg *internalConfig
-		var debug bool
-		m.mu.RLock()
-		{
-			icfg = m.icfg
-			debug = m.debug
-		}
-		m.mu.RUnlock()
+		icfg := m.icfg.Load()
 		if icfg == nil { // passthrough middleware
 			h.ServeHTTP(w, r)
 			return
@@ -151,6 +135,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 		if isOPTIONS && found {
 			// r is a CORS-preflight request;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
+			debug := m.debug.Load()
 			icfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl, debug)
 			return
 		}
@@ -494,24 +479,13 @@ func (icfg *internalConfig) processACRH(
 }
 
 // SetDebug turns debug mode on (if b is true) or off (otherwise).
-// If m happens to be a passthrough middleware,
-// its debug mode is invariably off and SetDebug is a no-op.
 func (m *Middleware) SetDebug(b bool) {
-	m.mu.Lock()
-	{
-		m.debug = b
-	}
-	m.mu.Unlock()
+	m.debug.Store(b)
 }
 
 // Debug reports whether m's debug mode is on.
-func (m *Middleware) Debug() (debug bool) {
-	m.mu.RLock()
-	{
-		debug = m.debug
-	}
-	m.mu.RUnlock()
-	return
+func (m *Middleware) Debug() bool {
+	return m.debug.Load()
 }
 
 // Config returns a pointer to a deep copy of m's current configuration;
@@ -526,11 +500,5 @@ func (m *Middleware) Debug() (debug bool) {
 // However, you can reconfigure a [Middleware] via its
 // [*Middleware.Reconfigure] method.
 func (m *Middleware) Config() *Config {
-	var icfg *internalConfig
-	m.mu.RLock()
-	{
-		icfg = m.icfg
-	}
-	m.mu.RUnlock()
-	return newConfig(icfg)
+	return newConfig(m.icfg.Load())
 }
