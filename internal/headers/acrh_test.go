@@ -178,12 +178,22 @@ func TestCheck(t *testing.T) {
 			}
 			slice := set.ToSlice()
 			for _, a := range tc.accepted {
+				allocs := testing.AllocsPerRun(10, func() { headers.Check(set, a) })
+				if allocs > 0 {
+					const tmpl = "headers.Check(%v, %q) allocs: got %.2f; want 0"
+					t.Errorf(tmpl, set, a, allocs)
+				}
 				if !headers.Check(set, a) {
 					const tmpl = "%q rejects %q, but should accept it"
 					t.Errorf(tmpl, slice, a)
 				}
 			}
 			for _, r := range tc.rejected {
+				allocs := testing.AllocsPerRun(10, func() { headers.Check(set, r) })
+				if allocs > 0 {
+					const tmpl = "headers.Check(%v, %q) allocs: got %.2f; want 0"
+					t.Errorf(tmpl, set, r, allocs)
+				}
 				if headers.Check(set, r) {
 					const tmpl = "%q accepts %q, but should reject it"
 					t.Errorf(tmpl, slice, r)
