@@ -334,7 +334,9 @@ import (
 // [security reasons]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
 // [subdomain takeover]: https://labs.detectify.com/writeups/hostile-subdomain-takeover-using-heroku-github-desk-more/
 type Config struct {
-	_ [0]func() // precludes comparability and unkeyed struct literals
+	// precludes comparability, unkeyed struct literals, and conversion to and
+	// from third-party types
+	_ [0]func()
 
 	Origins         []string
 	Credentialed    bool
@@ -397,7 +399,9 @@ type Config struct {
 // [Same-Origin Policy]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 // [no-cors mode]: https://fetch.spec.whatwg.org/#concept-request-mode
 type ExtraConfig struct {
-	_ [0]func() // precludes comparability and unkeyed struct literals
+	// precludes comparability, unkeyed struct literals, and conversion to and
+	// from third-party types
+	_ [0]func()
 
 	PreflightSuccessStatus                        int
 	DangerouslyTolerateInsecureOrigins            bool
