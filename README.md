@@ -28,15 +28,15 @@ This library allows you to configure and build [net/http][net-http] middleware
 that implement CORS. It distinguishes itself from other CORS middleware
 libraries by providing the following features:
 
+- full compliance with [the Fetch standard][fetch];
 - [a simple and coherent API][pkgsite-index];
 - [comprehensive documentation][pkgsite];
 - [extensive configuration validation][validation];
-- [programmatic handling of configuration errors][cfgerrors];
 - [safe-by-default middleware][safe];
+- [strong performance guarantees][benchmark-results];
 - [a useful debug mode][debug];
 - [on-the-fly, concurrency-safe middleware reconfigurability][reconfigurable];
-- [strong performance guarantees][benchmark-results];
-- full compliance with [the Fetch standard][fetch].
+- [programmatic handling of configuration errors][cfgerrors].
 
 Despite all of this library's goodness, here are some valid reasons
 for favoring libraries like the more popular [rs/cors][rs-cors]:
