@@ -8,11 +8,11 @@ import "github.com/jub0bs/cors/internal/util"
 //   - sorted in lexicographical order,
 //   - unique.
 //
-// This methods's parameter is a slice of strings rather than just a string
+// This function's parameter is a slice of strings rather than just a string
 // because, although [the Fetch standard] requires browsers to include at most
 // one ACRH field line in CORS-preflight requests, some intermediaries may well
-// (and [some reportedly do]) split it into multiple ACRH field lines.
-// Note that, because [RFC 9110] (section 5.3) forbids intermediaries from
+// (and [some reportedly do]) split that ACRH field line into multiple ones.
+// Note that, because [RFC 9110] ([section 5.3]) forbids intermediaries from
 // changing the order of field lines of the same name, we can expect the
 // overall sequence of elements to still be sorted in lexicographical order.
 //
@@ -20,20 +20,21 @@ import "github.com/jub0bs/cors/internal/util"
 // in the value of the ACRH field, some intermediaries may well alter this
 // list-based field's value by sprinkling optional whitespace (OWS) around
 // the value's elements.
-// [RFC 9110] requires recipients to tolerate arbitrary long
-// OWS around elements of a list-based field value,
+// [RFC 9110] ([section 5.6.1.2]) requires recipients to tolerate arbitrary
+// long OWS around elements of a list-based field value,
 // but adherence to this requirement leads to non-negligible performance
-// degradation in CORS middleware in the face of adversarial (spoofed)
+// degradation in CORS middleware when they handle adversarial (spoofed)
 // CORS-preflight requests.
-// Therefore, this method only tolerates a small total (2) of OWS bytes
-// before and after each element. This deviation from RFC 9110 is expected
+// Therefore, this function only tolerates a small total (2) of OWS bytes
+// before and after each element. This deviation from [RFC 9110] is expected
 // to strike a good balance between interoperability and performance.
-//
-// This method also tolerates a small number (16) of empty list elements,
-// in accordance with [RFC 9110].
+// This function also tolerates a small number (16) of empty list elements,
+// in accordance with [RFC 9110] ([section 5.6.1.2]).
 //
 // [RFC 9110]: https://httpwg.org/specs/rfc9110.html#abnf.extension.recipient
 // [list-based field values]: https://httpwg.org/specs/rfc9110.html#abnf.extension
+// [section 5.3]: https://httpwg.org/specs/rfc9110.html#rfc.section.5.3
+// [section 5.6.1.2]: https://httpwg.org/specs/rfc9110.html#rfc.section.5.6.1.2
 // [some reportedly do]: https://github.com/rs/cors/issues/184
 // [the Fetch standard]: https://fetch.spec.whatwg.org
 func Check(set util.SortedSet, acrhs []string) bool {
