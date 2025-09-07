@@ -35,6 +35,8 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.6.0] (2025-06-10)
 
+### Changed
+
 - **Behavior**: minor changes to how middleware tolerate optional whitespace
   in the Access-Control-Request-Headers header.
 - **Performance**: minor improvements
