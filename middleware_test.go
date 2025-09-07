@@ -1862,9 +1862,14 @@ func TestReconfigure(t *testing.T) {
 					},
 				},
 			},
+		}, {
+			desc:       "passthrough again", // once more, in order to test debug
+			newHandler: newSpyHandler(200, http.Header{headerVary: {"foo"}}, "bar"),
+			cfg:        nil,
 		},
 	}
 	var mw cors.Middleware
+	var oldDebug bool
 	for _, mwtc := range cases {
 		f := func(t *testing.T) {
 			err := mw.Reconfigure(mwtc.cfg)
@@ -1874,9 +1879,25 @@ func TestReconfigure(t *testing.T) {
 			if err == nil && mwtc.invalid {
 				t.Fatal("unexpected absence of failure to reconfigure CORS middleware")
 			}
+			currentDebug := mw.Debug()
+			if mwtc.cfg == nil {
+				if currentDebug {
+					// Reconfiguring a middleware with a nil config should unset
+					// its debug mode.
+					const tmpl = "unexpected debug mode: got %t; want false"
+					t.Fatalf(tmpl, currentDebug)
+				}
+			} else if currentDebug != oldDebug {
+				// Reconfiguring a middleware with a non-nil config should
+				// preserve its debug mode.
+				const tmpl = "unexpected debug mode: got %t; want %t"
+				t.Fatalf(tmpl, currentDebug, oldDebug)
+			}
 			if mwtc.debug {
 				mw.SetDebug(true)
+				currentDebug = true
 			}
+			oldDebug = currentDebug
 			for _, tc := range mwtc.cases {
 				f := func(t *testing.T) {
 					// --- arrange ---

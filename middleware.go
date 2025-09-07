@@ -504,6 +504,16 @@ func (m *Middleware) SetDebug(b bool) {
 	m.mu.Unlock()
 }
 
+// Debug reports whether m's debug mode is on.
+func (m *Middleware) Debug() (debug bool) {
+	m.mu.RLock()
+	{
+		debug = m.debug
+	}
+	m.mu.RUnlock()
+	return
+}
+
 // Config returns a pointer to a deep copy of m's current configuration;
 // if m is a passthrough middleware, it simply returns nil.
 // The result may differ from the [Config] with which m was created or last
