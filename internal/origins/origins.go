@@ -155,19 +155,16 @@ func fastParseHost(str string) (Host, string, bool) {
 	return host, str[i:], true
 }
 
-// parseScheme parses a URI scheme. It returns the scheme,
-// the unconsumed part of the input string, and a bool that indicates success
-// or failure.
-func parseScheme(str string) (string, string, bool) {
+// parseScheme parses a URI scheme. If successful, it returns the scheme,
+// the unconsumed part of str, and true; otherwise, it returns "", "", false.
+func parseScheme(str string) (_ string, _ string, _ bool) {
 	// See https://www.rfc-editor.org/rfc/rfc3986.html#section-3.1.
 	if len(str) == 0 || !isLowerAlpha(str[0]) {
-		return "", str, false
+		return
 	}
 	i := 1
-	for end := min(maxSchemeLen, len(str)); i < end; i++ {
-		if !isSubsequentSchemeByte(str[i]) {
-			break
-		}
+	for end := min(maxSchemeLen, len(str)); i < end && isSubsequentSchemeByte(str[i]); i++ {
+		// deliberately empty body
 	}
 	return str[:i], str[i:], true
 }
