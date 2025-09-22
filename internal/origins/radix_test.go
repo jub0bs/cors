@@ -452,7 +452,9 @@ func TestTree(t *testing.T) {
 					t.Errorf("tree.Contains(%q): got true; want false", raw)
 				}
 			}
-			elems := tree.Elems()
+			elems := slices.Collect(tree.Elems())
+			slices.Sort(elems)
+			slices.Sort(tc.elems)
 			if !slices.Equal(elems, tc.elems) {
 				t.Errorf("tree.Elems(): got %q; want %q", elems, tc.elems)
 			}
