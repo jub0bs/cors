@@ -1,6 +1,7 @@
 package origins
 
 import (
+	"iter"
 	"math"
 	"slices"
 	"strconv"
@@ -140,12 +141,13 @@ func splitAtCommonSuffix(a, b string) (string, string, string) {
 	return a[:len(a)-len(s)+i], b[:len(b)-len(s)+i], s[i:]
 }
 
-// Elems returns a slice containing textual representations of t's elements.
-func (t *Tree) Elems() []string {
-	var res []string
-	t.root.elems(&res, "")
-	slices.Sort(res)
-	return res
+// Elems returns an iterator over textual representations of t's elements.
+// The order is unspecified. However, the order is stable: different calls to
+// t.Elems always yield the same elements in the same order.
+func (t *Tree) Elems() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		t.root.elems("", yield)
+	}
 }
 
 // A node represents a node of a Tree.
@@ -248,9 +250,9 @@ func (n *node) upsertEdge(label byte, child node) *node {
 	return &n.children[i]
 }
 
-// elems adds textual representations of n's elements
-// (using suf as base suffix) to dst.
-func (n *node) elems(dst *[]string, suf string) {
+// elems reports whether f(x) is true for the textual representation
+// (using suf as base suffix) of every element x in n.
+func (n *node) elems(suf string, f func(string) bool) bool {
 	suf = n.suf + suf
 	// We iterate over n.ports rather than n.schemes in order to
 	// hoist most bounds checks out of the (outer) loop.
@@ -271,10 +273,15 @@ func (n *node) elems(dst *[]string, suf string) {
 			default:
 				s = scheme + schemeHostSep + maybeWildcard + suf + string(hostPortSep) + strconv.Itoa(port)
 			}
-			*dst = append(*dst, s)
+			if !f(s) {
+				return false
+			}
 		}
 	}
 	for i := range n.children {
-		n.children[i].elems(dst, suf)
+		if !n.children[i].elems(suf, f) {
+			return false
+		}
 	}
+	return true
 }

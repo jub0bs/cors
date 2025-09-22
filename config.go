@@ -3,6 +3,7 @@ package cors
 import (
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -794,7 +795,7 @@ func newConfig(icfg *internalConfig) *Config {
 	if icfg.tree.IsEmpty() {
 		cfg.Origins = []string{"*"}
 	} else {
-		cfg.Origins = icfg.tree.Elems()
+		cfg.Origins = slices.Collect(icfg.tree.Elems())
 	}
 
 	// credentialed

@@ -1,6 +1,7 @@
 package origins_test
 
 import (
+	"iter"
 	"slices"
 	"testing"
 
@@ -452,11 +453,36 @@ func TestTree(t *testing.T) {
 					t.Errorf("tree.Contains(%q): got true; want false", raw)
 				}
 			}
-			elems := tree.Elems()
+			elems := slices.Collect(tree.Elems())
+
+			// exercise iteration cut short
+			allElemsButLast := slices.Collect(take(tree.Elems(), len(elems)-1))
+			if !slices.Equal(allElemsButLast, elems[:len(allElemsButLast)]) {
+				t.Error("tree.Elems(): the order of elements is unstable")
+			}
+
+			// the order is unspecified; sort before asserting equality
+			slices.Sort(elems)
+			slices.Sort(tc.elems)
 			if !slices.Equal(elems, tc.elems) {
 				t.Errorf("tree.Elems(): got %q; want %q", elems, tc.elems)
 			}
 		}
 		t.Run(tc.desc, f)
+	}
+}
+
+func take[E any](seq iter.Seq[E], count int) iter.Seq[E] {
+	return func(yield func(E) bool) {
+		for e := range seq {
+			if count > 0 {
+				if !yield(e) {
+					return
+				}
+				count--
+				continue
+			}
+			return
+		}
 	}
 }
