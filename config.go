@@ -795,7 +795,7 @@ func newConfig(icfg *internalConfig) *Config {
 	if icfg.tree.IsEmpty() {
 		cfg.Origins = []string{"*"}
 	} else {
-		cfg.Origins = slices.Collect(icfg.tree.Elems())
+		cfg.Origins = slices.Sorted(icfg.tree.Elems())
 	}
 
 	// credentialed
