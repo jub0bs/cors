@@ -201,8 +201,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// allocations on average; see https://go.dev/play/p/RQdNE-pPCQq.
 	// Therefore, using a different data structure for accumulating response
 	// headers provides no performance advantage; a simple http.Header will do.
-	const bufSizeHint = 4 // enough to hold ACAO, ACAC, ACAM, and ACAH
-	buf := make(http.Header, bufSizeHint)
+	buf := make(http.Header)
 
 	// When debug is on and a preflight step fails,
 	// we omit the remaining CORS response headers
