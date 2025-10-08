@@ -185,8 +185,8 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 	}
 	i, found := slices.BinarySearch(n.schemes, scheme)
 	if !found {
-		n.schemes = insert(n.schemes, i, scheme)
-		n.ports = insert(n.ports, i, []int{port})
+		n.schemes = slices.Insert(n.schemes, i, scheme)
+		n.ports = slices.Insert(n.ports, i, []int{port})
 		return
 	}
 	ports := n.ports[i]
@@ -196,15 +196,6 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 	ports = append(ports, port)
 	slices.Sort(ports)
 	n.ports[i] = ports
-}
-
-func insert[T any](s []T, i int, v T) []T {
-	// see https://go.dev/wiki/SliceTricks#insert
-	var dummy T
-	s = append(s, dummy)
-	copy(s[i+1:], s[i:])
-	s[i] = v
-	return s
 }
 
 // deleteSameSign, if v is negative, removes all the negative values from s;
@@ -242,8 +233,8 @@ func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool)
 func (n *node) upsertEdge(label byte, child node) *node {
 	i, found := slices.BinarySearch(n.edges, label)
 	if !found {
-		n.edges = insert(n.edges, i, label)
-		n.children = insert(n.children, i, child)
+		n.edges = slices.Insert(n.edges, i, label)
+		n.children = slices.Insert(n.children, i, child)
 		return &n.children[i]
 	}
 	n.children[i] = child

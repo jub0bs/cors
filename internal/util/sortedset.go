@@ -13,12 +13,11 @@ type SortedSet struct {
 
 // Add adds e to set.
 func (set *SortedSet) Add(e string) {
-	_, found := slices.BinarySearch(set.elems, e)
+	i, found := slices.BinarySearch(set.elems, e)
 	if found {
 		return
 	}
-	set.elems = append(set.elems, e)
-	slices.Sort(set.elems)
+	set.elems = slices.Insert(set.elems, i, e)
 	set.maxLen = max(set.maxLen, uint(len(e)))
 }
 
