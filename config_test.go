@@ -368,399 +368,401 @@ func assertConfigEqual(t *testing.T, got, want *cors.Config) {
 	}
 }
 
-func TestIncorrectConfig(t *testing.T) {
-	type InvalidConfigTestCase struct {
-		desc string
-		cfg  *cors.Config
-		want []*errorMatcher
-	}
-	cases := []InvalidConfigTestCase{
-		{
-			desc: "no origin pattern specified",
-			cfg:  &cors.Config{},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{Reason: "missing"}),
-			},
-		}, {
-			desc: "null origin",
-			cfg: &cors.Config{
-				Origins: []string{"null"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{
-					Value:  "null",
-					Reason: "prohibited",
-				}),
-			},
-		}, {
-			desc: "invalid origin pattern",
-			cfg: &cors.Config{
-				Origins: []string{"http://example.com:6060/path"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{
-					Value:  "http://example.com:6060/path",
-					Reason: "invalid",
-				}),
-			},
-		}, {
-			desc: "empty method name",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				Methods: []string{""},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableMethodError{
-					Value:  "",
-					Reason: "invalid",
-				}),
-			},
-		}, {
-			desc: "invalid method name",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				Methods: []string{"résumé"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableMethodError{
-					Value:  "résumé",
-					Reason: "invalid",
-				}),
-			},
-		}, {
-			desc: "forbidden method name",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				Methods: []string{
-					http.MethodGet,
-					http.MethodConnect,
-				},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableMethodError{
-					Value:  http.MethodConnect,
-					Reason: "forbidden",
-				}),
-			},
-		}, {
-			desc: "empty request-header name",
-			cfg: &cors.Config{
-				Origins:        []string{"https://example.com"},
-				RequestHeaders: []string{""},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "",
-					Type:   "request",
-					Reason: "invalid",
-				}),
-			},
-		}, {
-			desc: "invalid request-header name",
-			cfg: &cors.Config{
-				Origins:        []string{"https://example.com"},
-				RequestHeaders: []string{"résumé"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "résumé",
-					Type:   "request",
-					Reason: "invalid",
-				}),
-			},
-		}, {
-			desc: "forbidden request-header name",
-			cfg: &cors.Config{
-				Origins:        []string{"https://example.com"},
-				RequestHeaders: []string{"Connection"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "Connection",
-					Type:   "request",
-					Reason: "forbidden",
-				}),
-			},
-		}, {
-			desc: "forbidden request-header name with Sec- prefix",
-			cfg: &cors.Config{
-				Origins:        []string{"https://example.com"},
-				RequestHeaders: []string{"Sec-Foo"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "Sec-Foo",
-					Type:   "request",
-					Reason: "forbidden",
-				}),
-			},
-		}, {
-			desc: "forbidden request-header name with Proxy- prefix",
-			cfg: &cors.Config{
-				Origins:        []string{"https://example.com"},
-				RequestHeaders: []string{"Proxy-Foo"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "Proxy-Foo",
-					Type:   "request",
-					Reason: "forbidden",
-				}),
-			},
-		}, {
-			desc: "prohibited request-header name",
-			cfg: &cors.Config{
-				Origins:        []string{"https://example.com"},
-				RequestHeaders: []string{"Access-Control-Allow-Origin"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "Access-Control-Allow-Origin",
-					Type:   "request",
-					Reason: "prohibited",
-				}),
-			},
-		}, {
-			desc: "max age less than -1",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				RequestHeaders: []string{
-					"Content-Type",
-					"Authorization",
-				},
-				MaxAgeInSeconds: -2,
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.MaxAgeOutOfBoundsError{
-					Value:   -2,
-					Default: 5,
-					Max:     86_400,
-					Disable: -1,
-				}),
-			},
-		}, {
-			desc: "max age exceeds upper bound",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				RequestHeaders: []string{
-					"Content-Type",
-					"Authorization",
-				},
-				MaxAgeInSeconds: 86_401,
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.MaxAgeOutOfBoundsError{
-					Value:   86_401,
-					Default: 5,
-					Max:     86_400,
-					Disable: -1,
-				}),
-			},
-		}, {
-			desc: "empty response-header name",
-			cfg: &cors.Config{
-				Origins:         []string{"https://example.com"},
-				ResponseHeaders: []string{""},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "",
-					Type:   "response",
-					Reason: "invalid",
-				}),
-			},
-		}, {
-			desc: "invalid response-header name",
-			cfg: &cors.Config{
-				Origins:         []string{"https://example.com"},
-				ResponseHeaders: []string{"résumé"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "résumé",
-					Type:   "response",
-					Reason: "invalid",
-				}),
-			},
-		}, {
-			desc: "forbidden response-header name",
-			cfg: &cors.Config{
-				Origins:         []string{"https://example.com"},
-				ResponseHeaders: []string{"Set-Cookie"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "Set-Cookie",
-					Type:   "response",
-					Reason: "forbidden",
-				}),
-			},
-		}, {
-			desc: "prohibited response-header name",
-			cfg: &cors.Config{
-				Origins:         []string{"https://example.com"},
-				ResponseHeaders: []string{"Access-Control-Request-Method"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "Access-Control-Request-Method",
-					Type:   "response",
-					Reason: "prohibited",
-				}),
-			},
-		}, {
-			desc: "preflight-success status less than 200",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 199,
-				},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.PreflightSuccessStatusOutOfBoundsError{
-					Value:   199,
-					Default: 204,
-					Min:     200,
-					Max:     299,
-				}),
-			},
-		}, {
-			desc: "preflight-success status greater than 299",
-			cfg: &cors.Config{
-				Origins: []string{"https://example.com"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 300,
-				},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.PreflightSuccessStatusOutOfBoundsError{
-					Value:   300,
-					Default: 204,
-					Min:     200,
-					Max:     299,
-				}),
-			},
-		}, {
-			desc: "wildcard origin with Credentialed",
-			cfg: &cors.Config{
-				Origins:      []string{"*"},
-				Credentialed: true,
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "*",
-					Reason: "credentialed",
-				}),
-			},
-		}, {
-			desc: "insecure origin with Credentialed without DangerouslyTolerateInsecureOrigins",
-			cfg: &cors.Config{
-				Origins: []string{
-					"http://example.com:6060",
-					"http://*.example.com:6060",
-				},
-				Credentialed: true,
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://example.com:6060",
-					Reason: "credentialed",
-				}),
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://*.example.com:6060",
-					Reason: "credentialed",
-				}),
-			},
-		}, {
-			desc: "insecure origin with Credentialed without DangerouslyTolerateInsecureOrigins",
-			cfg: &cors.Config{
-				Origins: []string{
-					"http://example.com:6060",
-					"http://*.example.com:6060",
-				},
-				Credentialed: true,
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://example.com:6060",
-					Reason: "credentialed",
-				}),
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "http://*.example.com:6060",
-					Reason: "credentialed",
-				}),
-			},
-		}, {
-			desc: "wildcard pattern encompassing subdomains of a public suffix without DangerouslyTolerateSubdomainsOfPublicSuffixes",
-			cfg: &cors.Config{
-				Origins: []string{"https://*.com"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-					Value:  "https://*.com",
-					Reason: "psl",
-				}),
-			},
-		}, {
-			desc: "wildcard response-header name with Credentialed",
-			cfg: &cors.Config{
-				Origins:         []string{"https://example.com"},
-				Credentialed:    true,
-				ResponseHeaders: []string{"*"},
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)),
-			},
-		}, {
-			desc: "multiple configuration issues",
-			cfg: &cors.Config{
-				Origins: []string{
-					"http://example.com",
-					"https://example.com/",
-				},
-				Methods: []string{
-					http.MethodConnect,
-					"résumé",
-				},
-				RequestHeaders: []string{
-					"résumé",
-					"Access-Control-Allow-Origin",
-				},
-				MaxAgeInSeconds: 86_401,
-			},
-			want: []*errorMatcher{
-				newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{
-					Value:  "https://example.com/",
-					Reason: "invalid",
-				}),
-				newErrorMatcher(&cfgerrors.UnacceptableMethodError{
-					Value:  http.MethodConnect,
-					Reason: "forbidden",
-				}),
-				newErrorMatcher(&cfgerrors.UnacceptableMethodError{
-					Value:  "résumé",
-					Reason: "invalid",
-				}),
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "résumé",
-					Type:   "request",
-					Reason: "invalid",
-				}),
-				newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
-					Value:  "Access-Control-Allow-Origin",
-					Type:   "request",
-					Reason: "prohibited",
-				}),
-				newErrorMatcher(&cfgerrors.MaxAgeOutOfBoundsError{
-					Value:   86_401,
-					Default: 5,
-					Max:     86_400,
-					Disable: -1,
-				}),
+type InvalidConfigTestCase struct {
+	desc string
+	cfg  *cors.Config
+	want []*errorMatcher
+}
+
+var invalidConfigTestCases = []InvalidConfigTestCase{
+	{
+		desc: "no origin pattern specified",
+		cfg:  &cors.Config{},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{Reason: "missing"}),
+		},
+	}, {
+		desc: "null origin",
+		cfg: &cors.Config{
+			Origins: []string{"null"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{
+				Value:  "null",
+				Reason: "prohibited",
+			}),
+		},
+	}, {
+		desc: "invalid origin pattern",
+		cfg: &cors.Config{
+			Origins: []string{"http://example.com:6060/path"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{
+				Value:  "http://example.com:6060/path",
+				Reason: "invalid",
+			}),
+		},
+	}, {
+		desc: "empty method name",
+		cfg: &cors.Config{
+			Origins: []string{"https://example.com"},
+			Methods: []string{""},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableMethodError{
+				Value:  "",
+				Reason: "invalid",
+			}),
+		},
+	}, {
+		desc: "invalid method name",
+		cfg: &cors.Config{
+			Origins: []string{"https://example.com"},
+			Methods: []string{"résumé"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableMethodError{
+				Value:  "résumé",
+				Reason: "invalid",
+			}),
+		},
+	}, {
+		desc: "forbidden method name",
+		cfg: &cors.Config{
+			Origins: []string{"https://example.com"},
+			Methods: []string{
+				http.MethodGet,
+				http.MethodConnect,
 			},
 		},
-	}
-	for _, tc := range cases {
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableMethodError{
+				Value:  http.MethodConnect,
+				Reason: "forbidden",
+			}),
+		},
+	}, {
+		desc: "empty request-header name",
+		cfg: &cors.Config{
+			Origins:        []string{"https://example.com"},
+			RequestHeaders: []string{""},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "",
+				Type:   "request",
+				Reason: "invalid",
+			}),
+		},
+	}, {
+		desc: "invalid request-header name",
+		cfg: &cors.Config{
+			Origins:        []string{"https://example.com"},
+			RequestHeaders: []string{"résumé"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "résumé",
+				Type:   "request",
+				Reason: "invalid",
+			}),
+		},
+	}, {
+		desc: "forbidden request-header name",
+		cfg: &cors.Config{
+			Origins:        []string{"https://example.com"},
+			RequestHeaders: []string{"Connection"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "Connection",
+				Type:   "request",
+				Reason: "forbidden",
+			}),
+		},
+	}, {
+		desc: "forbidden request-header name with Sec- prefix",
+		cfg: &cors.Config{
+			Origins:        []string{"https://example.com"},
+			RequestHeaders: []string{"Sec-Foo"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "Sec-Foo",
+				Type:   "request",
+				Reason: "forbidden",
+			}),
+		},
+	}, {
+		desc: "forbidden request-header name with Proxy- prefix",
+		cfg: &cors.Config{
+			Origins:        []string{"https://example.com"},
+			RequestHeaders: []string{"Proxy-Foo"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "Proxy-Foo",
+				Type:   "request",
+				Reason: "forbidden",
+			}),
+		},
+	}, {
+		desc: "prohibited request-header name",
+		cfg: &cors.Config{
+			Origins:        []string{"https://example.com"},
+			RequestHeaders: []string{"Access-Control-Allow-Origin"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "Access-Control-Allow-Origin",
+				Type:   "request",
+				Reason: "prohibited",
+			}),
+		},
+	}, {
+		desc: "max age less than -1",
+		cfg: &cors.Config{
+			Origins: []string{"https://example.com"},
+			RequestHeaders: []string{
+				"Content-Type",
+				"Authorization",
+			},
+			MaxAgeInSeconds: -2,
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.MaxAgeOutOfBoundsError{
+				Value:   -2,
+				Default: 5,
+				Max:     86_400,
+				Disable: -1,
+			}),
+		},
+	}, {
+		desc: "max age exceeds upper bound",
+		cfg: &cors.Config{
+			Origins: []string{"https://example.com"},
+			RequestHeaders: []string{
+				"Content-Type",
+				"Authorization",
+			},
+			MaxAgeInSeconds: 86_401,
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.MaxAgeOutOfBoundsError{
+				Value:   86_401,
+				Default: 5,
+				Max:     86_400,
+				Disable: -1,
+			}),
+		},
+	}, {
+		desc: "empty response-header name",
+		cfg: &cors.Config{
+			Origins:         []string{"https://example.com"},
+			ResponseHeaders: []string{""},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "",
+				Type:   "response",
+				Reason: "invalid",
+			}),
+		},
+	}, {
+		desc: "invalid response-header name",
+		cfg: &cors.Config{
+			Origins:         []string{"https://example.com"},
+			ResponseHeaders: []string{"résumé"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "résumé",
+				Type:   "response",
+				Reason: "invalid",
+			}),
+		},
+	}, {
+		desc: "forbidden response-header name",
+		cfg: &cors.Config{
+			Origins:         []string{"https://example.com"},
+			ResponseHeaders: []string{"Set-Cookie"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "Set-Cookie",
+				Type:   "response",
+				Reason: "forbidden",
+			}),
+		},
+	}, {
+		desc: "prohibited response-header name",
+		cfg: &cors.Config{
+			Origins:         []string{"https://example.com"},
+			ResponseHeaders: []string{"Access-Control-Request-Method"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "Access-Control-Request-Method",
+				Type:   "response",
+				Reason: "prohibited",
+			}),
+		},
+	}, {
+		desc: "preflight-success status less than 200",
+		cfg: &cors.Config{
+			Origins: []string{"https://example.com"},
+			ExtraConfig: cors.ExtraConfig{
+				PreflightSuccessStatus: 199,
+			},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.PreflightSuccessStatusOutOfBoundsError{
+				Value:   199,
+				Default: 204,
+				Min:     200,
+				Max:     299,
+			}),
+		},
+	}, {
+		desc: "preflight-success status greater than 299",
+		cfg: &cors.Config{
+			Origins: []string{"https://example.com"},
+			ExtraConfig: cors.ExtraConfig{
+				PreflightSuccessStatus: 300,
+			},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.PreflightSuccessStatusOutOfBoundsError{
+				Value:   300,
+				Default: 204,
+				Min:     200,
+				Max:     299,
+			}),
+		},
+	}, {
+		desc: "wildcard origin with Credentialed",
+		cfg: &cors.Config{
+			Origins:      []string{"*"},
+			Credentialed: true,
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+				Value:  "*",
+				Reason: "credentialed",
+			}),
+		},
+	}, {
+		desc: "insecure origin with Credentialed without DangerouslyTolerateInsecureOrigins",
+		cfg: &cors.Config{
+			Origins: []string{
+				"http://example.com:6060",
+				"http://*.example.com:6060",
+			},
+			Credentialed: true,
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+				Value:  "http://example.com:6060",
+				Reason: "credentialed",
+			}),
+			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+				Value:  "http://*.example.com:6060",
+				Reason: "credentialed",
+			}),
+		},
+	}, {
+		desc: "insecure origin with Credentialed without DangerouslyTolerateInsecureOrigins",
+		cfg: &cors.Config{
+			Origins: []string{
+				"http://example.com:6060",
+				"http://*.example.com:6060",
+			},
+			Credentialed: true,
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+				Value:  "http://example.com:6060",
+				Reason: "credentialed",
+			}),
+			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+				Value:  "http://*.example.com:6060",
+				Reason: "credentialed",
+			}),
+		},
+	}, {
+		desc: "wildcard pattern encompassing subdomains of a public suffix without DangerouslyTolerateSubdomainsOfPublicSuffixes",
+		cfg: &cors.Config{
+			Origins: []string{"https://*.com"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
+				Value:  "https://*.com",
+				Reason: "psl",
+			}),
+		},
+	}, {
+		desc: "wildcard response-header name with Credentialed",
+		cfg: &cors.Config{
+			Origins:         []string{"https://example.com"},
+			Credentialed:    true,
+			ResponseHeaders: []string{"*"},
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)),
+		},
+	}, {
+		desc: "multiple configuration issues",
+		cfg: &cors.Config{
+			Origins: []string{
+				"http://example.com",
+				"https://example.com/",
+			},
+			Methods: []string{
+				http.MethodConnect,
+				"résumé",
+			},
+			RequestHeaders: []string{
+				"résumé",
+				"Access-Control-Allow-Origin",
+			},
+			MaxAgeInSeconds: 86_401,
+		},
+		want: []*errorMatcher{
+			newErrorMatcher(&cfgerrors.UnacceptableOriginPatternError{
+				Value:  "https://example.com/",
+				Reason: "invalid",
+			}),
+			newErrorMatcher(&cfgerrors.UnacceptableMethodError{
+				Value:  http.MethodConnect,
+				Reason: "forbidden",
+			}),
+			newErrorMatcher(&cfgerrors.UnacceptableMethodError{
+				Value:  "résumé",
+				Reason: "invalid",
+			}),
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "résumé",
+				Type:   "request",
+				Reason: "invalid",
+			}),
+			newErrorMatcher(&cfgerrors.UnacceptableHeaderNameError{
+				Value:  "Access-Control-Allow-Origin",
+				Type:   "request",
+				Reason: "prohibited",
+			}),
+			newErrorMatcher(&cfgerrors.MaxAgeOutOfBoundsError{
+				Value:   86_401,
+				Default: 5,
+				Max:     86_400,
+				Disable: -1,
+			}),
+		},
+	},
+}
+
+func TestIncorrectConfig(t *testing.T) {
+	for _, tc := range invalidConfigTestCases {
 		f := func(t *testing.T) {
 			mw, err := cors.NewMiddleware(*tc.cfg)
 			if mw != nil {
@@ -823,4 +825,18 @@ func newErrorMatcher[T comparable, P PError[T]](ptrToTargetValue P) *errorMatche
 type PError[T any] interface {
 	error
 	*T
+}
+
+func BenchmarkIncorrectConfig(b *testing.B) {
+	for _, tc := range invalidConfigTestCases {
+		f := func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				if _, err := cors.NewMiddleware(*tc.cfg); err == nil {
+					b.Fatal("got nil error; want non-nil error")
+				}
+			}
+		}
+		b.Run(tc.desc, f)
+	}
 }
