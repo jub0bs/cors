@@ -429,35 +429,23 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	if cfg == nil {
 		return nil, nil
 	}
-	var (
-		icfg internalConfig
-		errs []error
-	)
+	var icfg internalConfig
+	// Accumulate errors in a slice so as to call errors.Join at most once,
+	// for better performance.
+	var errs []error
 
 	// extra config (accessed by other validateX methods)
-	if err := icfg.validatePreflightStatus(cfg.PreflightSuccessStatus); err != nil {
-		errs = append(errs, err)
-	}
+	errs = icfg.validatePreflightStatus(errs, cfg.PreflightSuccessStatus)
 	icfg.insecureOrigins = cfg.DangerouslyTolerateInsecureOrigins
 	icfg.subsOfPublicSuffixes = cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes
 
 	// base config
 	icfg.credentialed = cfg.Credentialed // accessed by other validateX methods
-	if err := icfg.validateOrigins(cfg.Origins); err != nil {
-		errs = append(errs, err)
-	}
-	if err := icfg.validateMethods(cfg.Methods); err != nil {
-		errs = append(errs, err)
-	}
-	if err := icfg.validateRequestHeaders(cfg.RequestHeaders); err != nil {
-		errs = append(errs, err)
-	}
-	if err := icfg.validateMaxAge(cfg.MaxAgeInSeconds); err != nil {
-		errs = append(errs, err)
-	}
-	if err := icfg.validateResponseHeaders(cfg.ResponseHeaders); err != nil {
-		errs = append(errs, err)
-	}
+	errs = icfg.validateOrigins(errs, cfg.Origins)
+	errs = icfg.validateMethods(errs, cfg.Methods)
+	errs = icfg.validateRequestHeaders(errs, cfg.RequestHeaders)
+	errs = icfg.validateMaxAge(errs, cfg.MaxAgeInSeconds)
+	errs = icfg.validateResponseHeaders(errs, cfg.ResponseHeaders)
 
 	if len(errs) != 0 {
 		return nil, errors.Join(errs...)
@@ -465,18 +453,18 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	return &icfg, nil
 }
 
-func (icfg *internalConfig) validateOrigins(patterns []string) error {
+func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []error {
 	if len(patterns) == 0 {
 		err := &cfgerrors.UnacceptableOriginPatternError{
 			Reason: "missing",
 		}
-		return err
+		return append(errs, err)
 	}
 	var (
 		tree           origins.Tree
 		discreteOrigin string
-		errs           []error
 		allowAnyOrigin bool
+		nbErrors       = len(errs)
 	)
 	for _, raw := range patterns {
 		if raw == headers.ValueWildcard {
@@ -525,23 +513,23 @@ func (icfg *internalConfig) validateOrigins(patterns []string) error {
 		}
 		tree.Insert(&pattern)
 	}
-	if len(errs) != 0 {
-		return errors.Join(errs...)
+	if len(errs) > nbErrors {
+		return errs
 	}
 	if allowAnyOrigin {
-		return nil
+		return errs
 	}
 	icfg.tree = tree
-	return nil
+	return errs
 }
 
-func (icfg *internalConfig) validateMethods(names []string) error {
+func (icfg *internalConfig) validateMethods(errs []error, names []string) []error {
 	if len(names) == 0 {
-		return nil
+		return errs
 	}
 	var (
 		allowedMethods util.Set
-		errs           []error
+		nbErrors       = len(errs)
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
@@ -572,23 +560,23 @@ func (icfg *internalConfig) validateMethods(names []string) error {
 		}
 		allowedMethods.Add(name)
 	}
-	if len(errs) != 0 {
-		return errors.Join(errs...)
+	if len(errs) > nbErrors {
+		return errs
 	}
 	if icfg.allowAnyMethod {
-		return nil
+		return errs
 	}
 	icfg.allowedMethods = allowedMethods
-	return nil
+	return errs
 }
 
-func (icfg *internalConfig) validateRequestHeaders(names []string) error {
+func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string) []error {
 	if len(names) == 0 {
-		return nil
+		return errs
 	}
 	var (
 		allowedHeaders util.SortedSet
-		errs           []error
+		nbErrors       = len(errs)
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
@@ -644,8 +632,8 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		}
 		allowedHeaders.Add(normalized)
 	}
-	if len(errs) != 0 {
-		return errors.Join(errs...)
+	if len(errs) > nbErrors {
+		return errs
 	}
 	if !icfg.asteriskReqHdrs && allowedHeaders.Size() != 0 {
 		icfg.allowedReqHdrs = allowedHeaders
@@ -655,10 +643,10 @@ func (icfg *internalConfig) validateRequestHeaders(names []string) error {
 		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
 		icfg.acah = []string{strings.Join(s, headers.ValueSep)}
 	}
-	return nil
+	return errs
 }
 
-func (icfg *internalConfig) validateMaxAge(delta int) error {
+func (icfg *internalConfig) validateMaxAge(errs []error, delta int) []error {
 	const (
 		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7.9
 		defaultMaxAge = 5
@@ -673,31 +661,32 @@ func (icfg *internalConfig) validateMaxAge(delta int) error {
 	)
 	switch {
 	case delta < disableCaching || upperBound < delta:
-		return &cfgerrors.MaxAgeOutOfBoundsError{
+		err := &cfgerrors.MaxAgeOutOfBoundsError{
 			Value:   delta,
 			Default: defaultMaxAge,
 			Max:     upperBound,
 			Disable: disableCaching,
 		}
+		return append(errs, err)
 	case delta == disableCaching:
 		icfg.acma = []string{"0"}
-		return nil
+		return errs
 	case delta == 0:
-		return nil
+		return errs
 	default:
 		icfg.acma = []string{strconv.Itoa(delta)}
-		return nil
+		return errs
 	}
 }
 
-func (icfg *internalConfig) validateResponseHeaders(names []string) error {
+func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string) []error {
 	if len(names) == 0 {
-		return nil
+		return errs
 	}
 	var (
 		exposedHeaders   util.Set
-		errs             []error
 		exposeAllResHdrs bool
+		nbErrors         = len(errs)
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
@@ -742,8 +731,8 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 		}
 		exposedHeaders.Add(normalized)
 	}
-	if len(errs) != 0 {
-		return errors.Join(errs...)
+	if len(errs) > nbErrors {
+		return errs
 	}
 	switch {
 	case exposeAllResHdrs:
@@ -754,28 +743,29 @@ func (icfg *internalConfig) validateResponseHeaders(names []string) error {
 		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
 		icfg.aceh = strings.Join(exposedHeaders.ToSlice(), headers.ValueSep)
 	}
-	return nil
+	return errs
 }
 
-func (icfg *internalConfig) validatePreflightStatus(status int) error {
+func (icfg *internalConfig) validatePreflightStatus(errs []error, status int) []error {
 	if status == 0 {
 		icfg.preflightStatusMinus200 = defaultPreflightStatus - 200
-		return nil
+		return errs
 	}
 	const ( // see https://fetch.spec.whatwg.org/#ok-status
 		lowerBound = 200
 		upperBound = 299
 	)
 	if !(lowerBound <= status && status <= upperBound) {
-		return &cfgerrors.PreflightSuccessStatusOutOfBoundsError{
+		err := &cfgerrors.PreflightSuccessStatusOutOfBoundsError{
 			Value:   status,
 			Default: defaultPreflightStatus,
 			Min:     lowerBound,
 			Max:     upperBound,
 		}
+		return append(errs, err)
 	}
 	icfg.preflightStatusMinus200 = uint8(status - 200) // 200 <= status < 300
-	return nil
+	return errs
 }
 
 const defaultPreflightStatus = http.StatusNoContent
