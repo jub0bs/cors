@@ -447,7 +447,7 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	errs = icfg.validateMaxAge(errs, cfg.MaxAgeInSeconds)
 	errs = icfg.validateResponseHeaders(errs, cfg.ResponseHeaders)
 
-	if len(errs) != 0 {
+	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}
 	return &icfg, nil
@@ -635,7 +635,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 	if len(errs) > nbErrors {
 		return errs
 	}
-	if !icfg.asteriskReqHdrs && allowedHeaders.Size() != 0 {
+	if !icfg.asteriskReqHdrs && allowedHeaders.Size() > 0 {
 		icfg.allowedReqHdrs = allowedHeaders
 		s := allowedHeaders.ToSlice()
 		// The elements of a header-field value may be separated simply by commas;
