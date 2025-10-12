@@ -602,7 +602,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 				continue
 			}
 			icfg.allowAuthorization = true
-			if !icfg.asteriskReqHdrs || !icfg.credentialed {
+			if !(icfg.credentialed && icfg.asteriskReqHdrs) {
 				// According to the Fetch standard, the wildcard does not cover
 				// request-header name Authorization; see
 				// https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name
