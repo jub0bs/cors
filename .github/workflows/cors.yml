@@ -23,7 +23,7 @@ jobs:
       - name: Display Go version
         run: go version
       - name: Test
-        run: go test -v -shuffle=on -coverprofile=cover.out ./...
+        run: go test -v -shuffle on -coverprofile cover.out ./...
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5.4.2
         with:
@@ -66,22 +66,22 @@ jobs:
       - name: Run benchinit (old)
         run: |
           cd old
-          benchinit -count=20 ./... > bench_init.out
+          benchinit -count 20 ./... > bench_init.out
       - name: Run benchinit (new)
         run: |
           cd new
-          benchinit -count=20 ./... > bench_init.out
+          benchinit -count 20 ./... > bench_init.out
       - name: Run benchstat for package initialization
         run: |
           benchstat old/bench_init.out new/bench_init.out
       - name: Run Benchmark (old)
         run: |
           cd old
-          go test -shuffle=on -run=^$ -bench='^BenchmarkMiddleware|^BenchmarkAll' -count=10 -benchtime=500ms . ./cfgerrors > bench.out
+          go test -shuffle on -run ^$ -bench '^BenchmarkMiddleware|^BenchmarkAll' -count 10 -benchtime 500ms . ./cfgerrors > bench.out
       - name: Run Benchmark (new)
         run: |
           cd new
-          go test -shuffle=on -run=^$ -bench='^BenchmarkMiddleware|^BenchmarkAll' -count=10 -benchtime=500ms . ./cfgerrors > bench.out
+          go test -shuffle on -run ^$ -bench '^BenchmarkMiddleware|^BenchmarkAll' -count 10 -benchtime 500ms . ./cfgerrors > bench.out
       - name: Run benchstat for middleware initialization
         run: |
           benchstat -filter "/type:init" old/bench.out new/bench.out
