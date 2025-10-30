@@ -10,15 +10,16 @@ import "github.com/jub0bs/cors/internal/util"
 //
 // This function's parameter is a slice of strings rather than just a string
 // because, although [the Fetch standard] requires browsers to include at most
-// one ACRH field line in CORS-preflight requests, some intermediaries may well
-// (and [some reportedly do]) split that ACRH field line into multiple ones.
-// Note that, because [RFC 9110] ([section 5.3]) forbids intermediaries from
-// changing the order of field lines of the same name, we can expect the
-// overall sequence of elements to still be sorted in lexicographical order.
+// one ACRH header line in CORS-preflight requests, some intermediaries may
+// well (and [some reportedly do]) split that ACRH header line into multiple
+// ones. Note that, because [RFC 9110] ([section 5.3]) forbids intermediaries
+// from changing the order of field lines of the same name, we can expect the
+// sequence of tokens in the ACRH field value to still be sorted in
+// lexicographical order.
 //
 // Although [the Fetch standard] requires browsers to omit any whitespace
 // in the value of the ACRH field, some intermediaries may well alter this
-// list-based field's value by sprinkling optional whitespace (OWS) around
+// list-based field value by sprinkling optional whitespace (OWS) around
 // the value's elements.
 // [RFC 9110] ([section 5.6.1.2]) requires recipients to tolerate arbitrary
 // long OWS around elements of a list-based field value,
@@ -39,13 +40,13 @@ import "github.com/jub0bs/cors/internal/util"
 // [the Fetch standard]: https://fetch.spec.whatwg.org
 func Check(set util.SortedSet, acrhs []string) bool {
 	var (
-		// position in set of the last name encountered in ACRH
+		// position in set of the last name encountered in the ACRH field value
 		pos = -1
-		// total number of empty field lines and empty list elements
+		// total number of empty ACRH header lines and empty list elements
 		emptyElements uint
 	)
 	for _, acrh := range acrhs {
-		if acrh == "" { // empty ACRH field line
+		if acrh == "" { // empty ACRH header-line value
 			if emptyElements >= MaxEmptyElements {
 				return false
 			}
@@ -64,13 +65,13 @@ func Check(set util.SortedSet, acrhs []string) bool {
 			// Before processing name, let's perform some sanity checks.
 			switch {
 			case len(acrh) == 0:
-				// name is the last element in this list-based field line;
+				// name is the last element in this list-based field value;
 				// stop the inner loop after the current iteration.
 				looping = false
 			case acrh[0] != ',':
 				// If acrh isn't empty and doesn't start by a comma,
-				// this field line either contains more OWS than we tolerate
-				// or it is not well-formed. Fail.
+				// this header line value either contains more OWS than we
+				// tolerate or it is not well-formed. Fail.
 				return false
 			default: // A comma was found at the start of acrh; consume it.
 				acrh = acrh[1:]
@@ -83,11 +84,11 @@ func Check(set util.SortedSet, acrhs []string) bool {
 				emptyElements++
 				continue
 			}
-			// The names in ACRH are expected to be sorted in lexicographical
-			// order and to each appear at most once.
-			// Therefore, the positions (in set) of the names that appear in
-			// ACRH should form a strictly increasing sequence.
-			// If that's not actually the case, fail.
+			// The names in the ACRH header value are expected to be sorted in
+			// lexicographical order and to each appear at most once.
+			// Therefore, the positions (in set) of the names that successively
+			// appear in the ACRH header value should form a strictly
+			// increasing sequence. If that's not actually the case, fail.
 			pos = set.IndexAfter(pos, name)
 			if pos < 0 {
 				return false

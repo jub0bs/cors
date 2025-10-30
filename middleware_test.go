@@ -294,7 +294,7 @@ func TestMiddleware(t *testing.T) {
 						headerVary: {varyPreflightValue},
 					},
 				}, {
-					desc:      "preflight with PURGE and Authorization with some empty ACRH field lines from allowed",
+					desc:      "preflight with PURGE and Authorization with some empty ACRH header lines from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -312,7 +312,7 @@ func TestMiddleware(t *testing.T) {
 						headerVary: {varyPreflightValue},
 					},
 				}, {
-					desc:      "preflight with PURGE and Authorization with too many empty ACRH field lines from allowed",
+					desc:      "preflight with PURGE and Authorization with too many empty ACRH header lines from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -499,7 +499,7 @@ func TestMiddleware(t *testing.T) {
 						headerVary: {varyPreflightValue},
 					},
 				}, {
-					desc:      "preflight with GET and headers with some empty ACHR field lines from allowed",
+					desc:      "preflight with GET and headers with some empty ACHR header lines from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -516,7 +516,7 @@ func TestMiddleware(t *testing.T) {
 						headerVary: {varyPreflightValue},
 					},
 				}, {
-					desc:      "preflight with GET and headers with too many empty ACHR field lines from allowed",
+					desc:      "preflight with GET and headers with too many empty ACHR header lines from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},

@@ -31,8 +31,8 @@ in the chain, and the ultimate handler. Follow the rules listed below:
     the value's elements or add (inadvertently, perhaps) some empty elements
     to that value, but they [SHOULD] do so within reason;
     moreover, intermediaries [MAY] split the value of that field across
-    multiple field lines of that name, but they [SHOULD NOT] add too many
-    empty field lines of that name.
+    multiple header lines of that name, but they [SHOULD NOT] add too many
+    empty header lines of that name.
     For performance (and at the cost of some interoperability),
     this library's middleware are indeed stricter in their handling of
     this specific list-based field than required by [RFC 9110].

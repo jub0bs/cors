@@ -22,7 +22,7 @@ func TestCheck(t *testing.T) {
 				{""},
 				{","},
 				{"\t, , "},
-				// multiple field lines, some empty elements
+				// multiple header lines, some empty elements
 				make([]string, headers.MaxEmptyElements),
 			},
 			rejected: [][]string{
@@ -30,7 +30,7 @@ func TestCheck(t *testing.T) {
 				{"x-bar,x-foo"},
 				// too many empty elements
 				{strings.Repeat(",", headers.MaxEmptyElements+1)},
-				// multiple field lines, too many empty elements
+				// multiple header lines, too many empty elements
 				make([]string, headers.MaxEmptyElements+1),
 			},
 		}, {
@@ -49,7 +49,7 @@ func TestCheck(t *testing.T) {
 				{"\tx-foo ,"},
 				{" x-foo\t,"},
 				{strings.Repeat(",", headers.MaxEmptyElements) + "x-foo"},
-				// multiple field lines, some empty elements
+				// multiple header lines, some empty elements
 				append(make([]string, headers.MaxEmptyElements), "x-foo"),
 				make([]string, headers.MaxEmptyElements),
 			},
@@ -65,7 +65,7 @@ func TestCheck(t *testing.T) {
 				{"\t\tx-foo\t\t"},
 				// too many empty elements
 				{strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo"},
-				// multiple field lines, too many empty elements
+				// multiple header lines, too many empty elements
 				append(make([]string, headers.MaxEmptyElements+1), "x-foo"),
 				make([]string, headers.MaxEmptyElements+1),
 			},
@@ -92,10 +92,10 @@ func TestCheck(t *testing.T) {
 				{"x-baz,x-foo,"},
 				{" x-bar , x-baz , x-foo ,"},
 				{"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo"},
-				// multiple field lines
+				// multiple header lines
 				{"x-bar", "x-foo"},
 				{"x-bar", "x-baz,x-foo"},
-				// multiple field lines, some empty elements
+				// multiple header lines, some empty elements
 				append(make([]string, headers.MaxEmptyElements), "x-bar", "x-foo"),
 				make([]string, headers.MaxEmptyElements),
 			},
@@ -115,9 +115,9 @@ func TestCheck(t *testing.T) {
 				{" x-bar\t,\tx-baz\t ,x-foo"},
 				// too many empty elements
 				{"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+2) + "x-foo"},
-				// multiple field lines, elements in the wrong order
+				// multiple header lines, elements in the wrong order
 				{"x-foo", "x-bar"},
-				// multiple field lines, too many empty elements
+				// multiple header lines, too many empty elements
 				append(make([]string, headers.MaxEmptyElements+1), "x-bar", "x-foo"),
 				make([]string, headers.MaxEmptyElements+1),
 			},
@@ -140,9 +140,9 @@ func TestCheck(t *testing.T) {
 				{"x-bar,x-foo,"},
 				{" x-bar , x-foo ,"},
 				{"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+1) + "x-foo"},
-				// multiple field lines
+				// multiple header lines
 				{"x-bar", "x-foo"},
-				// multiple field lines, some empty elements
+				// multiple header lines, some empty elements
 				append(make([]string, headers.MaxEmptyElements), "x-bar", "x-foo"),
 				make([]string, headers.MaxEmptyElements),
 			},
@@ -158,13 +158,13 @@ func TestCheck(t *testing.T) {
 				{"\tx-qux , x-baz\t\t,x-foo"},
 				// too many empty elements
 				{"x-bar" + strings.Repeat(",", headers.MaxEmptyElements+2) + "x-foo"},
-				// multiple field lines, elements in the wrong order
+				// multiple header lines, elements in the wrong order
 				{"x-foo", "x-bar"},
-				// multiple field lines, too much whitespace
+				// multiple header lines, too much whitespace
 				{"x-qux", "\t\tx-bar"},
 				{"x-qux", "x-foo\t\t"},
 				{"\tx-qux ", " x-baz\t\t,x-foo"},
-				// multiple field lines, too many empty elements
+				// multiple header lines, too many empty elements
 				append(make([]string, headers.MaxEmptyElements+1), "x-bar", "x-foo"),
 				make([]string, headers.MaxEmptyElements+1),
 			},
