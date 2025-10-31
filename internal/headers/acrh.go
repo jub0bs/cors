@@ -27,8 +27,8 @@ import "github.com/jub0bs/cors/internal/util"
 // degradation in CORS middleware when they handle adversarial (spoofed)
 // CORS-preflight requests.
 // Therefore, this function only tolerates a small total (2) of OWS bytes
-// before and after each element. This deviation from [RFC 9110] is expected
-// to strike a good balance between interoperability and performance.
+// before and after each element. We expect this deviation from [RFC 9110] to
+// strike a good balance between interoperability and performance.
 // This function also tolerates a small number (16) of empty list elements,
 // in accordance with [RFC 9110] ([section 5.6.1.2]).
 //
