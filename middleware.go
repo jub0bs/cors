@@ -118,7 +118,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 		// Fetch-compliant browsers send at most one Origin header;
 		// see https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
 		// (step 12).
-		origin, originSgl, found := headers.First(r.Header, headers.Origin)
+		originSgl, found := headers.First(r.Header, headers.Origin)
 		if !found {
 			// r is NOT a CORS request;
 			// see https://fetch.spec.whatwg.org/#cors-request.
@@ -131,16 +131,16 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 
 		// Fetch-compliant browsers send at most one ACRM header;
 		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch (step 3).
-		acrm, acrmSgl, found := headers.First(r.Header, headers.ACRM)
+		acrmSgl, found := headers.First(r.Header, headers.ACRM)
 		if isOPTIONS && found {
 			// r is a CORS-preflight request;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
 			debug := m.debug.Load()
-			icfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl, debug)
+			icfg.handleCORSPreflight(w, r.Header, originSgl, acrmSgl, debug)
 			return
 		}
 		// r is an "actual" (i.e. non-preflight) CORS request.
-		icfg.handleCORSActual(w, origin, originSgl, isOPTIONS)
+		icfg.handleCORSActual(w, originSgl, isOPTIONS)
 		h.ServeHTTP(w, r)
 	})
 }
@@ -172,9 +172,7 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
 func (icfg *internalConfig) handleCORSPreflight(
 	w http.ResponseWriter,
 	reqHdrs http.Header,
-	origin string,
 	originSgl []string,
-	acrm string,
 	acrmSgl []string,
 	debug bool,
 ) {
@@ -214,7 +212,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
-	if !icfg.processOriginForPreflight(buf, origin, originSgl) {
+	if !icfg.processOriginForPreflight(buf, originSgl) {
 		if debug {
 			maps.Copy(resHdrs, buf)
 		}
@@ -227,7 +225,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// if the response status is not an ok status
 	// (see https://fetch.spec.whatwg.org/#ok-status).
 
-	if !icfg.processACRM(buf, acrm, acrmSgl) {
+	if !icfg.processACRM(buf, acrmSgl) {
 		if debug {
 			maps.Copy(resHdrs, buf)
 			w.WriteHeader(int(icfg.preflightStatusMinus200) + 200)
@@ -255,12 +253,12 @@ func (icfg *internalConfig) handleCORSPreflight(
 	w.WriteHeader(int(icfg.preflightStatusMinus200) + 200)
 }
 
+// Precondition: originSgl is a singleton slice.
 func (icfg *internalConfig) processOriginForPreflight(
 	buf http.Header,
-	origin string,
 	originSgl []string,
 ) bool {
-	o, ok := origins.Parse(origin)
+	o, ok := origins.Parse(originSgl[0])
 	if !ok {
 		return false
 	}
@@ -282,9 +280,9 @@ func (icfg *internalConfig) processOriginForPreflight(
 }
 
 // Note: only for _non-preflight_ CORS requests
+// Precondition: originSgl is a singleton slice.
 func (icfg *internalConfig) handleCORSActual(
 	w http.ResponseWriter,
-	origin string,
 	originSgl []string,
 	isOPTIONS bool,
 ) {
@@ -311,7 +309,7 @@ func (icfg *internalConfig) handleCORSActual(
 		}
 		return
 	}
-	o, ok := origins.Parse(origin)
+	o, ok := origins.Parse(originSgl[0])
 	if !ok || !icfg.tree.Contains(&o) {
 		return
 	}
@@ -330,11 +328,12 @@ func (icfg *internalConfig) handleCORSActual(
 	}
 }
 
+// Precondition: acrmSgl is a singleton slice.
 func (icfg *internalConfig) processACRM(
 	buf http.Header,
-	acrm string,
 	acrmSgl []string,
 ) bool {
+	acrm := acrmSgl[0]
 	if methods.IsSafelisted(acrm) {
 		// CORS-safelisted methods get a free pass; see
 		// https://fetch.spec.whatwg.org/#ref-for-cors-safelisted-method%E2%91%A2.

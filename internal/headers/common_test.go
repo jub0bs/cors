@@ -93,10 +93,10 @@ func TestFirst(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			v, s, ok := First(tc.h, tc.key)
-			if ok != tc.ok || v != tc.want || len(s) > 1 || len(s) == 1 && s[0] != v {
-				const tmpl = "got %s, %q, %t; want %s, %q, %t"
-				t.Errorf(tmpl, v, s, ok, tc.want, []string{tc.want}, tc.ok)
+			s, ok := First(tc.h, tc.key)
+			if ok != tc.ok || len(s) > 1 || len(s) == 1 && s[0] != tc.want {
+				const tmpl = "got %q, %t; want %q, %t"
+				t.Errorf(tmpl, s, ok, []string{tc.want}, tc.ok)
 			}
 		}
 		t.Run(tc.desc, f)
