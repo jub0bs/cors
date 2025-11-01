@@ -59,7 +59,7 @@ func FuzzConsistencyBetweenParseAndSplitHostPort(f *testing.F) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		gotHost := origin.Host.Value
+		gotHost := origin.Host
 		gotPort := strconv.FormatInt(int64(origin.Port), 10)
 		if gotHost != wantHost || gotPort != wantPort {
 			const tmpl = "(host, port) of %q: got (%q, %s); want (%q, %s)"

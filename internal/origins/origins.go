@@ -31,7 +31,7 @@ type Origin struct {
 	// Scheme is the origin's scheme.
 	Scheme string
 	// Host is the origin's host.
-	Host
+	Host string
 	// Port is the origin's port (if any).
 	// The zero value marks the absence of an explicit port.
 	Port int
@@ -91,12 +91,12 @@ type Host struct {
 
 var zeroHost Host
 
-// fastParseHost parses a raw host into an [Host] structure.
+// parseHost parses a raw host into an [Host] structure.
 // It returns the parsed host, the unconsumed part of the input string,
 // and a bool that indicates success or failure.
 // fastParseHost is lenient insofar as the resulting host is
 // not guaranteed to be valid.
-func fastParseHost(str string) (Host, string, bool) {
+func parseHost(str string) (Host, string, bool) {
 	const (
 		minIPv6HostLen = len("[::]")
 		maxIPv6HostLen = len("[1111:1111:1111:1111:1111:1111:1111:1111]")
@@ -153,6 +153,47 @@ func fastParseHost(str string) (Host, string, bool) {
 		AssumeIP: assumeIPv4,
 	}
 	return host, str[i:], true
+}
+
+// newParseHost TODO
+func fastParseHost(str string) (string, string, bool) {
+	const (
+		minIPv6HostLen = len("[::]")
+		maxIPv6HostLen = len("[1111:1111:1111:1111:1111:1111:1111:1111]")
+	)
+	if len(str) >= minIPv6HostLen && str[0] == '[' { // looks like an IPv6 address
+		end := strings.IndexByte(str, ']')
+		if end == -1 { // unmatched left bracket
+			return "", str, false
+		}
+		return str[1:end], str[end+1:], true
+	}
+	// host can neither be empty nor start with a DNS-label separator
+	if len(str) == 0 || str[0] == labelSep {
+		return "", str, false
+	}
+	// host is either an IPv4 or a domain
+	var previousByteWasLabelSep bool
+	// If the last non-empty label starts with a digit,
+	// assume IPv4, since no TLD starts with a digit
+	// (see https://www.iana.org/domains/root/db).
+	for i := range len(str) {
+		switch c := str[i]; {
+		case c == labelSep:
+			if previousByteWasLabelSep {
+				// "empty" label, which can only occur at the end,
+				// in case of an absolute domain name (e.g. "example.com.").
+				// see https://www.rfc-editor.org/rfc/rfc1034.html#section-3.1
+				return "", "", false
+			}
+			previousByteWasLabelSep = true
+		case isDigit(c) || isASCIILabelByte(c):
+			previousByteWasLabelSep = false
+		default:
+			return str[:i], str[i:], true
+		}
+	}
+	return str, "", true
 }
 
 // parseScheme parses a URI scheme. If successful, it returns the scheme,

@@ -89,7 +89,7 @@ func (t *Tree) Insert(p *Pattern) {
 
 // Contains reports whether t contains o.
 func (t *Tree) Contains(o *Origin) bool {
-	host := o.Host.Value
+	host := o.Host
 	n := &t.root
 	for {
 		label, ok := lastByte(host)

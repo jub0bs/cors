@@ -173,7 +173,7 @@ func parseHostPattern(str, full string) (HostPattern, string, error) {
 		Value: str, // temporary value, to be trimmed later
 		Kind:  peekKind(str),
 	}
-	host, str, ok := fastParseHost(pattern.hostOnly())
+	host, str, ok := parseHost(pattern.hostOnly())
 	if !ok {
 		err := &cfgerrors.UnacceptableOriginPatternError{
 			Value:  full,

@@ -20,9 +20,7 @@ var parseCases = []struct {
 		input: "https://example.com",
 		want: Origin{
 			Scheme: "https",
-			Host: Host{
-				Value: "example.com",
-			},
+			Host:   "example.com",
 		},
 	}, {
 		desc:    "invalid scheme",
@@ -41,20 +39,15 @@ var parseCases = []struct {
 		input: "connector://localhost",
 		want: Origin{
 			Scheme: "connector",
-			Host: Host{
-				Value: "localhost",
-			},
+			Host:   "localhost",
 		},
 	}, {
 		desc:  "brackets containing non-IPv6 chars",
 		input: "http://[example]:90",
 		want: Origin{
 			Scheme: "http",
-			Host: Host{
-				Value:    "example",
-				AssumeIP: true,
-			},
-			Port: 90,
+			Host:   "example",
+			Port:   90,
 		},
 	}, {
 		desc:    "unmatched left bracket",
@@ -65,31 +58,22 @@ var parseCases = []struct {
 		input: "http://[::1:]",
 		want: Origin{
 			Scheme: "http",
-			Host: Host{
-				Value:    "::1:",
-				AssumeIP: true,
-			},
+			Host:   "::1:",
 		},
 	}, {
 		desc:  "brackets containing non-IPv6 chars",
 		input: "http://[::]",
 		want: Origin{
 			Scheme: "http",
-			Host: Host{
-				Value:    "::",
-				AssumeIP: true,
-			},
+			Host:   "::",
 		},
 	}, {
 		desc:  "valid compressed IPv6",
 		input: "http://[::1]:90",
 		want: Origin{
 			Scheme: "http",
-			Host: Host{
-				Value:    "::1",
-				AssumeIP: true,
-			},
-			Port: 90,
+			Host:   "::1",
+			Port:   90,
 		},
 	}, {
 		desc:    "valid compressed IPv6 followed by a trailing full stop",
@@ -128,7 +112,7 @@ var parseCases = []struct {
 		input: "https://example.com:6060",
 		want: Origin{
 			Scheme: "https",
-			Host:   Host{Value: "example.com"},
+			Host:   "example.com",
 			Port:   6060,
 		},
 	}, {
@@ -144,7 +128,7 @@ var parseCases = []struct {
 		input: "http://127.0.0.1:6060",
 		want: Origin{
 			Scheme: "http",
-			Host:   Host{Value: "127.0.0.1", AssumeIP: true},
+			Host:   "127.0.0.1",
 			Port:   6060,
 		},
 	}, {
@@ -152,7 +136,7 @@ var parseCases = []struct {
 		input: "http://1:6060",
 		want: Origin{
 			Scheme: "http",
-			Host:   Host{Value: "1", AssumeIP: true},
+			Host:   "1",
 			Port:   6060,
 		},
 	}, {
@@ -160,28 +144,28 @@ var parseCases = []struct {
 		input: "http://127.0.0.1.",
 		want: Origin{
 			Scheme: "http",
-			Host:   Host{Value: "127.0.0.1.", AssumeIP: true},
+			Host:   "127.0.0.1.",
 		},
 	}, {
 		desc:  "malformed ipv4 with one too many octets",
 		input: "http://127.0.0.1.1",
 		want: Origin{
 			Scheme: "http",
-			Host:   Host{Value: "127.0.0.1.1", AssumeIP: true},
+			Host:   "127.0.0.1.1",
 		},
 	}, {
 		desc:  "ipv4 with overflowing octet",
 		input: "http://256.0.0.1",
 		want: Origin{
 			Scheme: "http",
-			Host:   Host{Value: "256.0.0.1", AssumeIP: true},
+			Host:   "256.0.0.1",
 		},
 	}, {
 		desc:  "ipv4 with trailing full stop and port",
 		input: "http://127.0.0.1.:6060",
 		want: Origin{
 			Scheme: "http",
-			Host:   Host{Value: "127.0.0.1.", AssumeIP: true},
+			Host:   "127.0.0.1.",
 			Port:   6060,
 		},
 	}, {
@@ -189,7 +173,7 @@ var parseCases = []struct {
 		input: "http://foo.bar.255:6060",
 		want: Origin{
 			Scheme: "http",
-			Host:   Host{Value: "foo.bar.255", AssumeIP: true},
+			Host:   "foo.bar.255",
 			Port:   6060,
 		},
 	}, {
@@ -197,7 +181,7 @@ var parseCases = []struct {
 		input: "http://foo.bar.baz.012345678901234567890123456789:6060",
 		want: Origin{
 			Scheme: "http",
-			Host:   Host{Value: "foo.bar.baz.012345678901234567890123456789", AssumeIP: true},
+			Host:   "foo.bar.baz.012345678901234567890123456789",
 			Port:   6060,
 		},
 	}, {
@@ -205,7 +189,7 @@ var parseCases = []struct {
 		input: "http://foo.bar.baz.012345678901234567890123456789.ab:6060",
 		want: Origin{
 			Scheme: "http",
-			Host:   Host{Value: "foo.bar.baz.012345678901234567890123456789.ab"},
+			Host:   "foo.bar.baz.012345678901234567890123456789.ab",
 			Port:   6060,
 		},
 	}, {
@@ -213,7 +197,7 @@ var parseCases = []struct {
 		input: "http://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:6060",
 		want: Origin{
 			Scheme: "http",
-			Host:   Host{Value: "2001:0db8:85a3:0000:0000:8a2e:0370:7334", AssumeIP: true},
+			Host:   "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
 			Port:   6060,
 		},
 	}, {
