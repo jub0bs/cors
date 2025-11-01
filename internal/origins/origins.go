@@ -1,6 +1,10 @@
 package origins
 
-import "strings"
+import (
+	"net"
+	"strconv"
+	"strings"
+)
 
 const (
 	schemeHostSep = "://"     // scheme-host separator
@@ -39,12 +43,41 @@ type Origin struct {
 
 var zeroOrigin Origin
 
+func Parse(str string) (Origin, bool) {
+	const maxOriginLen = maxSchemeLen + len(schemeHostSep) + maxHostPortLen
+	if len(str) > maxOriginLen {
+		return zeroOrigin, false
+	}
+	scheme, str, found := strings.Cut(str, "://")
+	if !found {
+		return zeroOrigin, false
+	}
+	host, rawPort, err := net.SplitHostPort(str)
+	if err != nil { // assume missing port for now
+		o := Origin{
+			Scheme: scheme,
+			Host:   Host{Value: host},
+		}
+		return o, true
+	}
+	port, err := strconv.Atoi(rawPort)
+	if err != nil {
+		return zeroOrigin, false
+	}
+	o := Origin{
+		Scheme: scheme,
+		Host:   Host{Value: host},
+		Port:   port,
+	}
+	return o, true
+}
+
 // Parse parses str into an [Origin] structure.
 // It is lenient insofar as it performs just enough validation for
 // [Tree.Contains] to know what to do with the resulting Origin value.
 // In particular, the scheme and port of the resulting origin are guaranteed
 // to be valid, but its host isn't.
-func Parse(str string) (Origin, bool) {
+func Parse1(str string) (Origin, bool) {
 	const maxOriginLen = maxSchemeLen + len(schemeHostSep) + maxHostPortLen
 	if len(str) > maxOriginLen {
 		return zeroOrigin, false
