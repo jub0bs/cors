@@ -116,7 +116,7 @@ func FuzzTree(f *testing.F) {
 		tree := new(Tree)
 		tree.Insert(&pattern)
 		origin, ok := Parse(rawOrigin)
-		if !ok || !tree.Contains(&origin) {
+		if !ok || !tree.Contains(origin) {
 			t.Skip()
 		}
 		const tmpl = "tree built with pattern %q contains origin %q"

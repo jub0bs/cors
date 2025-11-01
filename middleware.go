@@ -268,7 +268,7 @@ func (icfg *internalConfig) processOriginForPreflight(
 		buf[headers.ACAO] = headers.WildcardSgl
 		return true
 	}
-	if !icfg.tree.Contains(&o) {
+	if !icfg.tree.Contains(o) {
 		return false
 	}
 	buf[headers.ACAO] = originSgl
@@ -312,7 +312,7 @@ func (icfg *internalConfig) handleCORSActual(
 		return
 	}
 	o, ok := origins.Parse(origin)
-	if !ok || !icfg.tree.Contains(&o) {
+	if !ok || !icfg.tree.Contains(o) {
 		return
 	}
 	resHdrs[headers.ACAO] = originSgl

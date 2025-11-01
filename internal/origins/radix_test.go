@@ -440,7 +440,7 @@ func TestTree(t *testing.T) {
 				if !ok {
 					t.Fatalf("origins.Parse(%q): got false; want true", raw)
 				}
-				if !tree.Contains(&origin) {
+				if !tree.Contains(origin) {
 					t.Errorf("tree.Contains(%q): got false; want true", raw)
 				}
 			}
@@ -449,7 +449,7 @@ func TestTree(t *testing.T) {
 				if !ok {
 					t.Fatalf("origins.Parse(%q): got false; want true", raw)
 				}
-				if tree.Contains(&origin) {
+				if tree.Contains(origin) {
 					t.Errorf("tree.Contains(%q): got true; want false", raw)
 				}
 			}
