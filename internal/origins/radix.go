@@ -9,7 +9,7 @@ import (
 )
 
 // A Tree is a radix tree that represents a set of Web origins.
-// The zero value of Tree is an empty tree.
+// The zero value of Tree corresponds to an empty tree.
 type Tree struct {
 	root node
 }
@@ -53,7 +53,7 @@ func (t *Tree) Insert(p *Pattern) {
 		//
 		// Before splitting: child
 		//
-		// After splitting:  child' -- grandChild1
+		// After splitting:  child' -- grandChild
 		//
 		// ... or perhaps    child' -- grandChild1
 		//                      \
@@ -155,15 +155,20 @@ func (t *Tree) Elems() iter.Seq[string] {
 //   - len(edges) == len(children)
 //   - len(schemes) == len(ports)
 type node struct {
-	// suf of this node (not restricted to ASCII or even valid UTF-8)
+	// suf is the suffix of this node (not restricted to ASCII or even valid
+	// UTF-8).
 	suf string
-	// edges to children of this node
+	// edges are the edges to children of this node.
 	edges []byte
-	// children of this node ("parallels" edges slice)
+	// children are the children of this node ("parallels" edges slice).
+	// Using []*node is tempting because it is expedient, but using []node is
+	// more performant (because it involves one fewer lever of indirection) at
+	// the cost of some gymnastics.
 	children []node
-	// schemes of this node
+	// schemes are the schemes of this node.
 	schemes []string
-	// ports associated to this node's schemes ("parallels" schemes slice)
+	// ports are the ports associated to this node's schemes ("parallels"
+	// schemes slice).
 	ports [][]int
 }
 
