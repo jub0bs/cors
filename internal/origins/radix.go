@@ -2,7 +2,6 @@ package origins
 
 import (
 	"iter"
-	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -21,7 +20,7 @@ func (t *Tree) IsEmpty() bool {
 
 // Insert inserts p in t.
 func (t *Tree) Insert(p *Pattern) {
-	s := p.HostPattern.Value // non-empty by construction
+	s := p.HostPattern // non-empty by construction
 	s, wildcardSubs := strings.CutPrefix(s, "*")
 	n := &t.root
 	for {
@@ -89,7 +88,7 @@ func (t *Tree) Insert(p *Pattern) {
 
 // Contains reports whether t contains o.
 func (t *Tree) Contains(o *Origin) bool {
-	host := o.Host.Value
+	host := o.Host
 	n := &t.root
 	for {
 		label, ok := lastByte(host)
@@ -172,13 +171,6 @@ type node struct {
 	ports [][]int
 }
 
-const (
-	// a sentinel value that subsumes all other port numbers
-	wildcardPort = math.MaxUint16 + 1
-	// an offset used for storing ports corresponding to wildcard subs
-	portOffset = wildcardPort + 1
-)
-
 func (n *node) add(scheme string, port int, wildcardSubs bool) {
 	wildcardPort := wildcardPort // shadows package-level constant
 	if wildcardSubs {
@@ -202,6 +194,9 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 	slices.Sort(ports)
 	n.ports[i] = ports
 }
+
+// an offset used for storing ports corresponding to wildcard subs
+const portOffset = wildcardPort + 1
 
 // deleteSameSign, if v is negative, removes all the negative values from s;
 // otherwise, it removes all the non-negative values from s.

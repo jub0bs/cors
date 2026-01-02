@@ -499,10 +499,10 @@ func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []e
 				errs = append(errs, err)
 			}
 		}
-		if pattern.Kind != origins.PatternKindSubdomains && discreteOrigin == "" {
+		if pattern.Kind != origins.ArbitrarySubdomains && discreteOrigin == "" {
 			discreteOrigin = raw
 		}
-		if pattern.Kind == origins.PatternKindSubdomains && !icfg.subsOfPublicSuffixes {
+		if pattern.Kind == origins.ArbitrarySubdomains && !icfg.subsOfPublicSuffixes {
 			if _, isEffectiveTLD := pattern.HostIsEffectiveTLD(); isEffectiveTLD {
 				err := &cfgerrors.IncompatibleOriginPatternError{
 					Value:  raw,

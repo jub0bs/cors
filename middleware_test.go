@@ -39,7 +39,7 @@ func TestMiddleware(t *testing.T) {
 					desc:      "actual GET from invalid",
 					reqMethod: "GET",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 					},
 				}, {
 					desc:      "actual OPTIONS from allowed",
@@ -86,7 +86,7 @@ func TestMiddleware(t *testing.T) {
 					desc:      "preflight with GET from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 						headerACRM:   {"GET"},
 					},
 				}, {
@@ -173,7 +173,7 @@ func TestMiddleware(t *testing.T) {
 					desc:      "actual GET from invalid",
 					reqMethod: "GET",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 					},
 					respHeaders: http.Header{
 						headerVary: {headerOrigin},
@@ -340,7 +340,7 @@ func TestMiddleware(t *testing.T) {
 					desc:      "preflight with GET from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 						headerACRM:   {"GET"},
 					},
 					preflight: true,
@@ -723,7 +723,7 @@ func TestMiddleware(t *testing.T) {
 					desc:      "actual GET from invalid",
 					reqMethod: "GET",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 					},
 					respHeaders: http.Header{
 						headerACAO: {wildcard},
@@ -790,12 +790,14 @@ func TestMiddleware(t *testing.T) {
 					desc:      "preflight with GET from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 						headerACRM:   {"GET"},
 					},
-					preflight:      true,
-					preflightFails: true,
+					preflight:                true,
+					preflightPassesCORSCheck: true,
 					respHeaders: http.Header{
+						headerACAO: {wildcard},
+						headerACMA: {"30"},
 						headerVary: {varyPreflightValue},
 					},
 				}, {
@@ -900,7 +902,7 @@ func TestMiddleware(t *testing.T) {
 					desc:      "actual GET from invalid",
 					reqMethod: "GET",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 					},
 					respHeaders: http.Header{
 						headerVary: {headerOrigin},
@@ -988,7 +990,7 @@ func TestMiddleware(t *testing.T) {
 					desc:      "actual GET from invalid",
 					reqMethod: "GET",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 					},
 					respHeaders: http.Header{
 						headerVary: {headerOrigin},
@@ -1066,7 +1068,7 @@ func TestMiddleware(t *testing.T) {
 					desc:      "preflight with GET from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 						headerACRM:   {"GET"},
 					},
 					preflight: true,
@@ -1290,7 +1292,7 @@ func TestMiddleware(t *testing.T) {
 					desc:      "actual GET from invalid",
 					reqMethod: "GET",
 					reqHeaders: http.Header{
-						headerOrigin: {"connector://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 					},
 					respHeaders: http.Header{
 						headerVary: {headerOrigin},
@@ -1628,7 +1630,7 @@ func TestReconfigure(t *testing.T) {
 					desc:      "actual GET from invalid",
 					reqMethod: "GET",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 					},
 				}, {
 					desc:      "actual OPTIONS from allowed",
@@ -1675,7 +1677,7 @@ func TestReconfigure(t *testing.T) {
 					desc:      "preflight with GET from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
-						headerOrigin: {"https://example.com/index.html"},
+						headerOrigin: {"invalid_origin"},
 						headerACRM:   {"GET"},
 					},
 				}, {
@@ -1738,6 +1740,17 @@ func TestReconfigure(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
+						headerVary: {varyPreflightValue},
+					},
+				}, {
+					desc:      "preflight with PUT from invalid",
+					reqMethod: "OPTIONS",
+					reqHeaders: http.Header{
+						headerOrigin: {"invalid_origin"},
+						headerACRM:   {"PUT"},
+					},
+					preflight: true,
+					respHeaders: http.Header{
 						headerVary: {varyPreflightValue},
 					},
 				}, {

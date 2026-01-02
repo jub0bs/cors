@@ -260,13 +260,13 @@ func (icfg *internalConfig) processOriginForPreflight(
 	origin string,
 	originSgl []string,
 ) bool {
-	o, ok := origins.Parse(origin)
-	if !ok {
-		return false
-	}
 	if !icfg.credentialed && icfg.tree.IsEmpty() {
 		buf[headers.ACAO] = headers.WildcardSgl
 		return true
+	}
+	o, ok := origins.Parse(origin)
+	if !ok {
+		return false
 	}
 	if !icfg.tree.Contains(&o) {
 		return false

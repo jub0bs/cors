@@ -26,11 +26,9 @@ var parsePatternCases = []TestCase{
 		name:  "wildcard character sequence followed by 251 chars",
 		input: "https://*." + validHostOf251chars,
 		want: Pattern{
-			Scheme: "https",
-			HostPattern: HostPattern{
-				Value: "*." + validHostOf251chars,
-				Kind:  PatternKindSubdomains,
-			},
+			Scheme:      "https",
+			HostPattern: "*." + validHostOf251chars,
+			Kind:        ArbitrarySubdomains,
 		},
 	}, {
 		name:    "null origin",
@@ -72,11 +70,9 @@ var parsePatternCases = []TestCase{
 		name:  "non-HTTP scheme",
 		input: "connector://foo",
 		want: Pattern{
-			Scheme: "connector",
-			HostPattern: HostPattern{
-				Value: "foo",
-				Kind:  PatternKindDomain,
-			},
+			Scheme:      "connector",
+			HostPattern: "foo",
+			Kind:        Domain,
 		},
 	}, {
 		name:    "file scheme",
@@ -190,22 +186,18 @@ var parsePatternCases = []TestCase{
 		name:  "non-loopback IPv4",
 		input: "http://69.254.169.254",
 		want: Pattern{
-			Scheme: "http",
-			HostPattern: HostPattern{
-				Value: "69.254.169.254",
-				Kind:  PatternKindNonLoopbackIP,
-			},
+			Scheme:      "http",
+			HostPattern: "69.254.169.254",
+			Kind:        NonLoopbackIP,
 		},
 	}, {
 		name:  "loopback IPv4",
 		input: "http://127.0.0.1:90",
 		want: Pattern{
-			Scheme: "http",
-			HostPattern: HostPattern{
-				Value: "127.0.0.1",
-				Kind:  PatternKindLoopbackIP,
-			},
-			Port: 90,
+			Scheme:      "http",
+			HostPattern: "127.0.0.1",
+			Kind:        LoopbackIP,
+			Port:        90,
 		},
 	}, {
 		name:    "https scheme with IPv6 host",
@@ -239,23 +231,19 @@ var parsePatternCases = []TestCase{
 		name:  "non-loopback IPv6 with hexadecimal chars",
 		input: "http://[2001:db8:aaaa:1111::100]:9090",
 		want: Pattern{
-			Scheme: "http",
-			HostPattern: HostPattern{
-				Value: "2001:db8:aaaa:1111::100",
-				Kind:  PatternKindNonLoopbackIP,
-			},
-			Port: 9090,
+			Scheme:      "http",
+			HostPattern: "2001:db8:aaaa:1111::100",
+			Kind:        NonLoopbackIP,
+			Port:        9090,
 		},
 	}, {
 		name:  "loopback IPv6 address with port",
 		input: "http://[::1]:90",
 		want: Pattern{
-			Scheme: "http",
-			HostPattern: HostPattern{
-				Value: "::1",
-				Kind:  PatternKindLoopbackIP,
-			},
-			Port: 90,
+			Scheme:      "http",
+			HostPattern: "::1",
+			Kind:        LoopbackIP,
+			Port:        90,
 		},
 	}, {
 		name:    "loopback IPv4 in non-standard form",
@@ -285,21 +273,19 @@ var parsePatternCases = []TestCase{
 		name:  "host contains underscores and hyphens",
 		input: "http://ex_am-ple.com:3999",
 		want: Pattern{
-			Scheme: "http",
-			HostPattern: HostPattern{
-				Value: "ex_am-ple.com",
-			},
-			Port: 3999,
+			Scheme:      "http",
+			HostPattern: "ex_am-ple.com",
+			Kind:        Domain,
+			Port:        3999,
 		},
 	}, {
 		name:  "trailing full stop in host",
 		input: "http://example.com.:3999",
 		want: Pattern{
-			Scheme: "http",
-			HostPattern: HostPattern{
-				Value: "example.com.",
-			},
-			Port: 3999,
+			Scheme:      "http",
+			HostPattern: "example.com.",
+			Kind:        Domain,
+			Port:        3999,
 		},
 	}, {
 		name:    "multiple trailing full stops in host",
@@ -317,23 +303,19 @@ var parsePatternCases = []TestCase{
 		name:  "arbitrary subdomains of depth one or more",
 		input: "http://*.example.com:3999",
 		want: Pattern{
-			Scheme: "http",
-			HostPattern: HostPattern{
-				Value: "*.example.com",
-				Kind:  PatternKindSubdomains,
-			},
-			Port: 3999,
+			Scheme:      "http",
+			HostPattern: "*.example.com",
+			Kind:        ArbitrarySubdomains,
+			Port:        3999,
 		},
 	}, {
 		name:  "arbitrary subdomains of depth one or more and arbitrary ports",
 		input: "http://*.example.com:*",
 		want: Pattern{
-			Scheme: "http",
-			HostPattern: HostPattern{
-				Value: "*.example.com",
-				Kind:  PatternKindSubdomains,
-			},
-			Port: 1 << 16,
+			Scheme:      "http",
+			HostPattern: "*.example.com",
+			Kind:        ArbitrarySubdomains,
+			Port:        1 << 16,
 		},
 	}, {
 		name:    "leading double asterisk",
