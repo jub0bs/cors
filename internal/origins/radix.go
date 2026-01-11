@@ -250,10 +250,12 @@ func (n *node) upsertEdge(label byte, child node) *node {
 // (using suf as base suffix) of every element x in n.
 func (n *node) elems(suf string, f func(string) bool) bool {
 	suf = n.suf + suf
-	// We iterate over n.ports rather than n.schemes in order to
-	// hoist most bounds checks out of the (outer) loop.
-	for i, ports := range n.ports {
-		scheme := n.schemes[i]
+	var ( // Hoist bounds checks out of the outer loop.
+		nSchemes = n.schemes
+		nPorts   = n.ports[:len(nSchemes)]
+	)
+	for i, ports := range nPorts {
+		scheme := nSchemes[i]
 		for _, port := range ports {
 			var maybeWildcard string
 			if port < 0 {
@@ -274,8 +276,9 @@ func (n *node) elems(suf string, f func(string) bool) bool {
 			}
 		}
 	}
-	for i := range n.children {
-		if !n.children[i].elems(suf, f) {
+	children := n.children // Hoist bounds checks out of the loop.
+	for i := range children {
+		if !children[i].elems(suf, f) {
 			return false
 		}
 	}
