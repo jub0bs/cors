@@ -67,9 +67,8 @@ type ReqTestCase struct {
 func newRequest(method string, headers http.Header) *http.Request {
 	const dummyEndpoint = "https://example.com/whatever"
 	req := httptest.NewRequest(method, dummyEndpoint, nil)
-	for name, value := range headers {
-		req.Header[name] = value
-	}
+	// Because our middleware don't modify requests, headers can be shared.
+	req.Header = headers
 	return req
 }
 
@@ -243,7 +242,7 @@ func isListBasedField(name string) bool {
 func normalize(s []string) (res []string) {
 	const owsChars = " \t"
 	for _, str := range s {
-		for _, e := range strings.Split(str, ",") {
+		for e := range strings.SplitSeq(str, ",") {
 			e = strings.Trim(e, owsChars)
 			res = append(res, e)
 		}
