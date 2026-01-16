@@ -258,7 +258,7 @@ var parsePatternCases = []TestCase{
 			Port: 90,
 		},
 	}, {
-		name:    "loopback IPv4 in nonstandard form",
+		name:    "loopback IPv4 in non-standard form",
 		input:   "http://127.1:3999",
 		failure: true,
 	}, {
