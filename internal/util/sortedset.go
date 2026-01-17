@@ -40,12 +40,12 @@ func (set SortedSet) IndexAfter(n int, e string) int {
 	if set.maxLen < uint(len(e)) {
 		return -1
 	}
-	start := n + 1
-	i, found := slices.BinarySearch(set.elems[start:], e)
+	n++
+	i, found := slices.BinarySearch(set.elems[n:], e)
 	if !found {
 		return -1
 	}
-	return start + i
+	return n + i
 }
 
 // ToSlice returns a slice of set's elements sorted in lexicographical order.
