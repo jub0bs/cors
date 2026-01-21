@@ -8,7 +8,10 @@ import (
 )
 
 // A Tree is a radix tree that represents a set of Web origins.
-// The zero value of Tree corresponds to an empty tree.
+// The zero value corresponds to an empty tree.
+//
+// A Tree can be grown by inserting values of type [Pattern] in it, and
+// a Tree can be queried about whether it contains some [Origin] value.
 type Tree struct {
 	root node
 }
@@ -21,7 +24,7 @@ func (t *Tree) IsEmpty() bool {
 // Insert inserts p in t.
 func (t *Tree) Insert(p *Pattern) {
 	s := p.HostPattern // non-empty by construction
-	s, wildcardSubs := strings.CutPrefix(s, "*")
+	s, wildcardSubs := strings.CutPrefix(s, subdomainWildcard)
 	n := &t.root
 	for {
 		labelToChild, ok := lastByte(s)
@@ -118,7 +121,7 @@ func (t *Tree) Contains(o *Origin) bool {
 }
 
 func lastByte(str string) (byte, bool) {
-	if len(str) == 0 {
+	if str == "" {
 		return 0, false
 	}
 	return str[len(str)-1], true
@@ -141,8 +144,9 @@ func splitAtCommonSuffix(a, b string) (string, string, string) {
 }
 
 // Elems returns an iterator over textual representations of t's elements.
-// The order is unspecified. However, the order is stable: different calls to
-// t.Elems always yield the same elements in the same order.
+// The order is unspecified; however, the order is stable, in the sense that
+// different calls to t.Elems systematically yield the same elements in the
+// same order.
 func (t *Tree) Elems() iter.Seq[string] {
 	return func(yield func(string) bool) {
 		t.root.elems("", yield)
