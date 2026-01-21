@@ -171,9 +171,14 @@ var parsePatternCases = []TestCase{
 		input:   "http://127.0.0.1:0",
 		failure: true,
 	}, {
-		name:    "https scheme with IPv4 host",
-		input:   "https://127.0.0.1:90",
-		failure: true,
+		name:  "https scheme with IPv4 host",
+		input: "https://127.0.0.1:90",
+		want: Pattern{
+			Scheme:      "https",
+			HostPattern: "127.0.0.1",
+			Kind:        LoopbackIP,
+			Port:        90,
+		},
 	}, {
 		name:    "IPv4 host with trailing full stop",
 		input:   "https://127.0.0.1.:90",
@@ -200,9 +205,14 @@ var parsePatternCases = []TestCase{
 			Port:        90,
 		},
 	}, {
-		name:    "https scheme with IPv6 host",
-		input:   "https://[::1]:90",
-		failure: true,
+		name:  "https scheme with IPv6 host",
+		input: "https://[::1]:90",
+		want: Pattern{
+			Scheme:      "https",
+			HostPattern: "::1",
+			Kind:        LoopbackIP,
+			Port:        90,
+		},
 	}, {
 		name:    "junk in brackets",
 		input:   "http://[example]:90",

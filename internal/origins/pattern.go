@@ -107,13 +107,8 @@ func ParsePattern(str string) (p Pattern, err error) {
 	if err != nil {
 		return
 	}
-	if p.Scheme == schemeHTTPS && (p.Kind == NonLoopbackIP || p.Kind == LoopbackIP) {
-		err = &cfgerrors.UnacceptableOriginPatternError{
-			Value:  str,
-			Reason: "invalid",
-		}
-		return
-	}
+	// Note that we tolerate origin patterns consisting of the https scheme and
+	// an IP-address host pattern, in order to cater for RFC 8738.
 	if rest != "" {
 		rest, ok = strings.CutPrefix(rest, string(hostPortSep))
 		if !ok {
