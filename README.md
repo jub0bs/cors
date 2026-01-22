@@ -29,7 +29,7 @@ that implement CORS. It distinguishes itself from other CORS middleware
 libraries by providing the following features:
 
 - full compliance with [the Fetch standard][fetch];
-- [a simple and coherent API][pkgsite-index];
+- [a simple, coherent, and declarative API][pkgsite-index];
 - [comprehensive documentation][pkgsite];
 - [extensive configuration validation][validation];
 - [safe-by-default middleware][safe];
