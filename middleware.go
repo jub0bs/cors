@@ -98,6 +98,9 @@ func NewMiddleware(cfg Config) (*Middleware, error) {
 // If you need to programmatically handle the configuration errors constitutive
 // of the resulting error, rely on package [github.com/jub0bs/cors/cfgerrors].
 func (m *Middleware) Reconfigure(cfg *Config) error {
+	// Rather than attempt to diff the new config against the current one,
+	// we simply start from scratch; for common configurations, doing so indeed
+	// is performant enough.
 	icfg, err := newInternalConfig(cfg)
 	if err != nil {
 		return err
