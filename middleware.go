@@ -139,6 +139,9 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 			// r is a CORS-preflight request;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
 			debug := m.debug.Load()
+			// Note that, because h.ServeHTTP is not called in this branch,
+			// we can safely rely, for performance, on some precomputed slices
+			// for adding/setting headers.
 			icfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl, debug)
 			return
 		}
@@ -149,6 +152,11 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 }
 
 func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
+	// It's tempting to rely (for performance) on some precomputed slices for
+	// the response headers we add/set here, as we do in handleCORSPreflight.
+	// However, doing so here is fraught with peril, because it would provide
+	// the wrapped handler an undesirable affordance: mutation of those slices.
+	// See https://github.com/rs/cors/issues/198.
 	if isOPTIONS {
 		// see the implementation comment in handleCORSPreflight
 		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
@@ -291,6 +299,11 @@ func (icfg *internalConfig) handleCORSActual(
 	originSgl []string,
 	isOPTIONS bool,
 ) {
+	// It's tempting to rely (for performance) on some precomputed slices for
+	// the response headers we add/set here, as we do in handleCORSPreflight.
+	// However, doing so here is fraught with peril, because it would provide
+	// the wrapped handler an undesirable affordance: mutation of those slices.
+	// See https://github.com/rs/cors/issues/198.
 	resHdrs := w.Header()
 	switch {
 	case isOPTIONS:
