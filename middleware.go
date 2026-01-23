@@ -157,20 +157,30 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
 	// However, doing so here is fraught with peril, because it would provide
 	// the wrapped handler an undesirable affordance: mutation of those slices.
 	// See https://github.com/rs/cors/issues/198.
-	if isOPTIONS {
+
+	allOriginsAllowed := icfg.tree.IsEmpty()
+
+	var varyHeaderValue string
+	switch {
+	case isOPTIONS:
 		// see the implementation comment in handleCORSPreflight
-		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
-	}
-	if !icfg.tree.IsEmpty() {
+		varyHeaderValue = headers.ValueVaryOptions
+	case !allOriginsAllowed:
 		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
 		// Note that we deliberately list "Origin" in the Vary header of responses
 		// to actual requests even in cases where a single origin is allowed,
 		// because doing so is simpler to implement and unlikely to be
 		// detrimental to Web caches.
-		if !isOPTIONS {
-			resHdrs.Add(headers.Vary, headers.Origin)
-		}
-		// nothing to do: at this stage, we've already added a Vary header
+		varyHeaderValue = headers.Origin
+	}
+	if varyHeaderValue != "" {
+		// Note that we must add rather than set a Vary header here, because outer
+		// middleware may have already added/set a Vary header, which we wouldn't
+		// want to clobber.
+		resHdrs.Add(headers.Vary, varyHeaderValue)
+	}
+
+	if !allOriginsAllowed {
 		return
 	}
 	resHdrs.Set(headers.ACAO, headers.ValueWildcard)
@@ -205,6 +215,8 @@ func (icfg *internalConfig) handleCORSPreflight(
 	if !found { // fast path
 		resHdrs[headers.Vary] = headers.PreflightVarySgl
 	} else { // slow path
+		// Some outer middleware has already added/set one or more Vary headers;
+		// don't clobber them.
 		resHdrs[headers.Vary] = append(vary, headers.ValueVaryOptions)
 	}
 
@@ -305,14 +317,23 @@ func (icfg *internalConfig) handleCORSActual(
 	// the wrapped handler an undesirable affordance: mutation of those slices.
 	// See https://github.com/rs/cors/issues/198.
 	resHdrs := w.Header()
+
+	var varyHeaderValue string
 	switch {
 	case isOPTIONS:
 		// see the implementation comment in handleCORSPreflight
-		resHdrs.Add(headers.Vary, headers.ValueVaryOptions)
+		varyHeaderValue = headers.ValueVaryOptions
 	case !icfg.tree.IsEmpty():
 		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
-		resHdrs.Add(headers.Vary, headers.Origin)
+		varyHeaderValue = headers.Origin
 	}
+	if varyHeaderValue != "" {
+		// Note that we must add rather than set a Vary header here, because outer
+		// middleware may have already added/set a Vary header, which we wouldn't
+		// want to clobber.
+		resHdrs.Add(headers.Vary, varyHeaderValue)
+	}
+
 	if !icfg.credentialed && icfg.tree.IsEmpty() {
 		// See the last paragraph in
 		// https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
@@ -327,6 +348,7 @@ func (icfg *internalConfig) handleCORSActual(
 		}
 		return
 	}
+
 	o, ok := origins.Parse(origin)
 	if !ok || !icfg.tree.Contains(&o) {
 		return
@@ -341,6 +363,7 @@ func (icfg *internalConfig) handleCORSActual(
 		// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
 		resHdrs.Set(headers.ACAC, headers.ValueTrue)
 	}
+
 	if icfg.aceh != "" {
 		resHdrs.Set(headers.ACEH, icfg.aceh)
 	}
