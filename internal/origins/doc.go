@@ -1,3 +1,3 @@
-// Package origin implements parsing of origins and origin patterns and
-// provides a data structure useful for representing a set of origins.
+// Package origins implements parsing of Web origins and Web-origin patterns
+// and provides a radix-tree data structure that represents a set of origins.
 package origins
