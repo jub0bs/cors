@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] (2026-01-25)
+
+### Changed
+
+- **Behavior**: Origin patterns composed of the https scheme and an IP address
+  are now tolerated, in accordance with [RFC 8738].
+- **Performance**: Middleware initialization and reconfiguration is now faster
+  but requires (in some cases) more heap allocation, because of a performance
+  regression in golang.org/x/net/publicsuffix; see [issue #76766][issue76766].
+- **Performance**: Middleware's Config method is now faster.
+- **Performance**: Middleware execution is now faster.
+- **Documentation**: minor improvements
+- **Dependencies**: update to golang.org/x/net v0.49.0
+
 ## [0.9.2] (2025-10-25)
 
 - **Performance**: Middleware initialization and reconfiguration now require
@@ -280,6 +294,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[0.10.0]: https://github.com/jub0bs/cors/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/jub0bs/cors/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/jub0bs/cors/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/jub0bs/cors/compare/v0.8.0...v0.9.0
@@ -305,6 +320,8 @@ Private-Network Access was never fully implemented by browsers and has been put
 [0.1.1]: https://github.com/jub0bs/cors/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/jub0bs/cors/releases/tag/v0.1.0
 
+[RFC 8738]: https://datatracker.ietf.org/doc/html/rfc8738
+[issue76766]: https://go.dev/issue/76766
 [lna]: https://developer.chrome.com/blog/local-network-access
 [pna-on-hold]: https://developer.chrome.com/blog/pna-on-hold
 [pna]: https://wicg.github.io/private-network-access/
