@@ -23,7 +23,7 @@ jobs:
       - name: Display Go version
         run: go version
       - name: Test
-        run: go test -v -shuffle on -coverprofile cover.out ./...
+        run: go test -race -v -shuffle on -coverprofile cover.out ./...
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5.4.2
         with:
