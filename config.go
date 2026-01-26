@@ -441,7 +441,7 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 
 	// base config
 	icfg.credentialed = cfg.Credentialed // accessed by other validateX methods
-	errs = icfg.validateOrigins(errs, cfg.Origins)
+	errs = icfg.validateOriginPatterns(errs, cfg.Origins)
 	errs = icfg.validateMethods(errs, cfg.Methods)
 	errs = icfg.validateRequestHeaders(errs, cfg.RequestHeaders)
 	errs = icfg.validateMaxAge(errs, cfg.MaxAgeInSeconds)
@@ -453,19 +453,14 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	return &icfg, nil
 }
 
-func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []error {
+func (icfg *internalConfig) validateOriginPatterns(errs []error, patterns []string) []error {
 	if len(patterns) == 0 {
 		err := &cfgerrors.UnacceptableOriginPatternError{
 			Reason: "missing",
 		}
 		return append(errs, err)
 	}
-	var (
-		tree           origins.Tree
-		discreteOrigin string
-		allowAnyOrigin bool
-		nbErrors       = len(errs)
-	)
+	var allowAnyOrigin bool
 	for _, raw := range patterns {
 		if raw == headers.ValueWildcard {
 			if icfg.credentialed {
@@ -481,7 +476,7 @@ func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []e
 			}
 			allowAnyOrigin = true
 			// We no longer need to maintain a set of allowed origins.
-			tree = origins.Tree{}
+			icfg.tree = origins.Tree{}
 			continue
 		}
 		pattern, err := origins.ParsePattern(raw)
@@ -506,9 +501,6 @@ func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []e
 				continue
 			}
 		}
-		if pattern.Kind != origins.ArbitrarySubdomains && discreteOrigin == "" {
-			discreteOrigin = raw
-		}
 		if pattern.Kind == origins.ArbitrarySubdomains && !icfg.subsOfPublicSuffixes {
 			if _, isEffectiveTLD := pattern.HostIsEffectiveTLD(); isEffectiveTLD {
 				err := &cfgerrors.IncompatibleOriginPatternError{
@@ -520,16 +512,9 @@ func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []e
 			}
 		}
 		if !allowAnyOrigin {
-			tree.Insert(&pattern)
+			icfg.tree.Insert(&pattern)
 		}
 	}
-	if len(errs) > nbErrors {
-		return errs
-	}
-	if allowAnyOrigin {
-		return errs
-	}
-	icfg.tree = tree
 	return errs
 }
 
@@ -537,17 +522,13 @@ func (icfg *internalConfig) validateMethods(errs []error, names []string) []erro
 	if len(names) == 0 {
 		return errs
 	}
-	var (
-		allowedMethods util.Set
-		nbErrors       = len(errs)
-	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
 			if icfg.allowAnyMethod {
 				continue
 			}
 			// We no longer need to maintain a set of allowed methods.
-			allowedMethods = util.Set{}
+			icfg.allowedMethods = util.Set{}
 			icfg.allowAnyMethod = true
 			continue
 		}
@@ -574,16 +555,9 @@ func (icfg *internalConfig) validateMethods(errs []error, names []string) []erro
 			continue
 		}
 		if !icfg.allowAnyMethod {
-			allowedMethods.Add(name)
+			icfg.allowedMethods.Add(name)
 		}
 	}
-	if len(errs) > nbErrors {
-		return errs
-	}
-	if icfg.allowAnyMethod {
-		return errs
-	}
-	icfg.allowedMethods = allowedMethods
 	return errs
 }
 
