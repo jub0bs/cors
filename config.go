@@ -475,7 +475,12 @@ func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []e
 				}
 				errs = append(errs, err)
 			}
+			if allowAnyOrigin {
+				continue
+			}
 			allowAnyOrigin = true
+			// We no longer need to maintain a set of allowed origins.
+			tree = origins.Tree{}
 			continue
 		}
 		pattern, err := origins.ParsePattern(raw)
@@ -511,7 +516,9 @@ func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []e
 				errs = append(errs, err)
 			}
 		}
-		tree.Insert(&pattern)
+		if !allowAnyOrigin {
+			tree.Insert(&pattern)
+		}
 	}
 	if len(errs) > nbErrors {
 		return errs
@@ -533,6 +540,11 @@ func (icfg *internalConfig) validateMethods(errs []error, names []string) []erro
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
+			if icfg.allowAnyMethod {
+				continue
+			}
+			// We no longer need to maintain a set of allowed methods.
+			allowedMethods = util.Set{}
 			icfg.allowAnyMethod = true
 			continue
 		}
@@ -558,7 +570,9 @@ func (icfg *internalConfig) validateMethods(errs []error, names []string) []erro
 			errs = append(errs, err)
 			continue
 		}
-		allowedMethods.Add(name)
+		if !icfg.allowAnyMethod {
+			allowedMethods.Add(name)
+		}
 	}
 	if len(errs) > nbErrors {
 		return errs
@@ -580,7 +594,12 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
+			if icfg.asteriskReqHdrs {
+				continue
+			}
 			icfg.asteriskReqHdrs = true
+			// We no longer need to maintain a set of allowed headers.
+			allowedHeaders = util.SortedSet{}
 			continue
 		}
 		if !headers.IsValid(name) {
@@ -630,7 +649,9 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 			errs = append(errs, err)
 			continue
 		}
-		allowedHeaders.Add(normalized)
+		if !icfg.asteriskReqHdrs {
+			allowedHeaders.Add(normalized)
+		}
 	}
 	if len(errs) > nbErrors {
 		return errs
@@ -706,7 +727,12 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 				err := new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)
 				errs = append(errs, err)
 			}
+			if exposeAllResHdrs {
+				continue
+			}
 			exposeAllResHdrs = true
+			// We no longer need to maintain a set of exposed headers.
+			exposedHeaders = util.Set{}
 			continue
 		}
 		if !headers.IsValid(name) {
@@ -741,7 +767,9 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 			// silently tolerate safelisted response-header names
 			continue
 		}
-		exposedHeaders.Add(normalized)
+		if !exposeAllResHdrs {
+			exposedHeaders.Add(normalized)
+		}
 	}
 	if len(errs) > nbErrors {
 		return errs
