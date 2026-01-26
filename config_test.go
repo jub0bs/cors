@@ -12,43 +12,27 @@ import (
 	"github.com/jub0bs/cors/cfgerrors"
 )
 
-var cfgTypes = []reflect.Type{
-	reflect.TypeFor[cors.Config](),
-	reflect.TypeFor[cors.ExtraConfig](),
-}
-
-// We want our exported struct types to be incomparable because, otherwise,
-// client code could rely on their comparability.
-func TestIncomparability(t *testing.T) {
-	for _, typ := range cfgTypes {
-		f := func(t *testing.T) {
-			t.Parallel()
-			if typ.Comparable() {
-				t.Errorf("type %v is comparable, but should not be", typ)
-			}
-		}
-		t.Run(typ.String(), f)
+// We want cors.Config to be incomparable because, otherwise,
+// client code could rely on its comparability.
+func TestIncomparabilityOfConfig(t *testing.T) {
+	if typ := reflect.TypeFor[cors.Config](); typ.Comparable() {
+		t.Errorf("type %v is comparable, but should not be", typ)
 	}
 }
 
 // We don't want client code to rely on unkeyed literals
-// of our exported struct types.
+// of cors.Config.
 func TestImpossibilityOfUnkeyedStructLiterals(t *testing.T) {
-	for _, typ := range cfgTypes {
-		f := func(t *testing.T) {
-			t.Parallel()
-			var unexportedFields bool
-			for i := range typ.NumField() {
-				if !typ.Field(i).IsExported() {
-					unexportedFields = true
-					break
-				}
-			}
-			if !unexportedFields {
-				t.Errorf("type %v has no unexported fields, but should have at least one", typ)
-			}
+	typ := reflect.TypeFor[cors.Config]()
+	var unexportedFields bool
+	for i := range typ.NumField() {
+		if !typ.Field(i).IsExported() {
+			unexportedFields = true
+			break
 		}
-		t.Run(typ.String(), f)
+	}
+	if !unexportedFields {
+		t.Errorf("type %v has no unexported fields, but should have at least one", typ)
 	}
 }
 
@@ -144,23 +128,19 @@ func TestConfig(t *testing.T) {
 					"X-baR",
 					"x-foo",
 				},
-				ExtraConfig: cors.ExtraConfig{
-					DangerouslyTolerateInsecureOrigins: true,
-				},
+				DangerouslyTolerateInsecureOrigins: true,
 			},
 			want: &cors.Config{
 				Origins: []string{
 					"http://example.com",
 					"https://*.example.com:8080",
 				},
-				Credentialed:    true,
-				Methods:         []string{"DELETE", "PUT"},
-				RequestHeaders:  []string{"*"},
-				MaxAgeInSeconds: 30,
-				ResponseHeaders: []string{"x-bar", "x-foo"},
-				ExtraConfig: cors.ExtraConfig{
-					DangerouslyTolerateInsecureOrigins: true,
-				},
+				Credentialed:                       true,
+				Methods:                            []string{"DELETE", "PUT"},
+				RequestHeaders:                     []string{"*"},
+				MaxAgeInSeconds:                    30,
+				ResponseHeaders:                    []string{"x-bar", "x-foo"},
+				DangerouslyTolerateInsecureOrigins: true,
 			},
 		}, {
 			desc: "discrete origin patterns in addition to wildcard",
@@ -350,7 +330,7 @@ func assertConfigEqual(t *testing.T, got, want *cors.Config) {
 		const tmpl = "ResponseHeaders: got %q; want %q"
 		t.Errorf(tmpl, got.ResponseHeaders, want.ResponseHeaders)
 	}
-	// extra config
+	// rest of the config
 	if got.DangerouslyTolerateInsecureOrigins != want.DangerouslyTolerateInsecureOrigins {
 		const tmpl = "DangerouslyTolerateInsecureOrigins: got %t; want %t"
 		t.Errorf(tmpl, got.DangerouslyTolerateInsecureOrigins, want.DangerouslyTolerateInsecureOrigins)

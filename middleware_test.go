@@ -1226,10 +1226,8 @@ func TestMiddleware(t *testing.T) {
 				Origins: []string{
 					"connector://example.com",
 				},
-				Credentialed: true,
-				ExtraConfig: cors.ExtraConfig{
-					DangerouslyTolerateInsecureOrigins: true,
-				},
+				Credentialed:                       true,
+				DangerouslyTolerateInsecureOrigins: true,
 			},
 			cases: []ReqTestCase{
 				{

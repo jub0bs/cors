@@ -62,10 +62,8 @@ func (app *TenantApp) handleReconfigureCORS(w http.ResponseWriter, r *http.Reque
 		RequestHeaders:  reqData.RequestHeaders,
 		MaxAgeInSeconds: reqData.MaxAge,
 		ResponseHeaders: reqData.ResponseHeaders,
-		ExtraConfig: cors.ExtraConfig{
-			DangerouslyTolerateSubdomainsOfPublicSuffixes: reqData.TolerateInsecure,
-			DangerouslyTolerateInsecureOrigins:            reqData.TolerateInsecure,
-		},
+		DangerouslyTolerateSubdomainsOfPublicSuffixes: reqData.TolerateInsecure,
+		DangerouslyTolerateInsecureOrigins:            reqData.TolerateInsecure,
 	}
 
 	if err := app.corsMiddleware.Reconfigure(&cfg); err != nil {

@@ -102,10 +102,10 @@ func (err *MaxAgeOutOfBoundsError) Error() string {
 //     specified and credentialed access was enabled.
 //   - Value != "*" and Reason == "credentialed": an insecure origin pattern
 //     was specified and credentialed access was enabled without also setting
-//     [github.com/jub0bs/cors.ExtraConfig.DangerouslyTolerateInsecureOriginPatterns].
+//     [github.com/jub0bs/cors.Config.DangerouslyTolerateInsecureOriginPatterns].
 //   - Reason == "psl": an origin pattern that encompasses arbitrary subdomains
 //     of a public suffix was specified without also setting
-//     [github.com/jub0bs/cors.ExtraConfig.DangerouslyTolerateSubdomainsOfPublicSuffixes].
+//     [github.com/jub0bs/cors.Config.DangerouslyTolerateSubdomainsOfPublicSuffixes].
 //
 // For more details, see [github.com/jub0bs/cors.Config.Origins].
 type IncompatibleOriginPatternError struct {

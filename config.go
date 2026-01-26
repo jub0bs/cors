@@ -147,7 +147,7 @@ import (
 // as such, they are by default prohibited when credentialed access is enabled.
 // If, even in such cases,
 // you deliberately wish to allow some insecure origins,
-// you must also set the ExtraConfig.DangerouslyTolerateInsecureOrigins field.
+// you must also set the DangerouslyTolerateInsecureOrigins field.
 //
 // Allowing arbitrary subdomains of a base domain that happens to be a
 // [public suffix] is dangerous; as such, doing so is by default prohibited:
@@ -158,7 +158,7 @@ import (
 //
 // If you deliberately wish to allow arbitrary subdomains of some public
 // suffix, you must also set the
-// ExtraConfig.DangerouslyTolerateSubdomainsOfPublicSuffixes field.
+// DangerouslyTolerateSubdomainsOfPublicSuffixes field.
 //
 // # Credentialed
 //
@@ -308,49 +308,6 @@ import (
 //   - Access-Control-Request-Method
 //   - Origin
 //
-// [ASCII serialized form]: https://html.spec.whatwg.org/multipage/browsers.html#ascii-serialisation-of-an-origin
-// [Authorization]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization
-// [Bearer tokens]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#bearer
-// [CORS-safelisted methods]: https://fetch.spec.whatwg.org/#cors-safelisted-method
-// [CORS-safelisted response-header names]: https://fetch.spec.whatwg.org/#cors-safelisted-response-header-name
-// [GET]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/GET
-// [HEAD]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/HEAD
-// [POST]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST
-// [Web origins]: https://developer.mozilla.org/en-US/docs/Glossary/Origin
-// [cap the max-age value]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#delta-seconds
-// [compressed form]: https://datatracker.ietf.org/doc/html/rfc5952
-// [cookies]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
-// [credentialed access]: https://fetch.spec.whatwg.org/#concept-request-credentials-mode
-// [cross-origin attacks]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
-// [cross-site scripting]: https://owasp.org/www-community/attacks/xss/
-// [default max-age value]: https://fetch.spec.whatwg.org/#http-access-control-max-age
-// [dotted-quad notation]: https://en.wikipedia.org/wiki/Dot-decimal_notation
-// [forbidden method names]: https://fetch.spec.whatwg.org/#forbidden-method
-// [forbidden request-header names]: https://fetch.spec.whatwg.org/#forbidden-request-header
-// [forbidden response-header names]: https://fetch.spec.whatwg.org/#forbidden-response-header-name
-// [fundamentally unsafe]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
-// [loopback IP address]: https://www.rfc-editor.org/rfc/rfc5735#section-3
-// [null origin]: https://fetch.spec.whatwg.org/#append-a-request-origin-header
-// [public suffix]: https://publicsuffix.org/
-// [security reasons]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
-// [subdomain takeover]: https://labs.detectify.com/writeups/hostile-subdomain-takeover-using-heroku-github-desk-more/
-type Config struct {
-	// precludes comparability, unkeyed struct literals, and conversion to and
-	// from third-party types
-	_ [0]func()
-
-	Origins         []string
-	Credentialed    bool
-	Methods         []string
-	RequestHeaders  []string
-	MaxAgeInSeconds int
-	ResponseHeaders []string
-	ExtraConfig
-}
-
-// An ExtraConfig provides more advanced (and potentially dangerous)
-// configuration settings.
-//
 // # DangerouslyTolerateInsecureOrigins
 //
 // DangerouslyTolerateInsecureOrigins enables you to allow insecure origins
@@ -373,49 +330,77 @@ type Config struct {
 // is dangerous, because such domains are typically registrable by anyone,
 // including attackers.
 //
+// [ASCII serialized form]: https://html.spec.whatwg.org/multipage/browsers.html#ascii-serialisation-of-an-origin
+// [Authorization]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization
+// [Bearer tokens]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#bearer
+// [CORS-safelisted methods]: https://fetch.spec.whatwg.org/#cors-safelisted-method
+// [CORS-safelisted response-header names]: https://fetch.spec.whatwg.org/#cors-safelisted-response-header-name
+// [GET]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/GET
+// [HEAD]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/HEAD
+// [POST]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST
+// [Web origins]: https://developer.mozilla.org/en-US/docs/Glossary/Origin
 // [active network attacks]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
+// [cap the max-age value]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#delta-seconds
+// [compressed form]: https://datatracker.ietf.org/doc/html/rfc5952
+// [cookies]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
+// [credentialed access]: https://fetch.spec.whatwg.org/#concept-request-credentials-mode
+// [cross-origin attacks]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
+// [cross-site scripting]: https://owasp.org/www-community/attacks/xss/
+// [default max-age value]: https://fetch.spec.whatwg.org/#http-access-control-max-age
+// [dotted-quad notation]: https://en.wikipedia.org/wiki/Dot-decimal_notation
+// [forbidden method names]: https://fetch.spec.whatwg.org/#forbidden-method
+// [forbidden request-header names]: https://fetch.spec.whatwg.org/#forbidden-request-header
+// [forbidden response-header names]: https://fetch.spec.whatwg.org/#forbidden-response-header-name
+// [fundamentally unsafe]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
 // [loopback IP address]: https://www.rfc-editor.org/rfc/rfc5735#section-3
+// [null origin]: https://fetch.spec.whatwg.org/#append-a-request-origin-header
 // [public suffix]: https://publicsuffix.org/
+// [security reasons]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
+// [subdomain takeover]: https://labs.detectify.com/writeups/hostile-subdomain-takeover-using-heroku-github-desk-more/
 // [the talk he gave at AppSec EU 2017]: https://www.youtube.com/watch?v=wgkj4ZgxI4c&t=1305s
-type ExtraConfig struct {
+type Config struct {
 	// precludes comparability, unkeyed struct literals, and conversion to and
 	// from third-party types
 	_ [0]func()
 
+	Origins                                       []string
+	Credentialed                                  bool
+	Methods                                       []string
+	RequestHeaders                                []string
+	MaxAgeInSeconds                               int
+	ResponseHeaders                               []string
 	DangerouslyTolerateInsecureOrigins            bool
 	DangerouslyTolerateSubdomainsOfPublicSuffixes bool
 }
 
 type internalConfig struct {
-	tree                 origins.Tree // empty means all origins allowed
-	allowedMethods       util.Set
-	allowedReqHdrs       util.SortedSet
-	acah                 []string
-	credentialed         bool
-	allowAnyMethod       bool
-	asteriskReqHdrs      bool
-	allowAuthorization   bool
-	subsOfPublicSuffixes bool
-	insecureOrigins      bool
-	acma                 []string
-	aceh                 string
+	tree                         origins.Tree // empty means all origins allowed
+	allowedMethods               util.Set
+	allowedReqHdrs               util.SortedSet
+	acah                         []string
+	credentialed                 bool
+	allowAnyMethod               bool
+	asteriskReqHdrs              bool
+	allowAuthorization           bool
+	tolerateSubsOfPublicSuffixes bool
+	tolerateInsecureOrigins      bool
+	acma                         []string
+	aceh                         string
 }
 
 func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	if cfg == nil {
 		return nil, nil
 	}
-	var icfg internalConfig
+	icfg := internalConfig{
+		credentialed:                 cfg.Credentialed,
+		tolerateInsecureOrigins:      cfg.DangerouslyTolerateInsecureOrigins,
+		tolerateSubsOfPublicSuffixes: cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes,
+	}
+
 	// Accumulate errors in a slice so as to call errors.Join at most once,
 	// for better performance.
 	var errs []error
-
-	// extra config (accessed by other validateX methods)
-	icfg.insecureOrigins = cfg.DangerouslyTolerateInsecureOrigins
-	icfg.subsOfPublicSuffixes = cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes
-
-	// base config
-	icfg.credentialed = cfg.Credentialed // accessed by other validateX methods
 	errs = icfg.validateOriginPatterns(errs, cfg.Origins)
 	errs = icfg.validateMethods(errs, cfg.Methods)
 	errs = icfg.validateRequestHeaders(errs, cfg.RequestHeaders)
@@ -459,14 +444,14 @@ func (icfg *internalConfig) validateOriginPatterns(errs []error, patterns []stri
 			errs = append(errs, err)
 			continue
 		}
-		if pattern.IsDeemedInsecure() && !icfg.insecureOrigins {
-			// We require ExtraConfig.DangerouslyTolerateInsecureOrigins to
+		if pattern.IsDeemedInsecure() && !icfg.tolerateInsecureOrigins {
+			// We require DangerouslyTolerateInsecureOrigins to
 			// be set only when
 			// - users specify one or more insecure origin patterns, and
 			// - enable credentialed access.
 			// In all other cases, insecure origins like http://example.com are
 			// indeed no less insecure than * is, which itself doesn't require
-			// ExtraConfig.DangerouslyTolerateInsecureOrigins to be set.
+			// DangerouslyTolerateInsecureOrigins to be set.
 			if icfg.credentialed {
 				err := &cfgerrors.IncompatibleOriginPatternError{
 					Value:  raw,
@@ -476,7 +461,7 @@ func (icfg *internalConfig) validateOriginPatterns(errs []error, patterns []stri
 				continue
 			}
 		}
-		if pattern.Kind == origins.ArbitrarySubdomains && !icfg.subsOfPublicSuffixes {
+		if pattern.Kind == origins.ArbitrarySubdomains && !icfg.tolerateSubsOfPublicSuffixes {
 			if _, isEffectiveTLD := pattern.HostIsEffectiveTLD(); isEffectiveTLD {
 				err := &cfgerrors.IncompatibleOriginPatternError{
 					Value:  raw,
@@ -800,8 +785,8 @@ func newConfig(icfg *internalConfig) *Config {
 		cfg.ResponseHeaders = strings.Split(icfg.aceh, headers.ValueSep)
 	}
 
-	// extra config
-	cfg.ExtraConfig.DangerouslyTolerateInsecureOrigins = icfg.insecureOrigins
-	cfg.ExtraConfig.DangerouslyTolerateSubdomainsOfPublicSuffixes = icfg.subsOfPublicSuffixes
+	// rest of the config
+	cfg.DangerouslyTolerateInsecureOrigins = icfg.tolerateInsecureOrigins
+	cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes = icfg.tolerateSubsOfPublicSuffixes
 	return &cfg
 }
