@@ -474,6 +474,7 @@ func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []e
 					Reason: "credentialed",
 				}
 				errs = append(errs, err)
+				continue
 			}
 			if allowAnyOrigin {
 				continue
@@ -502,6 +503,7 @@ func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []e
 					Reason: "credentialed",
 				}
 				errs = append(errs, err)
+				continue
 			}
 		}
 		if pattern.Kind != origins.ArbitrarySubdomains && discreteOrigin == "" {
@@ -514,6 +516,7 @@ func (icfg *internalConfig) validateOrigins(errs []error, patterns []string) []e
 					Reason: "psl",
 				}
 				errs = append(errs, err)
+				continue
 			}
 		}
 		if !allowAnyOrigin {
@@ -726,6 +729,7 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 				// credentialed access isn't viable.
 				err := new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)
 				errs = append(errs, err)
+				continue
 			}
 			if exposeAllResHdrs {
 				continue
