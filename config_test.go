@@ -62,9 +62,6 @@ func TestPossibilityToMarshalConfig(t *testing.T) {
 		RequestHeaders:  []string{"Authorization"},
 		MaxAgeInSeconds: 30,
 		ResponseHeaders: []string{"X-Response-Time"},
-		ExtraConfig: cors.ExtraConfig{
-			PreflightSuccessStatus: 299,
-		},
 	}
 	enc := json.NewEncoder(io.Discard)
 	if err := enc.Encode(cfg); err != nil {
@@ -148,7 +145,6 @@ func TestConfig(t *testing.T) {
 					"x-foo",
 				},
 				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus:             279,
 					DangerouslyTolerateInsecureOrigins: true,
 				},
 			},
@@ -163,7 +159,6 @@ func TestConfig(t *testing.T) {
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{"x-bar", "x-foo"},
 				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus:             279,
 					DangerouslyTolerateInsecureOrigins: true,
 				},
 			},
@@ -356,10 +351,6 @@ func assertConfigEqual(t *testing.T, got, want *cors.Config) {
 		t.Errorf(tmpl, got.ResponseHeaders, want.ResponseHeaders)
 	}
 	// extra config
-	if got.PreflightSuccessStatus != want.PreflightSuccessStatus {
-		const tmpl = "PreflightSuccessStatus: got %d; want %d"
-		t.Errorf(tmpl, got.PreflightSuccessStatus, want.PreflightSuccessStatus)
-	}
 	if got.DangerouslyTolerateInsecureOrigins != want.DangerouslyTolerateInsecureOrigins {
 		const tmpl = "DangerouslyTolerateInsecureOrigins: got %t; want %t"
 		t.Errorf(tmpl, got.DangerouslyTolerateInsecureOrigins, want.DangerouslyTolerateInsecureOrigins)
@@ -608,38 +599,6 @@ var invalidConfigTestCases = []InvalidConfigTestCase{
 				Value:  "Access-Control-Request-Method",
 				Type:   "response",
 				Reason: "prohibited",
-			}),
-		},
-	}, {
-		desc: "preflight-success status less than 200",
-		cfg: &cors.Config{
-			Origins: []string{"https://example.com"},
-			ExtraConfig: cors.ExtraConfig{
-				PreflightSuccessStatus: 199,
-			},
-		},
-		want: []*errorMatcher{
-			newErrorMatcher(&cfgerrors.PreflightSuccessStatusOutOfBoundsError{
-				Value:   199,
-				Default: 204,
-				Min:     200,
-				Max:     299,
-			}),
-		},
-	}, {
-		desc: "preflight-success status greater than 299",
-		cfg: &cors.Config{
-			Origins: []string{"https://example.com"},
-			ExtraConfig: cors.ExtraConfig{
-				PreflightSuccessStatus: 300,
-			},
-		},
-		want: []*errorMatcher{
-			newErrorMatcher(&cfgerrors.PreflightSuccessStatusOutOfBoundsError{
-				Value:   300,
-				Default: 204,
-				Min:     200,
-				Max:     299,
 			}),
 		},
 	}, {

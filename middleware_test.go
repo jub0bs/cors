@@ -131,9 +131,6 @@ func TestMiddleware(t *testing.T) {
 				RequestHeaders:  []string{"Authorization"},
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{"X-Foo", "X-Bar"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
 			},
 			cases: []ReqTestCase{
 				{
@@ -408,9 +405,6 @@ func TestMiddleware(t *testing.T) {
 				RequestHeaders:  []string{"*"},
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{"X-Foo", "X-Bar"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
 			},
 			cases: []ReqTestCase{
 				{
@@ -542,9 +536,6 @@ func TestMiddleware(t *testing.T) {
 				Credentialed:    true,
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{"X-Foo", "X-Bar"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
 			},
 			cases: []ReqTestCase{
 				{
@@ -571,9 +562,6 @@ func TestMiddleware(t *testing.T) {
 				Credentialed:    true,
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{"X-Foo", "X-Bar"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
 			},
 			debug: true,
 			cases: []ReqTestCase{
@@ -619,9 +607,6 @@ func TestMiddleware(t *testing.T) {
 				RequestHeaders:  []string{"Authorization"},
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{"X-Foo", "X-Bar"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
 			},
 			debug: true,
 			cases: []ReqTestCase{
@@ -654,9 +639,6 @@ func TestMiddleware(t *testing.T) {
 				RequestHeaders:  []string{wildcard},
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{wildcard},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
 			},
 			debug: true,
 			cases: []ReqTestCase{
@@ -688,9 +670,6 @@ func TestMiddleware(t *testing.T) {
 				RequestHeaders:  []string{"Authorization", wildcard},
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{wildcard},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
 			},
 			debug: true,
 			cases: []ReqTestCase{
@@ -859,9 +838,6 @@ func TestMiddleware(t *testing.T) {
 				ResponseHeaders: []string{
 					"X-Foo",
 					"X-Bar",
-				},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
 				},
 			},
 			cases: []ReqTestCase{
@@ -1722,9 +1698,6 @@ func TestReconfigure(t *testing.T) {
 				Credentialed:    true,
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{"X-Foo", "X-Bar"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
 			},
 			debug: true, // to check whether the debug mode will be retained after reconfiguration
 			cases: []ReqTestCase{
@@ -1781,9 +1754,6 @@ func TestReconfigure(t *testing.T) {
 				RequestHeaders:  []string{"*"},
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{"X-Foo", "X-Bar"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
 			},
 			debug: false, // to check whether the previous debug mode was retained after reconfiguration
 			cases: []ReqTestCase{
@@ -1836,9 +1806,6 @@ func TestReconfigure(t *testing.T) {
 				RequestHeaders:  []string{"*"},
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{"X-Foo", "X-Bar"},
-				ExtraConfig: cors.ExtraConfig{
-					PreflightSuccessStatus: 279,
-				},
 			},
 			debug: false, // to check whether the previous debug mode was retained
 			cases: []ReqTestCase{

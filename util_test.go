@@ -132,10 +132,8 @@ func assertPreflightStatus(t *testing.T, spyStatus, gotStatus int, mwtc *Middlew
 		wantStatusCode = spyStatus
 	case !tc.preflightPassesCORSCheck || !mwtc.debug && tc.preflightFails:
 		wantStatusCode = http.StatusForbidden
-	case mwtc.cfg.PreflightSuccessStatus == 0:
-		wantStatusCode = http.StatusNoContent
 	default:
-		wantStatusCode = mwtc.cfg.PreflightSuccessStatus
+		wantStatusCode = http.StatusNoContent
 	}
 	if gotStatus != wantStatusCode {
 		const tmpl = "got %d; want status code %d"

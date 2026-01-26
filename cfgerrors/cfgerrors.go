@@ -96,22 +96,6 @@ func (err *MaxAgeOutOfBoundsError) Error() string {
 	return fmt.Sprintf(tmpl, err.Value, err.Default, err.Max, err.Disable)
 }
 
-// A PreflightSuccessStatusOutOfBoundsError indicates a preflight-success status
-// that's either too low or too high.
-//
-// For more details, see [github.com/jub0bs/cors.Config.PreflightSuccessStatus].
-type PreflightSuccessStatusOutOfBoundsError struct {
-	Value   int // the unacceptable value that was specified
-	Default int // default value used by this library
-	Min     int // minimum value for an ok status
-	Max     int // maximum value for an ok status
-}
-
-func (err *PreflightSuccessStatusOutOfBoundsError) Error() string {
-	const tmpl = "cors: out-of-bounds preflight-success status %d (default: %d; min: %d; max: %d)"
-	return fmt.Sprintf(tmpl, err.Value, err.Default, err.Min, err.Max)
-}
-
 // An IncompatibleOriginPatternError indicates an origin pattern that conflicts
 // with other elements of the configuration. Three cases are possible:
 //   - Value == "*" and Reason == "credentialed": the wildcard origin was

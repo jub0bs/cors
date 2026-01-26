@@ -351,22 +351,6 @@ type Config struct {
 // An ExtraConfig provides more advanced (and potentially dangerous)
 // configuration settings.
 //
-// # PreflightSuccessStatus
-//
-// PreflightSuccessStatus configures a CORS middleware to use the specified
-// status code in successful preflight responses.
-// The default status code, which is used if this field has the zero value,
-// is [204].
-//
-// Specifying a non-zero status code outside the [2xx range] is prohibited.
-//
-// According to [the Fetch standard], any 2xx status code is acceptable
-// to mark a prelight response as successful;
-// however, some rare non-compliant user agents fail preflight when the
-// preflight response has a status code other than 200 (e.g. 204).
-// If some of your clients rely on such non-compliant user agents,
-// you should set a custom preflight-success status of 200.
-//
 // # DangerouslyTolerateInsecureOrigins
 //
 // DangerouslyTolerateInsecureOrigins enables you to allow insecure origins
@@ -389,40 +373,32 @@ type Config struct {
 // is dangerous, because such domains are typically registrable by anyone,
 // including attackers.
 //
-// [204]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/204
-// [2xx range]: https://fetch.spec.whatwg.org/#ok-status
 // [active network attacks]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
 // [loopback IP address]: https://www.rfc-editor.org/rfc/rfc5735#section-3
 // [public suffix]: https://publicsuffix.org/
-// [the Fetch standard]: https://fetch.spec.whatwg.org
 // [the talk he gave at AppSec EU 2017]: https://www.youtube.com/watch?v=wgkj4ZgxI4c&t=1305s
-//
-// [Same-Origin Policy]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
-// [no-cors mode]: https://fetch.spec.whatwg.org/#concept-request-mode
 type ExtraConfig struct {
 	// precludes comparability, unkeyed struct literals, and conversion to and
 	// from third-party types
 	_ [0]func()
 
-	PreflightSuccessStatus                        int
 	DangerouslyTolerateInsecureOrigins            bool
 	DangerouslyTolerateSubdomainsOfPublicSuffixes bool
 }
 
 type internalConfig struct {
-	tree                    origins.Tree // empty means all origins allowed
-	allowedMethods          util.Set
-	allowedReqHdrs          util.SortedSet
-	acah                    []string
-	preflightStatusMinus200 uint8 // range: [0,99]
-	credentialed            bool
-	allowAnyMethod          bool
-	asteriskReqHdrs         bool
-	allowAuthorization      bool
-	subsOfPublicSuffixes    bool
-	insecureOrigins         bool
-	acma                    []string
-	aceh                    string
+	tree                 origins.Tree // empty means all origins allowed
+	allowedMethods       util.Set
+	allowedReqHdrs       util.SortedSet
+	acah                 []string
+	credentialed         bool
+	allowAnyMethod       bool
+	asteriskReqHdrs      bool
+	allowAuthorization   bool
+	subsOfPublicSuffixes bool
+	insecureOrigins      bool
+	acma                 []string
+	aceh                 string
 }
 
 func newInternalConfig(cfg *Config) (*internalConfig, error) {
@@ -435,7 +411,6 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	var errs []error
 
 	// extra config (accessed by other validateX methods)
-	errs = icfg.validatePreflightStatus(errs, cfg.PreflightSuccessStatus)
 	icfg.insecureOrigins = cfg.DangerouslyTolerateInsecureOrigins
 	icfg.subsOfPublicSuffixes = cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes
 
@@ -764,28 +739,11 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 	return errs
 }
 
-func (icfg *internalConfig) validatePreflightStatus(errs []error, status int) []error {
-	if status == 0 {
-		icfg.preflightStatusMinus200 = defaultPreflightStatus - 200
-		return errs
-	}
-	const ( // see https://fetch.spec.whatwg.org/#ok-status
-		lowerBound = 200
-		upperBound = 299
-	)
-	if !(lowerBound <= status && status <= upperBound) {
-		err := &cfgerrors.PreflightSuccessStatusOutOfBoundsError{
-			Value:   status,
-			Default: defaultPreflightStatus,
-			Min:     lowerBound,
-			Max:     upperBound,
-		}
-		return append(errs, err)
-	}
-	icfg.preflightStatusMinus200 = uint8(status - 200) // 200 <= status < 300
-	return errs
-}
-
+// According to the Fetch standard, any 2xx status code is acceptable
+// to mark a preflight response as successful.
+// Arguably, 204 (No Content) is the most appropriate status code.
+// However, some rare non-compliant user agents fail preflight when the
+// preflight response has a status code other than 200 (e.g. 204). Oh well.
 const defaultPreflightStatus = http.StatusNoContent
 
 // newConfig returns a Config on the basis of icfg.
@@ -843,9 +801,6 @@ func newConfig(icfg *internalConfig) *Config {
 	}
 
 	// extra config
-	if icfg.preflightStatusMinus200+200 != defaultPreflightStatus {
-		cfg.ExtraConfig.PreflightSuccessStatus = int(icfg.preflightStatusMinus200) + 200
-	}
 	cfg.ExtraConfig.DangerouslyTolerateInsecureOrigins = icfg.insecureOrigins
 	cfg.ExtraConfig.DangerouslyTolerateSubdomainsOfPublicSuffixes = icfg.subsOfPublicSuffixes
 	return &cfg
