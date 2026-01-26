@@ -21,6 +21,7 @@ func TestIsForbiddenRequestHeaderName(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			got := headers.IsForbiddenRequestHeaderName(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"
@@ -47,6 +48,7 @@ func TestIsProhibitedRequestHeaderName(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			got := headers.IsProhibitedRequestHeaderName(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"

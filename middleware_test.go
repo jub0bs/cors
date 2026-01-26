@@ -1427,6 +1427,7 @@ func TestMiddleware(t *testing.T) {
 			}
 			for _, tc := range mwtc.cases {
 				f := func(t *testing.T) {
+					t.Parallel()
 					// --- arrange ---
 					innerHandler := mwtc.newHandler()
 					handler := mw.Wrap(innerHandler)
@@ -1576,6 +1577,7 @@ func TestWrappedHandlerCannotMutatePackageLevelSlices(t *testing.T) {
 			}
 			for _, tc := range mwtc.cases {
 				f := func(t *testing.T) {
+					t.Parallel()
 					// --- arrange ---
 					handler := mwtc.newHandler()
 					handler = mw.Wrap(handler)

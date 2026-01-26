@@ -422,6 +422,7 @@ func TestTree(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			tree := new(origins.Tree)
 			for _, raw := range tc.patterns {
 				pattern, err := origins.ParsePattern(raw)

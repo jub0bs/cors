@@ -238,6 +238,7 @@ var parseCases = []struct {
 func TestParse(t *testing.T) {
 	for _, c := range parseCases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			o, ok := Parse(c.input)
 			if ok == c.failure || ok && o != c.want {
 				t.Errorf("%q: got %v, %t; want %v, %t", c.input, o, ok, c.want, !c.failure)

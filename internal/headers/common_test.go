@@ -49,6 +49,7 @@ func TestIsValid(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			got := IsValid(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"
@@ -93,6 +94,7 @@ func TestFirst(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			v, s, ok := First(tc.h, tc.key)
 			if ok != tc.ok || v != tc.want || len(s) > 1 || len(s) == 1 && s[0] != v {
 				const tmpl = "got %s, %q, %t; want %s, %q, %t"

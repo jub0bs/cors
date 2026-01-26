@@ -22,6 +22,7 @@ var cfgTypes = []reflect.Type{
 func TestIncomparability(t *testing.T) {
 	for _, typ := range cfgTypes {
 		f := func(t *testing.T) {
+			t.Parallel()
 			if typ.Comparable() {
 				t.Errorf("type %v is comparable, but should not be", typ)
 			}
@@ -35,6 +36,7 @@ func TestIncomparability(t *testing.T) {
 func TestImpossibilityOfUnkeyedStructLiterals(t *testing.T) {
 	for _, typ := range cfgTypes {
 		f := func(t *testing.T) {
+			t.Parallel()
 			var unexportedFields bool
 			for i := range typ.NumField() {
 				if !typ.Field(i).IsExported() {
@@ -764,6 +766,7 @@ var invalidConfigTestCases = []InvalidConfigTestCase{
 func TestIncorrectConfig(t *testing.T) {
 	for _, tc := range invalidConfigTestCases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			mw, err := cors.NewMiddleware(*tc.cfg)
 			if mw != nil {
 				t.Error("got non-nil *Middleware; want nil *Middleware")

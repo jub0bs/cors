@@ -32,6 +32,7 @@ func TestSet(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			set := util.NewSet(tc.elems...)
 			for _, s := range tc.more {
 				set.Add(s)

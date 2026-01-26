@@ -17,6 +17,7 @@ func TestIsValid(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			got := methods.IsValid(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"
@@ -48,6 +49,7 @@ func TestIsForbidden(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			got := methods.IsForbidden(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"
@@ -75,6 +77,7 @@ func TestIsSafelisted(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			got := methods.IsSafelisted(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"
@@ -112,6 +115,7 @@ func TestNormalize(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			got := methods.Normalize(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %q; want %q"

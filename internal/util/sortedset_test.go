@@ -47,6 +47,7 @@ func TestSortedSet(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			var set util.SortedSet
 			for _, elem := range tc.elems {
 				set.Add(elem)

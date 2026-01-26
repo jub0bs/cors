@@ -67,6 +67,7 @@ var cases = []TestCase{
 func TestAll(t *testing.T) {
 	for _, tc := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			got := cfgerrors.All(tc.err)
 			assertEqual(t, got, tc.want, tc.breakWhen)
 		}

@@ -353,6 +353,7 @@ var parsePatternCases = []TestCase{
 func TestParsePattern(t *testing.T) {
 	for _, c := range parsePatternCases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			o, err := ParsePattern(c.input)
 			if err != nil && !c.failure {
 				t.Errorf("%q: got %v; want nil error", c.input, err)
@@ -407,6 +408,7 @@ func TestIsDeemedInsecure(t *testing.T) {
 	}
 	for _, c := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			pattern, err := ParsePattern(c.pattern)
 			if err != nil {
 				t.Errorf("got %v; want non-nil error", err)
@@ -446,6 +448,7 @@ func TestHostIsEffectiveTLD(t *testing.T) {
 	}
 	for _, c := range cases {
 		f := func(t *testing.T) {
+			t.Parallel()
 			pattern, err := ParsePattern(c.pattern)
 			if err != nil {
 				t.Errorf("got %v; want non-nil error", err)
