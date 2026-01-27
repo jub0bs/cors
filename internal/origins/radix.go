@@ -18,7 +18,7 @@ type Tree struct {
 
 // IsEmpty reports whether t is empty.
 func (t *Tree) IsEmpty() bool {
-	return t.root.schemes == nil && t.root.children == nil
+	return t.root.isEmpty()
 }
 
 // Insert inserts p in t.
@@ -211,6 +211,10 @@ func deleteSameSign(s []int, v int) []int {
 		return s[i:]
 	}
 	return s[:i]
+}
+
+func (n *node) isEmpty() bool {
+	return n.schemes == nil && n.children == nil
 }
 
 func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool) {
