@@ -361,13 +361,11 @@ func (p *Pattern) IsDeemedInsecure() bool {
 		strings.TrimPrefix(p.HostPattern, wildcardSeq) != "localhost"
 }
 
-// HostIsEffectiveTLD, if the host of p is an effective top-level domain
-// (eTLD), also known as [public suffix],
-// returns the eTLD in question and true;
-// otherwise, HostIsEffectiveTLD returns "", false.
+// HostIsEffectiveTLD reports whether p's host is an effective top-level
+// domain (eTLD), also known as [public suffix].
 //
 // [public suffix]: https://publicsuffix.org/list/
-func (p *Pattern) HostIsEffectiveTLD() (string, bool) {
+func (p *Pattern) HostIsEffectiveTLD() bool {
 	host := strings.TrimPrefix(p.HostPattern, wildcardSeq)
 	// For cases like of a Web origin that ends with a full stop,
 	// we need to trim the latter for this check.
@@ -375,8 +373,5 @@ func (p *Pattern) HostIsEffectiveTLD() (string, bool) {
 	// We ignore the second (boolean) result because
 	// it's false for some listed eTLDs (e.g. github.io)
 	etld, _ := publicsuffix.PublicSuffix(host)
-	if etld == host {
-		return host, true
-	}
-	return "", false
+	return etld == host
 }

@@ -462,7 +462,7 @@ func (icfg *internalConfig) validateOriginPatterns(errs []error, patterns []stri
 			}
 		}
 		if pattern.Kind == origins.ArbitrarySubdomains && !icfg.tolerateSubsOfPublicSuffixes {
-			if _, isEffectiveTLD := pattern.HostIsEffectiveTLD(); isEffectiveTLD {
+			if pattern.HostIsEffectiveTLD() {
 				err := &cfgerrors.IncompatibleOriginPatternError{
 					Value:  raw,
 					Reason: "psl",

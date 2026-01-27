@@ -426,24 +426,20 @@ func TestIsDeemedInsecure(t *testing.T) {
 func TestHostIsEffectiveTLD(t *testing.T) {
 	cases := []struct {
 		pattern string
-		isETLD  bool
-		eTLD    string
+		want    bool
 	}{
 		{
 			pattern: "https://*.com",
-			isETLD:  true,
-			eTLD:    "com",
+			want:    true,
 		}, {
 			pattern: "https://*.github.io",
-			isETLD:  true,
-			eTLD:    "github.io",
+			want:    true,
 		}, {
 			pattern: "https://*.github.io",
-			isETLD:  true,
-			eTLD:    "github.io",
+			want:    true,
 		}, {
 			pattern: "https://*.example.com",
-			isETLD:  false,
+			want:    false,
 		},
 	}
 	for _, c := range cases {
@@ -454,9 +450,9 @@ func TestHostIsEffectiveTLD(t *testing.T) {
 				t.Errorf("got %v; want non-nil error", err)
 				return
 			}
-			eTLD, isETLD := pattern.HostIsEffectiveTLD()
-			if eTLD != c.eTLD || isETLD != c.isETLD {
-				t.Errorf("got %s, %t; want %s, %t", eTLD, isETLD, c.eTLD, c.isETLD)
+			got := pattern.HostIsEffectiveTLD()
+			if got != c.want {
+				t.Errorf("got %t; want %t", got, c.want)
 			}
 		}
 		t.Run(c.pattern, f)
