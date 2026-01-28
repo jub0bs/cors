@@ -745,9 +745,15 @@ func newConfig(icfg *internalConfig) *Config {
 	if icfg == nil {
 		return nil
 	}
+
+	cfg := Config{
+		Credentialed:                                  icfg.credentialed,
+		DangerouslyTolerateInsecureOrigins:            icfg.tolerateInsecureOrigins,
+		DangerouslyTolerateSubdomainsOfPublicSuffixes: icfg.tolerateSubsOfPublicSuffixes,
+	}
+
 	// Note: do not hold (in cfg) any references to mutable fields of icfg;
 	// use defensive copying if required.
-	var cfg Config
 
 	// origins
 	if icfg.tree.IsEmpty() {
@@ -756,8 +762,14 @@ func newConfig(icfg *internalConfig) *Config {
 		cfg.Origins = slices.Collect(icfg.tree.Elems())
 	}
 
-	// credentialed
-	cfg.Credentialed = icfg.credentialed
+	// response headers
+	if len(icfg.aceh) > 0 {
+		cfg.ResponseHeaders = strings.Split(icfg.aceh, headers.ValueSep)
+	}
+
+	if !icfg.preflight {
+		return &cfg
+	}
 
 	// methods
 	switch {
@@ -787,13 +799,5 @@ func newConfig(icfg *internalConfig) *Config {
 		}
 	}
 
-	// response headers
-	if len(icfg.aceh) > 0 {
-		cfg.ResponseHeaders = strings.Split(icfg.aceh, headers.ValueSep)
-	}
-
-	// rest of the config
-	cfg.DangerouslyTolerateInsecureOrigins = icfg.tolerateInsecureOrigins
-	cfg.DangerouslyTolerateSubdomainsOfPublicSuffixes = icfg.tolerateSubsOfPublicSuffixes
 	return &cfg
 }
