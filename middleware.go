@@ -146,7 +146,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 			return
 		}
 		// r is an "actual" (i.e. non-preflight) CORS request.
-		icfg.handleCORSActual(w, origin, originSgl, isOPTIONS)
+		icfg.handleCORSActual(w.Header(), origin, originSgl, isOPTIONS)
 		h.ServeHTTP(w, r)
 	})
 }
@@ -290,7 +290,7 @@ func (icfg *internalConfig) processOriginForPreflight(
 
 // Note: only for _non-preflight_ CORS requests
 func (icfg *internalConfig) handleCORSActual(
-	w http.ResponseWriter,
+	resHdrs http.Header,
 	origin string,
 	originSgl []string,
 	isOPTIONS bool,
@@ -300,7 +300,6 @@ func (icfg *internalConfig) handleCORSActual(
 	// However, doing so here is fraught with peril, because it would provide
 	// the wrapped handler an undesirable affordance: mutation of those slices.
 	// See https://github.com/rs/cors/issues/198.
-	resHdrs := w.Header()
 
 	if icfg.tree.IsEmpty() {
 		// See the last paragraph in
