@@ -921,11 +921,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"GET"},
 					},
-					preflight:                true,
-					preflightPassesCORSCheck: true,
-					respHeaders: http.Header{
-						headerACAO: {"http://localhost:9090"},
-					},
+					preflight: true,
 				}, {
 					desc:      "preflight with PURGE from allowed",
 					reqMethod: "OPTIONS",

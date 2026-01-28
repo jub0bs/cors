@@ -384,6 +384,7 @@ type internalConfig struct {
 	allowAuthorization           bool
 	tolerateSubsOfPublicSuffixes bool
 	tolerateInsecureOrigins      bool
+	preflight                    bool
 	acma                         []string
 	aceh                         string
 }
@@ -410,6 +411,12 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}
+
+	icfg.preflight = icfg.allowAnyMethod ||
+		icfg.allowedMethods.Size() > 0 ||
+		icfg.asteriskReqHdrs ||
+		icfg.allowAuthorization ||
+		icfg.allowedReqHdrs.Size() > 0
 	return &icfg, nil
 }
 

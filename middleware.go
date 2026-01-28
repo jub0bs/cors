@@ -203,6 +203,11 @@ func (icfg *internalConfig) handleCORSPreflight(
 	//    Some CORS middleware libraries (such as github.com/rs/cors) do cater
 	//    for such non-compliant behavior; let's not.
 
+	if !icfg.preflight && !debug {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
 	// Populating a small (8 keys or fewer) local map incurs 0 heap
 	// allocations on average; see https://go.dev/play/p/RQdNE-pPCQq.
 	// Therefore, using a different data structure for accumulating response
@@ -462,9 +467,6 @@ func (icfg *internalConfig) processACRH(
 		return true
 	}
 	if !debug {
-		if icfg.allowedReqHdrs.Size() == 0 { // micro-optimization
-			return false
-		}
 		if !headers.Check(icfg.allowedReqHdrs, acrh) {
 			return false
 		}
