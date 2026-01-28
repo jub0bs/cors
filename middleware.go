@@ -209,7 +209,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// the following header names in the Vary header of preflight responses:
 	//
 	//   - Access-Control-Request-Headers
-	//   - Access-Control-Request-Methods
+	//   - Access-Control-Request-Method
 	//   - Origin
 	vary, found := resHdrs[headers.Vary]
 	if !found { // fast path
