@@ -374,17 +374,17 @@ type Config struct {
 }
 
 type internalConfig struct {
-	tree                         origins.Tree // empty means all origins allowed
+	tree                         origins.Tree // tree.IsEmpty() <=> any origin allowed
 	allowedMethods               util.Set
 	allowedReqHdrs               util.SortedSet
 	acah                         []string
-	credentialed                 bool
+	credentialed                 bool // tree.IsEmpty() => !credentialed
 	allowAnyMethod               bool
 	asteriskReqHdrs              bool
 	allowAuthorization           bool
 	tolerateSubsOfPublicSuffixes bool
 	tolerateInsecureOrigins      bool
-	preflight                    bool
+	preflight                    bool // reports whether preflight may succeed
 	acma                         []string
 	aceh                         string
 }
