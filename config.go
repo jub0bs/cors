@@ -731,12 +731,15 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 	return errs
 }
 
-// According to the Fetch standard, any 2xx status code is acceptable
-// to mark a preflight response as successful.
-// Arguably, 204 (No Content) is the most appropriate status code.
-// However, some rare non-compliant user agents fail preflight when the
-// preflight response has a status code other than 200 (e.g. 204). Oh well.
-const defaultPreflightStatus = http.StatusNoContent
+const (
+	// According to the Fetch standard, any 2xx status code is acceptable
+	// to mark a preflight response as successful.
+	// Arguably, 204 (No Content) is the most appropriate status code.
+	// However, some rare non-compliant user agents fail preflight when the
+	// preflight response has a status code other than 200 (e.g. 204). Oh well.
+	preflightOKStatus   = http.StatusNoContent
+	preflightFailStatus = http.StatusForbidden
+)
 
 // newConfig returns a Config on the basis of icfg.
 // The soundness of the result is guaranteed only if icfg is the result of a
