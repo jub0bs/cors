@@ -37,9 +37,8 @@ const (
 )
 
 const (
-	varyPreflightValue = headerACRH + ", " + headerACRM + ", " + headerOrigin
-	wildcard           = "*"
-	wildcardAndAuth    = "*,authorization"
+	wildcard        = "*"
+	wildcardAndAuth = "*,authorization"
 )
 
 type MiddlewareTestCase struct {

@@ -33,19 +33,17 @@ const (
 const Authorization = "authorization" // note: byte-lowercase
 
 const (
-	ValueTrue        = "true"
-	ValueWildcard    = "*"
-	ValueVaryOptions = ACRH + ", " + ACRM + ", " + Origin
+	ValueTrue     = "true"
+	ValueWildcard = "*"
 )
 
 const ValueSep = ","
 
 var ( // each of them an effective constant wrapped in a (singleton) slice
-	PreflightVarySgl = []string{ValueVaryOptions}
-	TrueSgl          = []string{ValueTrue}
-	OriginSgl        = []string{Origin}
-	WildcardSgl      = []string{ValueWildcard}
-	WildcardAuthSgl  = []string{ValueWildcard + ValueSep + Authorization}
+	TrueSgl         = []string{ValueTrue}
+	OriginSgl       = []string{Origin}
+	WildcardSgl     = []string{ValueWildcard}
+	WildcardAuthSgl = []string{ValueWildcard + ValueSep + Authorization}
 )
 
 // IsValid reports whether name is a valid header name,

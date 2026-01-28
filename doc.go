@@ -35,11 +35,17 @@ in the chain, and the ultimate handler. Follow the rules listed below:
     empty header lines of that name.
     For performance (and at the cost of some interoperability),
     this library's middleware are indeed stricter in their handling of
-    this specific list-based field than required by [RFC 9110].
+    this specific list-based field than required by [RFC 9110 section 5.6.1.2].
   - Intermediaries [SHOULD NOT] alter or augment the [CORS response headers]
     that are set by this library's middleware.
   - Intermediaries [MAY] alter the value of the [Vary] header that is set by
     this library's middleware, but they [MUST] preserve all of its elements.
+  - Intermediaries [SHOULD NOT] be configured to cache responses to preflight
+    requests; per [RFC 9110 section 9.3.7], responses to [OPTIONS] requests are
+    indeed not meant to be cached. If you choose to configure an intermediary
+    to cache such responses anyway, you [MUST] make sure (in order to avoid
+    [cache poisoning]) that the intermediary include a [Vary] header listing
+    the relevant [CORS request headers].
   - Multiple CORS middleware [MUST NOT] be stacked.
 
 [Access-Control-Request-Headers]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Headers
@@ -52,10 +58,12 @@ in the chain, and the ultimate handler. Follow the rules listed below:
 [MUST NOT]: https://www.ietf.org/rfc/rfc2119.txt
 [MUST]: https://www.ietf.org/rfc/rfc2119.txt
 [OPTIONS]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/OPTIONS
-[RFC 9110]: https://www.rfc-editor.org/rfc/rfc9110.html#name-recipient-requirements
+[RFC 9110 section 5.6.1.2]: https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.1.2
+[RFC 9110 section 9.3.7]: https://httpwg.org/specs/rfc9110.html#rfc.section.9.3.7
 [SHOULD NOT]: https://www.ietf.org/rfc/rfc2119.txt
 [SHOULD]: https://www.ietf.org/rfc/rfc2119.txt
 [Vary]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary
+[cache poisoning]: https://portswigger.net/web-security/web-cache-poisoning
 [dysfunctional or insecure CORS middleware]: https://jub0bs.com/posts/2023-02-08-fearless-cors/
 [list-based field]: https://httpwg.org/specs/rfc9110.html#abnf.extension
 [optional whitespace]: https://httpwg.org/specs/rfc9110.html#whitespace

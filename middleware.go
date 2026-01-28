@@ -158,31 +158,22 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
 	// the wrapped handler an undesirable affordance: mutation of those slices.
 	// See https://github.com/rs/cors/issues/198.
 
-	allOriginsAllowed := icfg.tree.IsEmpty()
-
-	var varyHeaderValue string
-	switch {
-	case isOPTIONS:
-		// see the implementation comment in handleCORSPreflight
-		varyHeaderValue = headers.ValueVaryOptions
-	case !allOriginsAllowed:
-		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
-		// Note that we deliberately list "Origin" in the Vary header of responses
-		// to actual requests even in cases where a single origin is allowed,
-		// because doing so is simpler to implement and unlikely to be
-		// detrimental to Web caches.
-		varyHeaderValue = headers.Origin
-	}
-	if varyHeaderValue != "" {
-		// Note that we must add rather than set a Vary header here, because outer
-		// middleware may have already added/set a Vary header, which we wouldn't
-		// want to clobber.
-		resHdrs.Add(headers.Vary, varyHeaderValue)
-	}
-
-	if !allOriginsAllowed {
+	if !icfg.tree.IsEmpty() {
+		if !isOPTIONS {
+			// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
+			// Note that we deliberately list "Origin" in the Vary header of
+			// responses to actual requests even in cases where a single origin
+			// is allowed, because doing so is simpler to implement and
+			// unlikely to be detrimental to Web caches.
+			//
+			// Note that we must add rather than set a Vary header here,
+			// because outer middleware may have already added/set a Vary
+			// header, which we wouldn't want to clobber.
+			resHdrs.Add(headers.Vary, headers.Origin)
+		}
 		return
 	}
+
 	resHdrs.Set(headers.ACAO, headers.ValueWildcard)
 	if icfg.aceh != "" {
 		// see https://github.com/whatwg/fetch/issues/1601
@@ -199,32 +190,25 @@ func (icfg *internalConfig) handleCORSPreflight(
 	acrmSgl []string,
 	debug bool,
 ) {
-	resHdrs := w.Header()
-	// Responses to OPTIONS requests are not meant to be cached
-	// (see https://httpwg.org/specs/rfc9110.html#rfc.section.9.3.7)
-	// but, for better or worse, some caching intermediaries can nevertheless
-	// be configured to cache such responses.
-	// To avoid poisoning such caches with inadequate preflight responses,
-	// middleware provided by this package by default lists
-	// the following header names in the Vary header of preflight responses:
-	//
-	//   - Access-Control-Request-Headers
-	//   - Access-Control-Request-Method
-	//   - Origin
-	vary, found := resHdrs[headers.Vary]
-	if !found { // fast path
-		resHdrs[headers.Vary] = headers.PreflightVarySgl
-	} else { // slow path
-		// Some outer middleware has already added/set one or more Vary headers;
-		// don't clobber them.
-		resHdrs[headers.Vary] = append(vary, headers.ValueVaryOptions)
-	}
+	// Some notes about Vary in the context of CORS preflight:
+	//  - Contrary to popular belief, the presence of a Vary header in
+	//    responses to preflight requests has no bearing on the behavior of
+	//    browsers' CORS-preflight cache;
+	//    see https://fetch.spec.whatwg.org/#concept-cache and
+	//    https://stackoverflow.com/a/42849375/2541573.
+	//  - Even though some caching intermediaries can be configured to cache
+	//    responses to OPTIONS requests, such caching contravenes RFC 9110;
+	//    see https://httpwg.org/specs/rfc9110.html#rfc.section.9.3.7.
+	//    Some CORS middleware libraries (such as github.com/rs/cors) do cater
+	//    for such non-compliant behavior; let's not.
 
 	// Populating a small (8 keys or fewer) local map incurs 0 heap
 	// allocations on average; see https://go.dev/play/p/RQdNE-pPCQq.
 	// Therefore, using a different data structure for accumulating response
 	// headers provides no performance advantage; a simple http.Header will do.
 	buf := make(http.Header)
+
+	resHdrs := w.Header()
 
 	// When debug is on and a preflight step fails,
 	// we omit the remaining CORS response headers
@@ -283,7 +267,7 @@ func (icfg *internalConfig) processOriginForPreflight(
 	origin string,
 	originSgl []string,
 ) bool {
-	if !icfg.credentialed && icfg.tree.IsEmpty() {
+	if icfg.tree.IsEmpty() {
 		buf[headers.ACAO] = headers.WildcardSgl
 		return true
 	}
@@ -318,50 +302,37 @@ func (icfg *internalConfig) handleCORSActual(
 	// See https://github.com/rs/cors/issues/198.
 	resHdrs := w.Header()
 
-	var varyHeaderValue string
-	switch {
-	case isOPTIONS:
-		// see the implementation comment in handleCORSPreflight
-		varyHeaderValue = headers.ValueVaryOptions
-	case !icfg.tree.IsEmpty():
-		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
-		varyHeaderValue = headers.Origin
-	}
-	if varyHeaderValue != "" {
-		// Note that we must add rather than set a Vary header here, because outer
-		// middleware may have already added/set a Vary header, which we wouldn't
-		// want to clobber.
-		resHdrs.Add(headers.Vary, varyHeaderValue)
-	}
-
-	if !icfg.credentialed && icfg.tree.IsEmpty() {
+	if icfg.tree.IsEmpty() {
 		// See the last paragraph in
 		// https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
-		// Note that we deliberately list "Origin" in the Vary header of responses
-		// to actual requests even in cases where a single origin is allowed,
-		// because doing so is simpler to implement and unlikely to be
-		// detrimental to Web caches.
 		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
-		if icfg.aceh != "" {
-			// see https://github.com/whatwg/fetch/issues/1601
-			resHdrs.Set(headers.ACEH, icfg.aceh)
+	} else {
+		if !isOPTIONS {
+			// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
+			// Note that we deliberately list "Origin" in the Vary header of
+			// responses to actual requests even in cases where a single origin
+			// is allowed, because doing so is simpler to implement and
+			// unlikely to be detrimental to Web caches.
+			//
+			// Note that we must add rather than set a Vary header here,
+			// because outer middleware may have already added/set a Vary
+			// header, which we wouldn't want to clobber.
+			resHdrs.Add(headers.Vary, headers.Origin)
 		}
-		return
-	}
-
-	o, ok := origins.Parse(origin)
-	if !ok || !icfg.tree.Contains(&o) {
-		return
-	}
-	resHdrs[headers.ACAO] = originSgl
-	if icfg.credentialed {
-		// We make no attempt to infer whether the request is credentialed;
-		// in fact, a request’s credentials mode is not necessarily observable
-		// on the server.
-		// Instead, we systematically include "ACAC: true" if credentialed
-		// access is enabled and request's origin is allowed.
-		// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
-		resHdrs.Set(headers.ACAC, headers.ValueTrue)
+		o, ok := origins.Parse(origin)
+		if !ok || !icfg.tree.Contains(&o) {
+			return
+		}
+		resHdrs[headers.ACAO] = originSgl
+		if icfg.credentialed {
+			// We make no attempt to infer whether the request is credentialed;
+			// in fact, a request’s credentials mode is not necessarily observable
+			// on the server.
+			// Instead, we systematically include "ACAC: true" if credentialed
+			// access is enabled and request's origin is allowed.
+			// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
+			resHdrs.Set(headers.ACAC, headers.ValueTrue)
+		}
 	}
 
 	if icfg.aceh != "" {

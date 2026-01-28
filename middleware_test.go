@@ -142,9 +142,6 @@ func TestMiddleware(t *testing.T) {
 				}, {
 					desc:      "non-CORS OPTIONS",
 					reqMethod: "OPTIONS",
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "actual GET from allowed",
 					reqMethod: "GET",
@@ -185,16 +182,12 @@ func TestMiddleware(t *testing.T) {
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACEH: {"x-bar,x-foo"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "actual OPTIONS from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
-					},
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET from allowed",
@@ -209,7 +202,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PURGE from allowed",
@@ -225,7 +217,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAM: {"PURGE"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PURGE and Content-Type from allowed",
@@ -237,9 +228,6 @@ func TestMiddleware(t *testing.T) {
 					},
 					preflight:                true,
 					preflightPassesCORSCheck: false,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with PURGE and Authorization from allowed",
 					reqMethod: "OPTIONS",
@@ -256,7 +244,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAM: {"PURGE"},
 						headerACAH: {"authorization"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PURGE and Authorization with some empty elements from allowed",
@@ -274,7 +261,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAM: {"PURGE"},
 						headerACAH: {",,authorization,,"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PURGE and Authorization with too many empty elements from allowed",
@@ -287,9 +273,6 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with PURGE and Authorization with some empty ACRH header lines from allowed",
 					reqMethod: "OPTIONS",
@@ -306,7 +289,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAM: {"PURGE"},
 						headerACAH: append(make([]string, 16), "authorization"),
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PURGE and Authorization with too many empty ACRH header lines from allowed",
@@ -319,9 +301,6 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET from disallowed",
 					reqMethod: "OPTIONS",
@@ -330,9 +309,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET from invalid",
 					reqMethod: "OPTIONS",
@@ -341,9 +317,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with PUT from allowed",
 					reqMethod: "OPTIONS",
@@ -354,9 +327,6 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with PUT from disallowed",
 					reqMethod: "OPTIONS",
@@ -365,9 +335,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PUT"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET and headers from allowed",
 					reqMethod: "OPTIONS",
@@ -379,9 +346,6 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET and headers from disallowed",
 					reqMethod: "OPTIONS",
@@ -391,9 +355,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRH:   {"bar,baz,foo"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				},
 			},
 		}, {
@@ -422,7 +383,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET and headers with some OWS from allowed",
@@ -439,7 +399,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: {"bar , baz\t, foo\t"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET and headers with too much OWS from allowed",
@@ -456,7 +415,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: {"bar \t, baz\t, foo\t"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET and headers with some empty elements from allowed",
@@ -473,7 +431,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo" + strings.Repeat(",", 16)},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET and headers with too many empty elements from allowed",
@@ -490,7 +447,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo" + strings.Repeat(",", 17)},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET and headers with some empty ACHR header lines from allowed",
@@ -507,7 +463,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: append(make([]string, 16), "bar,baz,foo"),
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET and headers with too many empty ACHR header lines from allowed",
@@ -524,7 +479,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: append(make([]string, 17), "bar,baz,foo"),
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				},
 			},
@@ -549,9 +503,6 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				},
 			},
 		}, {
@@ -579,7 +530,6 @@ func TestMiddleware(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with disallowed method",
@@ -594,7 +544,6 @@ func TestMiddleware(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
-						headerVary: {varyPreflightValue},
 					},
 				},
 			},
@@ -626,7 +575,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: {"authorization"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				},
 			},
@@ -657,7 +605,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAM: {wildcard},
 						headerACAH: {wildcard},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				},
 			},
@@ -686,7 +633,6 @@ func TestMiddleware(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACEH: {wildcard},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "actual GET request",
@@ -717,7 +663,6 @@ func TestMiddleware(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACEH: {wildcard},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET",
@@ -731,7 +676,6 @@ func TestMiddleware(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PURGE",
@@ -746,7 +690,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAO: {wildcard},
 						headerACAM: {wildcard},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PURGE and Content-Type",
@@ -763,7 +706,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAM: {wildcard},
 						headerACAH: {wildcardAndAuth},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET from invalid",
@@ -777,7 +719,6 @@ func TestMiddleware(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PUT",
@@ -792,7 +733,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAO: {wildcard},
 						headerACAM: {wildcard},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET and headers",
@@ -808,7 +748,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAO: {wildcard},
 						headerACAH: {wildcardAndAuth},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				},
 			},
@@ -850,9 +789,6 @@ func TestMiddleware(t *testing.T) {
 				}, {
 					desc:      "non-CORS OPTIONS request",
 					reqMethod: "OPTIONS",
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "actual GET from allowed",
 					reqMethod: "GET",
@@ -893,16 +829,12 @@ func TestMiddleware(t *testing.T) {
 						headerACAO: {"https://example.com:8080"},
 						headerACAC: {"true"},
 						headerACEH: {"x-bar,x-foo"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "actual OPTIONS from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://foo.example.com:8080"},
-					},
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET and headers from allowed",
@@ -919,7 +851,6 @@ func TestMiddleware(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				},
 			},
@@ -940,9 +871,6 @@ func TestMiddleware(t *testing.T) {
 				}, {
 					desc:      "non-CORS OPTIONS",
 					reqMethod: "OPTIONS",
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "actual GET from allowed",
 					reqMethod: "GET",
@@ -979,16 +907,12 @@ func TestMiddleware(t *testing.T) {
 					},
 					respHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "actual OPTIONS from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
-					},
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET from allowed",
@@ -1001,7 +925,6 @@ func TestMiddleware(t *testing.T) {
 					preflightPassesCORSCheck: true,
 					respHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PURGE from allowed",
@@ -1013,9 +936,6 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with PURGE and Content-Type from allowed",
 					reqMethod: "OPTIONS",
@@ -1026,9 +946,6 @@ func TestMiddleware(t *testing.T) {
 					},
 					preflight:                true,
 					preflightPassesCORSCheck: false,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET from disallowed",
 					reqMethod: "OPTIONS",
@@ -1037,9 +954,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET from invalid",
 					reqMethod: "OPTIONS",
@@ -1048,9 +962,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with PUT from allowed",
 					reqMethod: "OPTIONS",
@@ -1061,9 +972,6 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with PUT from disallowed",
 					reqMethod: "OPTIONS",
@@ -1072,9 +980,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PUT"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET and headers from allowed",
 					reqMethod: "OPTIONS",
@@ -1086,9 +991,6 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET and headers from disallowed",
 					reqMethod: "OPTIONS",
@@ -1098,9 +1000,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRH:   {"bar,baz,foo"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				},
 			},
 		}, {
@@ -1137,17 +1036,11 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"https://barfoo.com"},
 					},
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "actual OPTIONS from disallowed 2",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://foobar.com"},
-					},
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET from disallowed",
@@ -1157,9 +1050,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET from disallowed 2",
 					reqMethod: "OPTIONS",
@@ -1168,9 +1058,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with PUT from disallowed",
 					reqMethod: "OPTIONS",
@@ -1179,9 +1066,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PUT"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with PUT from disallowed 2",
 					reqMethod: "OPTIONS",
@@ -1190,9 +1074,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PUT"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET and headers from disallowed",
 					reqMethod: "OPTIONS",
@@ -1202,9 +1083,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRH:   {"bar,baz,foo"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with GET and headers from disallowed 2",
 					reqMethod: "OPTIONS",
@@ -1214,9 +1092,6 @@ func TestMiddleware(t *testing.T) {
 						headerACRH:   {"bar,baz,foo"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				},
 			},
 		}, {
@@ -1239,9 +1114,6 @@ func TestMiddleware(t *testing.T) {
 				}, {
 					desc:      "non-CORS OPTIONS request",
 					reqMethod: "OPTIONS",
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "actual GET from allowed",
 					reqMethod: "GET",
@@ -1280,16 +1152,12 @@ func TestMiddleware(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {"connector://example.com"},
 						headerACAC: {"true"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "actual OPTIONS from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"connector://example.com:8080"},
-					},
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with GET and headers from allowed",
@@ -1302,9 +1170,6 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				},
 			},
 		}, {
@@ -1374,9 +1239,6 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				},
 			},
 		},
@@ -1513,10 +1375,6 @@ func TestWrappedHandlerCannotMutatePackageLevelSlices(t *testing.T) {
 		sgl  []string
 	}{
 		{
-			desc: "headers.PreflightVarySgl[0]",
-			old:  headers.PreflightVarySgl[0],
-			sgl:  headers.PreflightVarySgl,
-		}, {
 			desc: "headers.TrueSgl[0]",
 			old:  headers.TrueSgl[0],
 			sgl:  headers.TrueSgl,
@@ -1713,7 +1571,6 @@ func TestReconfigure(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PUT from invalid",
@@ -1723,9 +1580,6 @@ func TestReconfigure(t *testing.T) {
 						headerACRM:   {"PUT"},
 					},
 					preflight: true,
-					respHeaders: http.Header{
-						headerVary: {varyPreflightValue},
-					},
 				}, {
 					desc:      "preflight with disallowed method",
 					reqMethod: "OPTIONS",
@@ -1739,7 +1593,6 @@ func TestReconfigure(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
-						headerVary: {varyPreflightValue},
 					},
 				},
 			},
@@ -1770,7 +1623,6 @@ func TestReconfigure(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PURGE and headers from allowed",
@@ -1786,7 +1638,6 @@ func TestReconfigure(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"}, // would be absent if debug were false
 						headerACAC: {"true"},                  // would be absent if debug were false
-						headerVary: {varyPreflightValue},
 					},
 				},
 			},
@@ -1822,7 +1673,6 @@ func TestReconfigure(t *testing.T) {
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo"},
 						headerACMA: {"30"},
-						headerVary: {varyPreflightValue},
 					},
 				}, {
 					desc:      "preflight with PURGE and headers from allowed",
@@ -1838,7 +1688,6 @@ func TestReconfigure(t *testing.T) {
 					respHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"}, // would be absent if debug were false
 						headerACAC: {"true"},                  // would be absent if debug were false
-						headerVary: {varyPreflightValue},
 					},
 				},
 			},
