@@ -184,6 +184,57 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
 	}
 }
 
+// Note: only for _non-preflight_ CORS requests
+func (icfg *internalConfig) handleCORSActual(
+	resHdrs http.Header,
+	origin string,
+	originSgl []string,
+	isOPTIONS bool,
+) {
+	// It's tempting to rely (for performance) on some precomputed slices for
+	// the response headers we add/set here, as we do in handleCORSPreflight.
+	// However, doing so here is fraught with peril, because it would provide
+	// the wrapped handler an undesirable affordance: mutation of those slices.
+	// See https://github.com/rs/cors/issues/198.
+
+	if icfg.tree.IsEmpty() {
+		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
+	} else {
+		if !isOPTIONS {
+			// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
+			// Note that we deliberately list "Origin" in the Vary header of
+			// responses to actual requests even in cases where a single origin
+			// is allowed, because doing so is simpler to implement and
+			// unlikely to be detrimental to Web caches.
+			// Moreover, official guidance about this special case is likely to
+			// change; see https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
+			//
+			// Note that we must add rather than set a Vary header here,
+			// because outer middleware may have already added/set a Vary
+			// header, which we wouldn't want to clobber.
+			resHdrs.Add(headers.Vary, headers.Origin)
+		}
+		o, ok := origins.Parse(origin)
+		if !ok || !icfg.tree.Contains(&o) {
+			return
+		}
+		resHdrs[headers.ACAO] = originSgl
+		if icfg.credentialed {
+			// We make no attempt to infer whether the request is credentialed;
+			// in fact, a request’s credentials mode is not necessarily observable
+			// on the server.
+			// Instead, we systematically include "ACAC: true" if credentialed
+			// access is enabled and request's origin is allowed.
+			// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
+			resHdrs.Set(headers.ACAC, headers.ValueTrue)
+		}
+	}
+
+	if icfg.aceh != "" {
+		resHdrs.Set(headers.ACEH, icfg.aceh)
+	}
+}
+
 func (icfg *internalConfig) handleCORSPreflight(
 	w http.ResponseWriter,
 	reqHdrs http.Header,
@@ -294,57 +345,6 @@ func (icfg *internalConfig) processOriginForPreflight(
 		buf[headers.ACAC] = headers.TrueSgl
 	}
 	return true
-}
-
-// Note: only for _non-preflight_ CORS requests
-func (icfg *internalConfig) handleCORSActual(
-	resHdrs http.Header,
-	origin string,
-	originSgl []string,
-	isOPTIONS bool,
-) {
-	// It's tempting to rely (for performance) on some precomputed slices for
-	// the response headers we add/set here, as we do in handleCORSPreflight.
-	// However, doing so here is fraught with peril, because it would provide
-	// the wrapped handler an undesirable affordance: mutation of those slices.
-	// See https://github.com/rs/cors/issues/198.
-
-	if icfg.tree.IsEmpty() {
-		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
-	} else {
-		if !isOPTIONS {
-			// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
-			// Note that we deliberately list "Origin" in the Vary header of
-			// responses to actual requests even in cases where a single origin
-			// is allowed, because doing so is simpler to implement and
-			// unlikely to be detrimental to Web caches.
-			// Moreover, official guidance about this special case is likely to
-			// change; see https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
-			//
-			// Note that we must add rather than set a Vary header here,
-			// because outer middleware may have already added/set a Vary
-			// header, which we wouldn't want to clobber.
-			resHdrs.Add(headers.Vary, headers.Origin)
-		}
-		o, ok := origins.Parse(origin)
-		if !ok || !icfg.tree.Contains(&o) {
-			return
-		}
-		resHdrs[headers.ACAO] = originSgl
-		if icfg.credentialed {
-			// We make no attempt to infer whether the request is credentialed;
-			// in fact, a request’s credentials mode is not necessarily observable
-			// on the server.
-			// Instead, we systematically include "ACAC: true" if credentialed
-			// access is enabled and request's origin is allowed.
-			// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
-			resHdrs.Set(headers.ACAC, headers.ValueTrue)
-		}
-	}
-
-	if icfg.aceh != "" {
-		resHdrs.Set(headers.ACEH, icfg.aceh)
-	}
 }
 
 func (icfg *internalConfig) processACRM(
