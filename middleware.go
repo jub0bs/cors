@@ -256,19 +256,6 @@ func (icfg *internalConfig) handleCORSPreflight(
 	//    Some CORS middleware libraries (such as github.com/rs/cors) do cater
 	//    for such non-compliant behavior; let's not.
 
-	if !icfg.preflight && !debug {
-		w.WriteHeader(preflightFailStatus)
-		return
-	}
-
-	// Populating a small (8 keys or fewer) local map incurs 0 heap
-	// allocations on average; see https://go.dev/play/p/RQdNE-pPCQq.
-	// Therefore, using a different data structure for accumulating response
-	// headers provides no performance advantage; a simple http.Header will do.
-	buf := make(http.Header)
-
-	resHdrs := w.Header()
-
 	// When debug is on and a preflight step fails,
 	// we omit the remaining CORS response headers
 	// and let the browser fail the CORS-preflight fetch;
@@ -278,8 +265,20 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// When debug is off and preflight fails,
 	// we omit all CORS headers from the preflight response.
 
+	if !icfg.preflight && !debug {
+		w.WriteHeader(preflightFailStatus)
+		return
+	}
+
+	// Populating a small (8 keys or fewer) local map incurs 0 heap
+	// allocations on average; see https://go.dev/play/p/RQdNE-pPCQq.
+	buf := make(http.Header)
+
+	resHdrs := w.Header()
+
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
+
 	if !icfg.processOriginForPreflight(buf, origin, originSgl) {
 		if debug {
 			maps.Copy(resHdrs, buf)
@@ -312,12 +311,15 @@ func (icfg *internalConfig) handleCORSPreflight(
 		w.WriteHeader(preflightFailStatus)
 		return
 	}
+
 	// Preflight was successful.
 
 	maps.Copy(resHdrs, buf)
+
 	if icfg.acma != nil {
 		resHdrs[headers.ACMA] = icfg.acma
 	}
+
 	w.WriteHeader(preflightOKStatus)
 }
 
