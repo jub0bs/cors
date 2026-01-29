@@ -361,9 +361,10 @@ func (icfg *internalConfig) processACRM(
 		return true
 	}
 	// Note that middleware only ever list a single method in the ACAM header.
-	// One inconvenient of this behavior is that it leads to less than ideal
-	// caching by the browser of responses to CORS-preflight requests;
+	// One inconvenience of this behavior is that it leads to less than ideal
+	// utilization of the CORS-preflight cache;
 	// see https://fetch.spec.whatwg.org/#cors-preflight-cache.
+	//
 	// However, this behavior presents two advantages with respect to responses
 	// to CORS-preflight requests:
 	//   - those responses disclose no other allowed methods than the one
