@@ -396,102 +396,102 @@ func (icfg *internalConfig) processACRH(
 	if !found {
 		return true
 	}
-	if icfg.asteriskReqHdrs && !icfg.credentialed {
-		if icfg.allowAuthorization {
-			// According to the Fetch standard, the wildcard does not cover
-			// request-header name Authorization; see
-			// https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name
-			// and https://github.com/whatwg/fetch/issues/251#issuecomment-209265586.
+	if icfg.asteriskReqHdrs {
+		if icfg.credentialed {
+			// If credentialed access is enabled,
+			// the single-asterisk pattern denotes all request-header names,
+			// including Authorization.
+			// Therefore, users of jub0bs/cors cannot both
+			// allow all request-header names other than Authorization
+			// and allow credentialed access.
+			// This limitation is the result of a deliberate design choice.
 			//
-			// Note that we systematically list Authorization
-			// in the ACAH header here.
-			// Unfortunately, such an approach reveals that
-			// the CORS configuration allows this request-header name,
-			// even to (potentially malicious) clients that don't include
-			// an Authorization header in their requests.
+			// First, rare are the cases where all request-header names
+			// other than Authorization should be allowed
+			// with credentialed access enabled.
 			//
-			// An alternative approach would consist in replying
-			// with "*,authorization" when ACRH contains "authorization",
-			// and with "*" when ACRH does not contain "authorization".
-			// However, such an approach would require us to scan the entire
-			// ACRH header in search of "authorization",
-			// which, in the event of a long ACRH header, would be costly
-			// in CPU cycles.
-			// Adversaries aware of this subtlety could spoof preflight requests
-			// containing a maliciously long ACRH header in order to exercise
-			// this costly execution path and thereby generate undue load
-			// on the server.
-			buf[headers.ACAH] = headers.WildcardAuthSgl
+			// Second, because jub0bs/cors prohibits its users from
+			// allowing all origins with credentialed access,
+			// allowing all request headers from select origins along
+			// with credentialed access presents little security-related risks.
+			//
+			// Third, if we followed an alternative approach
+			// in which * doesn't cover Authorization,
+			// we would need to scan the ACRH header in search of "authorization";
+			// as explained in an implementation comment above,
+			// such a computation would introduce performance issues.
+			// Moreover, if "authorization" were found in ACRH,
+			// we couldn't simply echo ACRH in ACAH,
+			// because we'd have to omit "authorization" in ACAH.
+			// Incidentally, this could be achieved
+			// without incurring heap allocations,
+			// e.g. by cutting ACRH around "authorization" and
+			// echoing the results in up to two ACAH header(s);
+			// but the whole alternative approach is not worth the trouble anyway.
+			//
+			// We can simply reflect all the ACRH header lines as ACAH header lines
+			// because the Fetch standard requires browsers to handle multiple ACAH
+			// header lines;
+			// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
+			//
+			// Reflecting ACRH into ACAH isn't ideal for performance in cases where
+			// ACRH is full of junk, but there isn't much else we can do, other than
+			// discourage users from both enabling credentialed access and allowing
+			// all request-header names.
+			buf[headers.ACAH] = acrh
 		} else {
-			buf[headers.ACAH] = headers.WildcardSgl
+			if icfg.allowAuthorization {
+				// According to the Fetch standard, the wildcard does not cover
+				// request-header name Authorization; see
+				// https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name
+				// and https://github.com/whatwg/fetch/issues/251#issuecomment-209265586.
+				//
+				// Note that we systematically list Authorization
+				// in the ACAH header here.
+				// Unfortunately, such an approach reveals that
+				// the CORS configuration allows this request-header name,
+				// even to (potentially malicious) clients that don't include
+				// an Authorization header in their requests.
+				//
+				// An alternative approach would consist in replying
+				// with "*,authorization" when ACRH contains "authorization",
+				// and with "*" when ACRH does not contain "authorization".
+				// However, such an approach would require us to scan the entire
+				// ACRH header in search of "authorization",
+				// which, in the event of a long ACRH header, would be costly
+				// in CPU cycles.
+				// Adversaries aware of this subtlety could spoof preflight requests
+				// containing a maliciously long ACRH header in order to exercise
+				// this costly execution path and thereby generate undue load
+				// on the server.
+				buf[headers.ACAH] = headers.WildcardAuthSgl
+			} else {
+				buf[headers.ACAH] = headers.WildcardSgl
+			}
 		}
 		return true
 	}
-	if icfg.asteriskReqHdrs && icfg.credentialed {
-		// If credentialed access is enabled,
-		// the single-asterisk pattern denotes all request-header names,
-		// including Authorization.
-		// Therefore, users of jub0bs/cors cannot both
-		// allow all request-header names other than Authorization
-		// and allow credentialed access.
-		// This limitation is the result of a deliberate design choice.
-		//
-		// First, rare are the cases where all request-header names
-		// other than Authorization should be allowed
-		// with credentialed access enabled.
-		//
-		// Second, because jub0bs/cors prohibits its users from
-		// allowing all origins with credentialed access,
-		// allowing all request headers from select origins along
-		// with credentialed access presents little security-related risks.
-		//
-		// Third, if we followed an alternative approach
-		// in which * doesn't cover Authorization,
-		// we would need to scan the ACRH header in search of "authorization";
-		// as explained in an implementation comment above,
-		// such a computation would introduce performance issues.
-		// Moreover, if "authorization" were found in ACRH,
-		// we couldn't simply echo ACRH in ACAH,
-		// because we'd have to omit "authorization" in ACAH.
-		// Incidentally, this could be achieved
-		// without incurring heap allocations,
-		// e.g. by cutting ACRH around "authorization" and
-		// echoing the results in up to two ACAH header(s);
-		// but the whole alternative approach is not worth the trouble anyway.
-		//
-		// We can simply reflect all the ACRH header lines as ACAH header lines
-		// because the Fetch standard requires browsers to handle multiple ACAH
-		// header lines;
-		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
-		//
-		// Reflecting ACRH into ACAH isn't ideal for performance in cases where
-		// ACRH is full of junk, but there isn't much else we can do, other than
-		// discourage users from both enabling credentialed access and allowing
-		// all request-header names.
-		buf[headers.ACAH] = acrh
-		return true
-	}
-	if !debug {
-		if !headers.Check(icfg.allowedReqHdrs, acrh) {
-			return false
+	if debug {
+		if icfg.acah != nil {
+			buf[headers.ACAH] = icfg.acah
+			return true
 		}
-		// We can simply reflect all the ACRH header lines as ACAH header lines
-		// because the Fetch standard requires browsers to handle multiple ACAH
-		// header lines;
-		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
-		//
-		// Reflecting ACRH into ACAH isn't ideal for performance in cases where
-		// ACRH is full of junk, but there isn't much else we can do, other than
-		// discourage users from keeping debug mode on for extended periods of
-		// time.
-		buf[headers.ACAH] = acrh
-		return true
+		return false
 	}
-	if icfg.acah != nil {
-		buf[headers.ACAH] = icfg.acah
-		return true
+	if !headers.Check(icfg.allowedReqHdrs, acrh) {
+		return false
 	}
-	return false
+	// We can simply reflect all the ACRH header lines as ACAH header lines
+	// because the Fetch standard requires browsers to handle multiple ACAH
+	// header lines;
+	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
+	//
+	// Reflecting ACRH into ACAH isn't ideal for performance in cases where
+	// ACRH is full of junk, but there isn't much else we can do, other than
+	// discourage users from keeping debug mode on for extended periods of
+	// time.
+	buf[headers.ACAH] = acrh
+	return true
 }
 
 // SetDebug turns debug mode on (if b is true) or off (otherwise).
