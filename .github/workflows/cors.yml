@@ -14,9 +14,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out Source
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.1
       - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v5.4.0
+        uses: actions/setup-go@v6.2.0
         with:
           go-version: ${{ matrix.go-version }}
           cache: true
@@ -25,7 +25,7 @@ jobs:
       - name: Test
         run: go test -race -v -shuffle on -coverprofile cover.out ./...
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5.4.2
+        uses: codecov/codecov-action@v5.5.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: jub0bs/cors
@@ -41,7 +41,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out Code (new)
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.1
         with:
           path: new
           fetch-depth: '0' # fetch all history for all branches and tags
@@ -51,12 +51,12 @@ jobs:
           cd new
           echo "LATEST_TAG=$(git for-each-ref --sort=-version:refname --format='%(refname:lstrip=2)' --count=1 refs/tags)" >> "$GITHUB_OUTPUT"
       - name: Check out Code (old)
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.1
         with:
           ref: ${{ steps.latest-tag.outputs.LATEST_TAG }}
           path: old
       - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v5.4.0
+        uses: actions/setup-go@v6.2.0
         with:
           go-version: ${{ matrix.go-version }}
       - name: Install benchinit
