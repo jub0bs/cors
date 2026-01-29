@@ -165,8 +165,9 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
 			// Note that we deliberately list "Origin" in the Vary header of
 			// responses to actual requests even in cases where a single origin
 			// is allowed, because doing so is simpler to implement and
-			// unlikely to be detrimental to Web caches. See also
-			// https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
+			// unlikely to be detrimental to Web caches.
+			// Moreover, official guidance about this special case is likely to
+			// change; see https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
 			//
 			// Note that we must add rather than set a Vary header here,
 			// because outer middleware may have already added/set a Vary
@@ -178,7 +179,7 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
 
 	resHdrs.Set(headers.ACAO, headers.ValueWildcard)
 	if icfg.aceh != "" {
-		// see https://github.com/whatwg/fetch/issues/1601
+		// see https://github.com/whatwg/fetch/issues/1601#issuecomment-1420881527
 		resHdrs.Set(headers.ACEH, icfg.aceh)
 	}
 }
@@ -309,7 +310,6 @@ func (icfg *internalConfig) handleCORSActual(
 	// See https://github.com/rs/cors/issues/198.
 
 	if icfg.tree.IsEmpty() {
-		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
 		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
 	} else {
 		if !isOPTIONS {
@@ -317,8 +317,9 @@ func (icfg *internalConfig) handleCORSActual(
 			// Note that we deliberately list "Origin" in the Vary header of
 			// responses to actual requests even in cases where a single origin
 			// is allowed, because doing so is simpler to implement and
-			// unlikely to be detrimental to Web caches. See also
-			// https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
+			// unlikely to be detrimental to Web caches.
+			// Moreover, official guidance about this special case is likely to
+			// change; see https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
 			//
 			// Note that we must add rather than set a Vary header here,
 			// because outer middleware may have already added/set a Vary
