@@ -78,6 +78,7 @@ func (app *TenantApp) handleReconfigureCORS(w http.ResponseWriter, r *http.Reque
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		return
 	}
 }
 
