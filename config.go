@@ -32,13 +32,12 @@ import (
 // Security considerations: Bear in mind that, by allowing Web origins
 // in your server's CORS configuration, you engage in a trust relationship
 // with those origins.
-// Malicious actors, by exploiting some Web vulnerabilities (including
-// [cross-site scripting] and [subdomain takeover]) on those origins,
-// may be able to gain a foothold on those origins
-// and mount [cross-origin attacks] against your users from there.
+// Malicious actors may be able to exploit some Web vulnerabilities (including
+// [cross-site scripting] and [subdomain takeover]) on those origins and mount
+// [cross-origin attacks] against your users from there.
 // Therefore, you should (in general) exercise caution when deciding which
 // origins to allow. In particular, if you enable [credentialed access],
-// you should only allow Web origins you absolutely trust.
+// you should only allow Web origins that you absolutely trust.
 //
 // Omitting to specify at least one origin pattern is prohibited;
 // so is specifying one or more invalid or prohibited origin pattern(s).
@@ -102,8 +101,7 @@ import (
 //	Origins:      []string{"*"}, // prohibited
 //
 // A leading asterisk followed by a period (.) in a host pattern
-// denotes exactly one arbitrary DNS label
-// or several period-separated arbitrary DNS labels.
+// denotes one or more period-separated arbitrary DNS labels.
 // For instance, the pattern
 //
 //	https://*.example.com
@@ -202,13 +200,14 @@ import (
 // Moreover, the CORS protocol forbids the use of some method names.
 // Accordingly, specifying [forbidden method names] is prohibited.
 //
-// Note that, contrary to popular belief, listing OPTIONS as an allowed method
-// in your CORS configuration is only required if you wish to allow clients
-// to make explicit use of that method, e.g. via the following client code:
+// Note that, contrary to popular belief, specifying OPTIONS as an allowed
+// method in your CORS configuration is only required if you wish to allow
+// clients to make explicit use of that method, e.g. via the following client
+// code:
 //
 //	fetch('https://example.com', {method: 'OPTIONS'})
 //
-// In the great majority of cases, listing OPTIONS as an allowed method
+// In the great majority of cases, specifying OPTIONS as an allowed method
 // in your CORS configuration is unnecessary.
 //
 // # RequestHeaders
@@ -269,8 +268,7 @@ import (
 // To instruct browsers to eschew caching of preflight responses altogether,
 // specify a value of -1. No other negative value is permitted.
 //
-// Because modern browsers [cap the max-age value]
-// (the highest cap currently is Firefox's: 86,400 seconds),
+// Because modern browsers [cap the max-age value],
 // this field is subject to an upper bound:
 // specifying a value larger than 86400 is prohibited.
 //
@@ -359,8 +357,8 @@ import (
 // [subdomain takeover]: https://labs.detectify.com/writeups/hostile-subdomain-takeover-using-heroku-github-desk-more/
 // [the talk he gave at AppSec EU 2017]: https://www.youtube.com/watch?v=wgkj4ZgxI4c&t=1305s
 type Config struct {
-	// precludes comparability, unkeyed struct literals, and conversion to and
-	// from third-party types
+	// Precludes comparability, unkeyed struct literals, and conversion to and
+	// from third-party types.
 	_ [0]func()
 
 	Origins                                       []string
@@ -374,9 +372,9 @@ type Config struct {
 }
 
 type internalConfig struct {
-	tree                         origins.Tree // tree.IsEmpty() <=> any origin allowed
-	allowedMethods               util.Set
-	allowedReqHdrs               util.SortedSet
+	tree                         origins.Tree   // tree.IsEmpty() <=> any origin allowed
+	allowedMethods               util.Set       // allowedMethods.Size() > 0 => !allowAnyMethod
+	allowedReqHdrs               util.SortedSet // allowedReqHdrs.Size() > 0 => !asteriskReqHdrs
 	acah                         []string
 	credentialed                 bool // tree.IsEmpty() => !credentialed
 	allowAnyMethod               bool
