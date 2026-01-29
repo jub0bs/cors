@@ -19,7 +19,8 @@ import (
 // and pass it a valid [Config].
 //
 // Middleware have a debug mode,
-// which can be toggled by calling their [*Middleware.SetDebug] method.
+// which can be toggled by calling their [*Middleware.SetDebug] method
+// and queried by calling their [*Middleware.Debug] method.
 // You should turn debug mode on whenever you're struggling to troubleshoot
 // some [CORS-preflight] issue;
 // however, be aware that keeping debug mode on may lead to observably poorer
