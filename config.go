@@ -598,7 +598,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 	if len(errs) > nbErrors {
 		return errs
 	}
-	if !icfg.asteriskReqHdrs && allowedHeaders.Size() > 0 {
+	if allowedHeaders.Size() > 0 {
 		icfg.allowedReqHdrs = allowedHeaders
 		s := allowedHeaders.ToSlice()
 		// The elements of a header-field value may be separated simply by commas;
@@ -792,7 +792,7 @@ func newConfig(icfg *internalConfig) *Config {
 
 	// max age
 	if len(icfg.acma) > 0 {
-		maxAge, _ := strconv.Atoi(icfg.acma[0]) // safe by construction of internalConfig
+		maxAge, _ := strconv.Atoi(icfg.acma[0]) // safe, by construction
 		if maxAge != 0 {
 			cfg.MaxAgeInSeconds = maxAge
 		} else {
