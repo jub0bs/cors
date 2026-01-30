@@ -440,34 +440,7 @@ func (icfg *internalConfig) processACRH(
 			// all request-header names.
 			buf[headers.ACAH] = acrh
 		} else {
-			if icfg.allowAuthorization {
-				// According to the Fetch standard, the wildcard does not cover
-				// request-header name Authorization; see
-				// https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name
-				// and https://github.com/whatwg/fetch/issues/251#issuecomment-209265586.
-				//
-				// Note that we systematically list Authorization
-				// in the ACAH header here.
-				// Unfortunately, such an approach reveals that
-				// the CORS configuration allows this request-header name,
-				// even to (potentially malicious) clients that don't include
-				// an Authorization header in their requests.
-				//
-				// An alternative approach would consist in replying
-				// with "*,authorization" when ACRH contains "authorization",
-				// and with "*" when ACRH does not contain "authorization".
-				// However, such an approach would require us to scan the entire
-				// ACRH header in search of "authorization",
-				// which, in the event of a long ACRH header, would be costly
-				// in CPU cycles.
-				// Adversaries aware of this subtlety could spoof preflight requests
-				// containing a maliciously long ACRH header in order to exercise
-				// this costly execution path and thereby generate undue load
-				// on the server.
-				buf[headers.ACAH] = headers.WildcardAuthSgl
-			} else {
-				buf[headers.ACAH] = headers.WildcardSgl
-			}
+			buf[headers.ACAH] = icfg.acah
 		}
 		return true
 	}

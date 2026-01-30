@@ -598,7 +598,37 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 	if len(errs) > nbErrors {
 		return errs
 	}
-	if allowedHeaders.Size() > 0 {
+	switch {
+	case icfg.asteriskReqHdrs && !icfg.credentialed:
+		if icfg.allowAuthorization {
+			// According to the Fetch standard, the wildcard does not cover
+			// request-header name Authorization; see
+			// https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name
+			// and https://github.com/whatwg/fetch/issues/251#issuecomment-209265586.
+			//
+			// Note that we systematically list Authorization
+			// in the ACAH header here.
+			// Unfortunately, such an approach reveals that
+			// the CORS configuration allows this request-header name,
+			// even to (potentially malicious) clients that don't include
+			// an Authorization header in their requests.
+			//
+			// An alternative approach would consist in replying
+			// with "*,authorization" when ACRH contains "authorization",
+			// and with "*" when ACRH does not contain "authorization".
+			// However, such an approach would require us to scan the entire
+			// ACRH header in search of "authorization",
+			// which, in the event of a long ACRH header, would be costly
+			// in CPU cycles.
+			// Adversaries aware of this subtlety could spoof preflight requests
+			// containing a maliciously long ACRH header in order to exercise
+			// this costly execution path and thereby generate undue load
+			// on the server.
+			icfg.acah = headers.WildcardAuthSgl
+		} else {
+			icfg.acah = headers.WildcardSgl
+		}
+	case allowedHeaders.Size() > 0:
 		icfg.allowedReqHdrs = allowedHeaders
 		s := allowedHeaders.ToSlice()
 		// The elements of a header-field value may be separated simply by commas;
