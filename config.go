@@ -430,7 +430,7 @@ func (icfg *internalConfig) validateOriginPatterns(errs []error, patterns []stri
 		if raw == headers.ValueWildcard {
 			if icfg.credentialed {
 				err := &cfgerrors.IncompatibleOriginPatternError{
-					Value:  "*",
+					Value:  headers.ValueWildcard,
 					Reason: "credentialed",
 				}
 				errs = append(errs, err)
@@ -788,7 +788,7 @@ func newConfig(icfg *internalConfig) *Config {
 
 	// origins
 	if icfg.tree.IsEmpty() {
-		cfg.Origins = []string{"*"}
+		cfg.Origins = []string{headers.ValueWildcard}
 	} else {
 		cfg.Origins = slices.Collect(icfg.tree.Elems())
 	}
@@ -805,7 +805,7 @@ func newConfig(icfg *internalConfig) *Config {
 	// methods
 	switch {
 	case icfg.allowAnyMethod:
-		cfg.Methods = []string{"*"}
+		cfg.Methods = []string{headers.ValueWildcard}
 	case icfg.allowedMethods.Size() > 0:
 		cfg.Methods = icfg.allowedMethods.ToSlice()
 	}
