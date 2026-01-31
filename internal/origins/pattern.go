@@ -283,7 +283,7 @@ func firstByteOfRightmostLabelIsDigit(hostPattern string) (_ bool, ok bool) {
 		return isDigit(label[0]), true
 	}
 	// s contains a trailing period ("absolute" domain).
-	rest, label, _ = lastCutByte(rest, labelSep)
+	_, label, _ = lastCutByte(rest, labelSep)
 	if label != "" {
 		return isDigit(label[0]), true
 	}
