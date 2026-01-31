@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] (2026-01-31)
+
+### Added
+
+- **API**: Add fields `DangerouslyTolerateInsecureOrigins` and
+  `DangerouslyTolerateSubdomainsOfPublicSuffixes` to struct type `Config`.
+  Those used to be fields of struct type `ExtraConfig`, which is now gone
+  (see below).
+
+### Changed
+
+- **Behavior** (breaking change): Middleware no longer cater for intermediaries
+  that cache responses to prelight requests; such caching behavior indeed
+  violates [RFC 9110]. If you choose to configure an intermediary to cache
+  those responses anyway, you must make sure (in order to avoid
+  [cache poisoning]) that the intermediary include a [Vary] header listing the
+  relevant [CORS request headers].
+- **Performance**: Middleware execution during preflight is now faster and
+  incurs fewer heap allocations.
+- **Performance**: various improvements
+- **Tests**: minor improvements
+- **Documentation**: various improvements
+
+### Removed
+
+- **API** (breaking change): Drop field `ExtraConfig` from struct type `Config`.
+- **API** (breaking change): Remove type `ExtraConfig`.
+- **API** (breaking change): Drop field `PreflightSuccessStatus` from struct
+  type `Config`. You can no longer set a custom status code to signal preflight
+  success; middleware now invariably use status code [204 (No Content)] for
+  preflight success. If this restriction does not suit you, either fork this
+  library or use another one.
+- **API** (breaking change): Remove type
+  `cfgerrors.PreflightSuccessStatusOutOfBoundsError`.
+
 ## [0.10.0] (2026-01-25)
 
 ### Changed
@@ -294,6 +329,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[0.11.0]: https://github.com/jub0bs/cors/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/jub0bs/cors/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/jub0bs/cors/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/jub0bs/cors/compare/v0.9.0...v0.9.1
@@ -320,7 +356,12 @@ Private-Network Access was never fully implemented by browsers and has been put
 [0.1.1]: https://github.com/jub0bs/cors/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/jub0bs/cors/releases/tag/v0.1.0
 
+[204 (No Content)]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/204
+[CORS request headers]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#the_http_request_headers
 [RFC 8738]: https://datatracker.ietf.org/doc/html/rfc8738
+[RFC 9110]: https://httpwg.org/specs/rfc9110.html
+[Vary]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary
+[cache poisoning]: https://portswigger.net/web-security/web-cache-poisoning
 [issue76766]: https://go.dev/issue/76766
 [lna]: https://developer.chrome.com/blog/local-network-access
 [pna-on-hold]: https://developer.chrome.com/blog/pna-on-hold
