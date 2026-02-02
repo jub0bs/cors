@@ -355,6 +355,9 @@ const schemeHTTPS = "https"
 //   - p's scheme is not https,
 //   - p's host is not a loopback IP address,
 //   - p's host is not localhost.
+//
+// Note: protocols using a scheme other than https may well encrypt traffic,
+// but let's be conservative here.
 func (p *Pattern) IsDeemedInsecure() bool {
 	return p.Scheme != schemeHTTPS &&
 		p.Kind != LoopbackIP &&
