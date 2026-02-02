@@ -310,7 +310,7 @@ var parsePatternTestCases = []TestCase{
 		input:   "http://xn--f",
 		failure: true,
 	}, {
-		name:  "arbitrary subdomains of depth one or more",
+		name:  "arbitrary subdomains",
 		input: "http://*.example.com:3999",
 		want: Pattern{
 			Scheme:      "http",
@@ -319,7 +319,7 @@ var parsePatternTestCases = []TestCase{
 			Port:        3999,
 		},
 	}, {
-		name:  "arbitrary subdomains of depth one or more and arbitrary ports",
+		name:  "arbitrary subdomains and arbitrary ports",
 		input: "http://*.example.com:*",
 		want: Pattern{
 			Scheme:      "http",

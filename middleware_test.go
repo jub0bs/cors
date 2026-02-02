@@ -1169,7 +1169,7 @@ func TestMiddleware(t *testing.T) {
 				},
 			},
 		}, {
-			desc:       "arbitrary subdomains of depth one or more and arbitrary ports",
+			desc:       "arbitrary subdomains and arbitrary ports",
 			newHandler: newSpyHandler(200, http.Header{headerVary: {"foo"}}, "bar"),
 			cfg: &cors.Config{
 				Origins: []string{"http://*.example.com:*"},
