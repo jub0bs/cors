@@ -17,7 +17,7 @@ const validHostOf251chars = "a2345678901234567890123456789012345678901234567890"
 	"1234567890.a2345678901234567890123456789012345678901234567890" +
 	"1234567890.a234567"
 
-var parsePatternCases = []TestCase{
+var parsePatternTestCases = []TestCase{
 	{
 		name:    "wildcard character sequence followed by 252 chars",
 		input:   "https://*.a" + validHostOf251chars,
@@ -351,7 +351,7 @@ var parsePatternCases = []TestCase{
 }
 
 func TestParsePattern(t *testing.T) {
-	for _, c := range parsePatternCases {
+	for _, c := range parsePatternTestCases {
 		f := func(t *testing.T) {
 			t.Parallel()
 			o, err := ParsePattern(c.input)
