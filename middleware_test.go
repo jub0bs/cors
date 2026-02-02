@@ -54,7 +54,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 					},
 				}, {
-					desc:      "preflight with GET from allowed",
+					desc:      "fake preflight with CORS-safelisted method from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -76,14 +76,14 @@ func TestMiddleware(t *testing.T) {
 						headerACRH:   {"content-type"},
 					},
 				}, {
-					desc:      "preflight with GET from disallowed",
+					desc:      "fake preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
 						headerACRM:   {"GET"},
 					},
 				}, {
-					desc:      "preflight with GET from invalid",
+					desc:      "fake preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
@@ -190,7 +190,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 					},
 				}, {
-					desc:      "preflight with GET from allowed",
+					desc:      "fake preflight with CORS-safelisted method from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -302,7 +302,7 @@ func TestMiddleware(t *testing.T) {
 					preflightPassesCORSCheck: true,
 					preflightFails:           true,
 				}, {
-					desc:      "preflight with GET from disallowed",
+					desc:      "fake preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
@@ -310,7 +310,7 @@ func TestMiddleware(t *testing.T) {
 					},
 					preflight: true,
 				}, {
-					desc:      "preflight with GET from invalid",
+					desc:      "fake preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
@@ -665,7 +665,7 @@ func TestMiddleware(t *testing.T) {
 						headerACEH: {wildcard},
 					},
 				}, {
-					desc:      "preflight with GET",
+					desc:      "fake preflight with CORS-safelisted method",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -708,7 +708,7 @@ func TestMiddleware(t *testing.T) {
 						headerACMA: {"30"},
 					},
 				}, {
-					desc:      "preflight with GET from invalid",
+					desc:      "fake preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
@@ -915,7 +915,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 					},
 				}, {
-					desc:      "preflight with GET from allowed",
+					desc:      "fake preflight with CORS-safelisted method from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -943,7 +943,7 @@ func TestMiddleware(t *testing.T) {
 					preflight:                true,
 					preflightPassesCORSCheck: false,
 				}, {
-					desc:      "preflight with GET from disallowed",
+					desc:      "fake preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
@@ -951,7 +951,7 @@ func TestMiddleware(t *testing.T) {
 					},
 					preflight: true,
 				}, {
-					desc:      "preflight with GET from invalid",
+					desc:      "fake preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
@@ -1039,7 +1039,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://foobar.com"},
 					},
 				}, {
-					desc:      "preflight with GET from disallowed",
+					desc:      "fake preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://barfoo.com"},
@@ -1047,7 +1047,7 @@ func TestMiddleware(t *testing.T) {
 					},
 					preflight: true,
 				}, {
-					desc:      "preflight with GET from disallowed 2",
+					desc:      "fake preflight with CORS-safelisted method from disallowed 2",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://foobar.com"},
@@ -1475,7 +1475,7 @@ func TestReconfigure(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 					},
 				}, {
-					desc:      "preflight with GET from allowed",
+					desc:      "fake preflight with CORS-safelisted method from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -1497,14 +1497,14 @@ func TestReconfigure(t *testing.T) {
 						headerACRH:   {"content-type"},
 					},
 				}, {
-					desc:      "preflight with GET from disallowed",
+					desc:      "fake preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
 						headerACRM:   {"GET"},
 					},
 				}, {
-					desc:      "preflight with GET from invalid",
+					desc:      "fake preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
