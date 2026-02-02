@@ -2,6 +2,7 @@ package cors_test
 
 import (
 	"bytes"
+	"crypto/rand"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -79,7 +80,11 @@ type spyHandler struct {
 	handler     http.Handler
 }
 
-func newSpyHandler(statusCode int, respHeaders http.Header, body string) func() http.Handler {
+func newSpyHandler(
+	statusCode int,
+	respHeaders http.Header,
+	body string,
+) func() http.Handler {
 	f := func() http.Handler {
 		h := func(w http.ResponseWriter, _ *http.Request) {
 			for k, v := range respHeaders {
@@ -123,16 +128,22 @@ func (m middleware) Wrap(next http.Handler) http.Handler {
 	return http.HandlerFunc(f)
 }
 
-func assertPreflightStatus(t *testing.T, spyStatus, gotStatus int, mwtc *MiddlewareTestCase, tc *ReqTestCase) {
+func assertPreflightStatus(
+	t *testing.T,
+	spyStatus int,
+	gotStatus int,
+	mwtc *MiddlewareTestCase,
+	tc *ReqTestCase,
+) {
 	t.Helper()
 	var wantStatusCode int
 	switch {
 	case mwtc.cfg == nil:
 		wantStatusCode = spyStatus
 	case !tc.preflightPassesCORSCheck || !mwtc.debug && tc.preflightFails:
-		wantStatusCode = http.StatusForbidden
+		wantStatusCode = http.StatusForbidden // keep in sync with preflightFailStatus
 	default:
-		wantStatusCode = http.StatusNoContent
+		wantStatusCode = http.StatusNoContent // keep in sync with preflightOKStatus
 	}
 	if gotStatus != wantStatusCode {
 		const tmpl = "got %d; want status code %d"
@@ -140,7 +151,7 @@ func assertPreflightStatus(t *testing.T, spyStatus, gotStatus int, mwtc *Middlew
 	}
 }
 
-// note: this function mutates got (to ease subsequent assertions)
+// note: this function mutates gotHeaders (to ease subsequent assertions)
 func assertResponseHeaders(t *testing.T, gotHeaders, wantHeaders http.Header) {
 	t.Helper()
 	for name, want := range wantHeaders {
@@ -171,6 +182,7 @@ func assertNoMoreResponseHeaders(t *testing.T, left http.Header) {
 
 func assertBody(t *testing.T, body io.ReadCloser, want string) {
 	t.Helper()
+	defer body.Close()
 	var buf bytes.Buffer
 	_, err := io.Copy(&buf, body)
 	if got := buf.String(); err != nil || got != want {
@@ -206,31 +218,25 @@ func deleteKV(h http.Header, k string, v []string) bool {
 	return false
 }
 
-// isListBasedField reports whether name is a list-based field (i.e. not a singleton field);
-// see https://httpwg.org/specs/rfc9110.html#abnf.extension.
+// isListBasedField reports whether name is a known list-based response header
+// field (i.e. not a singleton header field).
+// See https://httpwg.org/specs/rfc9110.html#abnf.extension.
 func isListBasedField(name string) bool {
 	switch name {
-	case "Vary":
+	case
 		// see https://www.rfc-editor.org/rfc/rfc9110#section-12.5.5
-		return true
-	case "Access-Control-Allow-Origin":
+		headerVary,
 		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
+		headerACAM,
+		headerACAH,
+		headerACEH:
+		return true
+	case
+		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
+		headerACAO,
+		headerACAC,
+		headerACMA:
 		return false
-	case "Access-Control-Allow-Credentials":
-		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
-		return false
-	case "Access-Control-Expose-Headers":
-		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
-		return true
-	case "Access-Control-Max-Age":
-		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
-		return false
-	case "Access-Control-Allow-Methods":
-		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
-		return true
-	case "Access-Control-Allow-Headers":
-		// see https://fetch.spec.whatwg.org/#http-new-header-syntax
-		return true
 	default: // assume singleton field
 		return false
 	}
@@ -248,17 +254,17 @@ func normalize(s []string) (res []string) {
 }
 
 func newMutatingHandler() http.Handler {
+	keys := []string{
+		headerACAO,
+		headerACAC,
+		headerACEH,
+		headerVary,
+	}
 	f := func(w http.ResponseWriter, _ *http.Request) {
 		resHdrs := w.Header()
-		keys := []string{
-			headerACAO,
-			headerACAC,
-			headerACEH,
-			headerVary,
-		}
 		for _, k := range keys {
 			if v, ok := resHdrs[k]; ok && len(v) > 0 {
-				v[0] = "mutated!"
+				v[0] = rand.Text()
 			}
 		}
 	}
