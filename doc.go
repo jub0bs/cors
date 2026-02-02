@@ -44,7 +44,7 @@ in the chain, and the ultimate handler. Follow the rules listed below:
     requests; per [RFC 9110 section 9.3.7], responses to [OPTIONS] requests are
     indeed not meant to be cached. If you choose to configure an intermediary
     to cache such responses anyway, you [MUST] make sure (in order to avoid
-    [cache poisoning]) that the intermediary include a [Vary] header listing
+    [cache poisoning]) that those responses include a [Vary] header listing
     the relevant [CORS request headers].
   - Multiple CORS middleware [MUST NOT] be stacked.
 
