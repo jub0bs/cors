@@ -1169,7 +1169,7 @@ func TestMiddleware(t *testing.T) {
 				},
 			},
 		}, {
-			desc:       "arbitrary subdomains of depth one or more and arbitrary ports",
+			desc:       "arbitrary subdomains and arbitrary ports",
 			newHandler: newSpyHandler(200, http.Header{headerVary: {"foo"}}, "bar"),
 			cfg: &cors.Config{
 				Origins: []string{"http://*.example.com:*"},
@@ -1196,7 +1196,7 @@ func TestMiddleware(t *testing.T) {
 						headerVary: {headerOrigin},
 					},
 				}, {
-					desc:      "actual GET from deeper ssubdomain",
+					desc:      "actual GET from deeper subdomain",
 					reqMethod: "GET",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://bar.foo.example.com"},
@@ -1206,7 +1206,7 @@ func TestMiddleware(t *testing.T) {
 						headerVary: {headerOrigin},
 					},
 				}, {
-					desc:      "actual GET from deeper ssubdomain and port",
+					desc:      "actual GET from deeper subdomain and port",
 					reqMethod: "GET",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://bar.foo.example.com:8080"},
