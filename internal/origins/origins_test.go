@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var parseCases = []struct {
+var parseTestCases = []struct {
 	desc    string
 	input   string
 	want    Origin
@@ -236,7 +236,7 @@ var parseCases = []struct {
 }
 
 func TestParse(t *testing.T) {
-	for _, c := range parseCases {
+	for _, c := range parseTestCases {
 		f := func(t *testing.T) {
 			t.Parallel()
 			o, ok := Parse(c.input)
@@ -249,7 +249,7 @@ func TestParse(t *testing.T) {
 }
 
 func BenchmarkParse(b *testing.B) {
-	for _, c := range parseCases {
+	for _, c := range parseTestCases {
 		f := func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
