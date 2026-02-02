@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that cache responses to prelight requests; such caching behavior indeed
   violates [RFC 9110]. If you choose to configure an intermediary to cache
   those responses anyway, you must make sure (in order to avoid
-  [cache poisoning]) that the intermediary include a [Vary] header listing the
+  [cache poisoning]) that those responses include a [Vary] header listing the
   relevant [CORS request headers].
 - **Performance**: Middleware execution during preflight is now faster and
   incurs fewer heap allocations.
