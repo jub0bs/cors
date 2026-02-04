@@ -58,10 +58,28 @@ type ReqTestCase struct {
 	reqMethod  string
 	reqHeaders http.Header
 	// expectations
-	preflight                bool
-	preflightPassesCORSCheck bool
-	preflightFails           bool
-	respHeaders              http.Header
+	category    ReqCategory
+	respHeaders http.Header
+}
+
+type ReqCategory uint8
+
+const (
+	isActual ReqCategory = iota
+	isPreflightAndFailsDuringCORSCheck
+	isPreflightAndFailsAfterCORSCheck
+	isPreflightAndSucceeds
+)
+
+func (cat ReqCategory) isPreflight() bool {
+	switch cat {
+	case isPreflightAndFailsDuringCORSCheck,
+		isPreflightAndFailsAfterCORSCheck,
+		isPreflightAndSucceeds:
+		return true
+	default:
+		return false
+	}
 }
 
 func newRequest(method string, headers http.Header) *http.Request {
@@ -128,9 +146,11 @@ func assertPreflightStatus(t *testing.T, spyStatus, gotStatus int, mwtc *Middlew
 	t.Helper()
 	var wantStatusCode int
 	switch {
-	case mwtc.cfg == nil:
+	case mwtc.cfg == nil,
+		tc.category == isActual:
 		wantStatusCode = spyStatus
-	case !tc.preflightPassesCORSCheck || !mwtc.debug && tc.preflightFails:
+	case tc.category == isPreflightAndFailsDuringCORSCheck,
+		!mwtc.debug && tc.category == isPreflightAndFailsAfterCORSCheck:
 		wantStatusCode = http.StatusForbidden // keep in sync with preflightFailStatus
 	default:
 		wantStatusCode = http.StatusNoContent // keep in sync with preflightOKStatus
