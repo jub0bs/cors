@@ -94,6 +94,12 @@ func (t *Tree) Contains(o *Origin) bool {
 	host := o.Host
 	n := &t.root
 	for {
+		prefixOfHost, _, suf := splitAtCommonSuffix(host, n.suf)
+		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of host
+			return false
+		}
+		// n.suf is a suffix of host
+		host = prefixOfHost
 		label, ok := lastByte(host)
 		if !ok {
 			return n.contains(o.Scheme, o.Port, false)
@@ -110,13 +116,6 @@ func (t *Tree) Contains(o *Origin) bool {
 			return false
 		}
 		n = &n.children[i]
-
-		prefixOfHost, _, suf := splitAtCommonSuffix(host, n.suf)
-		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of host
-			return false
-		}
-		// n.suf is a suffix of host
-		host = prefixOfHost
 	}
 }
 
