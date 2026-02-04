@@ -1,6 +1,7 @@
 package origins
 
 import (
+	"cmp"
 	"iter"
 	"slices"
 	"strconv"
@@ -23,69 +24,83 @@ func (t *Tree) IsEmpty() bool {
 
 // Insert inserts p in t.
 func (t *Tree) Insert(p *Pattern) {
-	s := p.HostPattern // non-empty by construction
-	s, wildcardSubs := strings.CutPrefix(s, subdomainWildcard)
+	host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
+	if t.IsEmpty() {
+		t.root.suf = host
+		t.root.add(p.Scheme, p.Port, wildcardSubs)
+		return
+	}
 	n := &t.root
 	for {
-		labelToChild, ok := lastByte(s)
-		if !ok { // s is empty
-			n.add(p.Scheme, p.Port, wildcardSubs)
-			return
-		}
-		if n.contains(p.Scheme, p.Port, true) {
-			return
-		}
-		i, found := slices.BinarySearch(n.edges, labelToChild)
-		if !found { // No matching edge found; create one.
-			child := node{suf: s}
-			child.add(p.Scheme, p.Port, wildcardSubs)
-			n.upsertEdge(labelToChild, child)
-			return
-		}
-		child := &n.children[i]
+		prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
+		label1, ok1 := lastByte(prefixOfNSuf)
+		label2, ok2 := lastByte(prefixOfHost)
+		if !ok1 {
+			if !ok2 { // n.suf == host
+				n.add(p.Scheme, p.Port, wildcardSubs)
+				return
+			} else { // n.suf is a strict suffix of host.
+				// Example:
+				// - n.suf: kin
+				// - host: akin
+				if n.contains(p.Scheme, p.Port, true) {
+					// Avoid redundancy; keep the tree somewhat compact.
+					return
+				}
+				// Look for an edge labeled label2 stemming from n.
+				i, ok := slices.BinarySearch(n.edges, label2)
+				if !ok { // No such edge found.
+					// Create one leading to the new child:
+					//
+					//  kin - a (child)
+					//
+					child := node{suf: prefixOfHost}
+					child.add(p.Scheme, p.Port, wildcardSubs)
+					n.insertEdge(-1, label2, &child)
+					return
+				}
+				// Edge found. Keep going.
+				host = prefixOfHost
+				n = n.children[i]
+				continue
+			}
+		} else {
+			if !ok2 { // host is a strict suffix of n.suf.
+				// Example:
+				// - n.suf: akin
+				// - host:   kin
 
-		prefixOfS, prefixOfChildSuf, suf := splitAtCommonSuffix(s, child.suf)
-		labelToGrandChild1, ok := lastByte(prefixOfChildSuf)
-		if !ok { // child.suf is a suffix of s
-			s = prefixOfS
-			n = child
-			continue
+				// Perform a one-way split of n:
+				//
+				//  kin - a (child)
+				//
+				child := *n
+				child.suf = prefixOfNSuf
+				*n = node{suf: suf}
+				n.insertEdge(-1, label1, &child)
+				n.add(p.Scheme, p.Port, wildcardSubs)
+				return
+			} else {
+				// Example:
+				// - n.suf:    akin
+				// - host:  pumpkin
+				// Perform a two-way split of n:
+				//
+				//   kin - a (child1)
+				//      \
+				//       pump (child2)
+				//
+				child1 := *n
+				child1.suf = prefixOfNSuf
+				*n = node{suf: suf}
+				n.insertEdge(-1, label1, &child1)
+				child2 := node{suf: prefixOfHost}
+				child2.add(p.Scheme, p.Port, wildcardSubs)
+				i := cmp.Compare(label2, label1) // either -1 or 1 (label1 != label2)
+				n.insertEdge(max(0, i), label2, &child2)
+				return
+			}
 		}
-		// child.suf is NOT a suffix of s; we need to split child.
-		//
-		// Before splitting: child
-		//
-		// After splitting:  child' -- grandChild
-		//
-		// ... or perhaps    child' -- grandChild1
-		//                      \
-		//                       grandChild2
-
-		// Create a first grandchild on the basis of the current child.
-		grandChild1 := node{
-			suf:      prefixOfChildSuf,
-			edges:    child.edges,
-			children: child.children,
-			schemes:  child.schemes,
-			ports:    child.ports,
-		}
-
-		// Replace child in n.
-		child = n.upsertEdge(labelToChild, node{suf: suf})
-
-		// Add a first grandchild in child.
-		child.upsertEdge(labelToGrandChild1, grandChild1)
-		labelToGrandChild2, ok := lastByte(prefixOfS)
-		if !ok {
-			child.add(p.Scheme, p.Port, wildcardSubs)
-			return
-		}
-
-		// Add a second grandchild in child.
-		grandChild2 := node{suf: prefixOfS}
-		grandChild2.add(p.Scheme, p.Port, wildcardSubs)
-		child.upsertEdge(labelToGrandChild2, grandChild2)
-		return
 	}
 }
 
@@ -94,29 +109,38 @@ func (t *Tree) Contains(o *Origin) bool {
 	host := o.Host
 	n := &t.root
 	for {
-		label, ok := lastByte(host)
+		prefixOfHost, _, suf := splitAtCommonSuffix(host, n.suf)
+		if len(suf) != len(n.suf) {
+			// n.suf is NOT a suffix of host. Example:
+			// - n.suf: akin
+			// - host:   kin
+			return false
+		}
+		// n.suf is a suffix of host.
+
+		label, ok := lastByte(prefixOfHost)
 		if !ok {
+			// n.suf == host
 			return n.contains(o.Scheme, o.Port, false)
 		}
 
-		// host is not empty;
-		// check whether n contains port for wildcard subs.
+		// host is a strict suffix of n.suf.
+		// Example:
+		// - n.suf: .kin
+		// - host: a.kin
+
+		// Check whether n contains port for wildcard subs.
 		if n.contains(o.Scheme, o.Port, true) {
 			return true
 		}
 
+		// Look for an edge labeled 'a' in n.
 		i, found := slices.BinarySearch(n.edges, label)
 		if !found {
 			return false
 		}
-		n = &n.children[i]
-
-		prefixOfHost, _, suf := splitAtCommonSuffix(host, n.suf)
-		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of host
-			return false
-		}
-		// n.suf is a suffix of host
 		host = prefixOfHost
+		n = n.children[i]
 	}
 }
 
@@ -164,10 +188,7 @@ type node struct {
 	// edges are the edges to children of this node.
 	edges []byte
 	// children are the children of this node ("parallels" edges slice).
-	// Using []*node is tempting because it is expedient, but using []node is
-	// more performant (because it involves one fewer lever of indirection) at
-	// the cost of some gymnastics.
-	children []node
+	children []*node
 	// schemes are the schemes of this node.
 	schemes []string
 	// ports are the ports associated to this node's schemes ("parallels"
@@ -176,13 +197,12 @@ type node struct {
 }
 
 func (n *node) add(scheme string, port int, wildcardSubs bool) {
-	wildcardPort := wildcardPort // shadows package-level constant
-	if wildcardSubs {
-		port -= portOffset
-		wildcardPort -= portOffset
-	}
 	if n.contains(scheme, port, wildcardSubs) {
 		return
+	}
+	arbitraryPort := arbitraryPort // shadows package-level constant
+	if wildcardSubs {
+		port, arbitraryPort = offset(port, arbitraryPort)
 	}
 	i, found := slices.BinarySearch(n.schemes, scheme)
 	if !found {
@@ -191,7 +211,7 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 		return
 	}
 	ports := n.ports[i]
-	if port == wildcardPort {
+	if port == arbitraryPort {
 		ports = deleteSameSign(ports, port)
 	}
 	ports = append(ports, port)
@@ -199,8 +219,12 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 	n.ports[i] = ports
 }
 
+func offset(port, arbitraryPort int) (int, int) {
+	return port - portOffset, arbitraryPort - portOffset
+}
+
 // an offset used for storing ports corresponding to wildcard subs
-const portOffset = wildcardPort + 1
+const portOffset = arbitraryPort + 1
 
 // deleteSameSign, if v is negative, removes all the negative values from s;
 // otherwise, it removes all the non-negative values from s.
@@ -218,10 +242,9 @@ func (n *node) isEmpty() bool {
 }
 
 func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool) {
-	wildcardPort := wildcardPort // shadows package-level constant
+	arbitraryPort := arbitraryPort // shadows package-level constant
 	if wildcardSubs {
-		port -= portOffset
-		wildcardPort -= portOffset
+		port, arbitraryPort = offset(port, arbitraryPort)
 	}
 	i, found := slices.BinarySearch(n.schemes, scheme)
 	if !found {
@@ -232,21 +255,22 @@ func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool)
 	if found {
 		return
 	}
-	_, found = slices.BinarySearch(ports, wildcardPort)
+	_, found = slices.BinarySearch(ports, arbitraryPort)
 	return
 }
 
-// upsertEdge updates or inserts child in n down an edge labeled by label
-// and returns a pointer to the corresponding child in n.
-func (n *node) upsertEdge(label byte, child node) *node {
-	i, found := slices.BinarySearch(n.edges, label)
-	if !found {
-		n.edges = slices.Insert(n.edges, i, label)
-		n.children = slices.Insert(n.children, i, child)
-		return &n.children[i]
+// insertEdge, if i is negative, replaces n's edges by a single edge labeled
+// label and leading to child; otherwise, it inserts an edge labeled label and
+// leading to child at index i in n.edges.
+// Precondition: i <= len(n.edges)
+func (n *node) insertEdge(i int, label byte, child *node) {
+	if i < 0 {
+		n.edges = []byte{label}
+		n.children = []*node{child}
+		return
 	}
-	n.children[i] = child
-	return &n.children[i]
+	n.edges = slices.Insert(n.edges, i, label)
+	n.children = slices.Insert(n.children, i, child)
 }
 
 // elems reports whether f(x) is true for the textual representation
@@ -267,9 +291,9 @@ func (n *node) elems(suf string, f func(string) bool) bool {
 			}
 			var s string
 			switch port {
-			case 0:
+			case absentPort:
 				s = scheme + schemeHostSep + maybeWildcard + suf
-			case wildcardPort:
+			case arbitraryPort:
 				s = scheme + schemeHostSep + maybeWildcard + suf + string(hostPortSep) + portWildcard
 			default:
 				s = scheme + schemeHostSep + maybeWildcard + suf + string(hostPortSep) + strconv.Itoa(port)

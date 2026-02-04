@@ -323,7 +323,7 @@ var parsePatternTestCases = []TestCase{
 			Scheme:      "http",
 			HostPattern: "*.example.com",
 			Kind:        ArbitrarySubdomains,
-			Port:        1 << 16,
+			Port:        arbitraryPort,
 		},
 	}, {
 		name:    "leading double asterisk",

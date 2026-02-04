@@ -325,13 +325,16 @@ func initProfile() {
 // otherwise, it returns 0 and false.
 func parsePortPattern(str string) (int, bool) {
 	if str == portWildcard {
-		return wildcardPort, true
+		return arbitraryPort, true
 	}
 	return parsePort(str)
 }
 
-// wildcardPort is a sentinel value that subsumes all other port numbers.
-const wildcardPort = math.MaxUint16 + 1
+const (
+	absentPort = 0
+	// arbitraryPort is a sentinel value that subsumes all other port numbers.
+	arbitraryPort = math.MaxUint16 + 1
+)
 
 // isDefaultPortForScheme returns true for the following combinations
 //   - (https, 443)

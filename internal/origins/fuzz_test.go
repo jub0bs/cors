@@ -43,7 +43,7 @@ func FuzzParsePattern(f *testing.F) {
 			t.Errorf(tmpl, raw)
 		}
 		if strings.HasSuffix(raw, ":*") {
-			if pattern.Port != wildcardPort {
+			if pattern.Port != arbitraryPort {
 				const tmpl = "pattern %q should but does not result in a Pattern that allows arbitrary ports"
 				t.Errorf(tmpl, raw)
 			}
