@@ -1630,11 +1630,7 @@ func TestReconfigure(t *testing.T) {
 					},
 					preflight:                true,
 					preflightPassesCORSCheck: true,
-					preflightFails:           false, // would be true if debug were false
-					respHeaders: http.Header{
-						headerACAO: {"http://localhost:9090"}, // would be absent if debug were false
-						headerACAC: {"true"},                  // would be absent if debug were false
-					},
+					preflightFails:           true,
 				},
 			},
 		}, {
@@ -1652,7 +1648,6 @@ func TestReconfigure(t *testing.T) {
 				MaxAgeInSeconds: 30,
 				ResponseHeaders: []string{"X-Foo", "X-Bar"},
 			},
-			debug: false, // to check whether the previous debug mode was retained
 			cases: []ReqTestCase{
 				{
 					desc:      "preflight with GET and headers from allowed",
@@ -1680,11 +1675,7 @@ func TestReconfigure(t *testing.T) {
 					},
 					preflight:                true,
 					preflightPassesCORSCheck: true,
-					preflightFails:           false, // would be true if debug were false
-					respHeaders: http.Header{
-						headerACAO: {"http://localhost:9090"}, // would be absent if debug were false
-						headerACAC: {"true"},                  // would be absent if debug were false
-					},
+					preflightFails:           true,
 				},
 			},
 		}, {
@@ -1710,11 +1701,8 @@ func TestReconfigure(t *testing.T) {
 				const tmpl = "unexpected debug mode: got %t; want %t"
 				t.Fatalf(tmpl, currentDebug, oldDebug)
 			}
-			if mwtc.debug {
-				mw.SetDebug(true)
-				currentDebug = true
-			}
-			oldDebug = currentDebug
+			mw.SetDebug(mwtc.debug)
+			oldDebug = mwtc.debug
 			for _, tc := range mwtc.cases {
 				f := func(t *testing.T) {
 					// --- arrange ---
