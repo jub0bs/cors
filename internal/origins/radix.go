@@ -32,7 +32,7 @@ func (t *Tree) Insert(p *Pattern) {
 	// }
 	n := &t.root
 	for {
-
+		// TODO: splitAtCommonSuffix first
 		// ---
 		labelToChild, ok := lastByte(host)
 		if !ok { // host is empty
@@ -99,7 +99,7 @@ func (t *Tree) Insert(p *Pattern) {
 // Contains reports whether t contains o.
 func (t *Tree) Contains(o *Origin) bool {
 	host := o.Host
-	n := &t.root
+	n := t.root
 	for {
 		prefixOfHost, _, suf := splitAtCommonSuffix(host, n.suf)
 		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of host
@@ -122,7 +122,7 @@ func (t *Tree) Contains(o *Origin) bool {
 			return false
 		}
 		host = prefixOfHost
-		n = &n.children[i]
+		n = n.children[i]
 	}
 }
 
