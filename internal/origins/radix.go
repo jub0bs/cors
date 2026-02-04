@@ -23,12 +23,19 @@ func (t *Tree) IsEmpty() bool {
 
 // Insert inserts p in t.
 func (t *Tree) Insert(p *Pattern) {
-	s := p.HostPattern // non-empty by construction
-	s, wildcardSubs := strings.CutPrefix(s, subdomainWildcard)
+	host := p.HostPattern // non-empty by construction
+	host, wildcardSubs := strings.CutPrefix(host, subdomainWildcard)
+	// if t.IsEmpty() {
+	// 	t.root.suf = host
+	// 	t.root.add(p.Scheme, p.Port, wildcardSubs)
+	// 	return
+	// }
 	n := &t.root
 	for {
-		labelToChild, ok := lastByte(s)
-		if !ok { // s is empty
+
+		// ---
+		labelToChild, ok := lastByte(host)
+		if !ok { // host is empty
 			n.add(p.Scheme, p.Port, wildcardSubs)
 			return
 		}
@@ -37,17 +44,17 @@ func (t *Tree) Insert(p *Pattern) {
 		}
 		i, found := slices.BinarySearch(n.edges, labelToChild)
 		if !found { // No matching edge found; create one.
-			child := node{suf: s}
+			child := node{suf: host}
 			child.add(p.Scheme, p.Port, wildcardSubs)
 			n.upsertEdge(labelToChild, child)
 			return
 		}
 		child := &n.children[i]
 
-		prefixOfS, prefixOfChildSuf, suf := splitAtCommonSuffix(s, child.suf)
+		prefixOfHost, prefixOfChildSuf, suf := splitAtCommonSuffix(host, child.suf)
 		labelToGrandChild1, ok := lastByte(prefixOfChildSuf)
-		if !ok { // child.suf is a suffix of s
-			s = prefixOfS
+		if !ok { // child.suf is a suffix of host
+			host = prefixOfHost
 			n = child
 			continue
 		}
@@ -75,14 +82,14 @@ func (t *Tree) Insert(p *Pattern) {
 
 		// Add a first grandchild in child.
 		child.upsertEdge(labelToGrandChild1, grandChild1)
-		labelToGrandChild2, ok := lastByte(prefixOfS)
+		labelToGrandChild2, ok := lastByte(prefixOfHost)
 		if !ok {
 			child.add(p.Scheme, p.Port, wildcardSubs)
 			return
 		}
 
 		// Add a second grandchild in child.
-		grandChild2 := node{suf: prefixOfS}
+		grandChild2 := node{suf: prefixOfHost}
 		grandChild2.add(p.Scheme, p.Port, wildcardSubs)
 		child.upsertEdge(labelToGrandChild2, grandChild2)
 		return
@@ -99,13 +106,12 @@ func (t *Tree) Contains(o *Origin) bool {
 			return false
 		}
 		// n.suf is a suffix of host
-		host = prefixOfHost
-		label, ok := lastByte(host)
+		label, ok := lastByte(prefixOfHost)
 		if !ok {
 			return n.contains(o.Scheme, o.Port, false)
 		}
 
-		// host is not empty;
+		// prefixOfHost is NOT empty;
 		// check whether n contains port for wildcard subs.
 		if n.contains(o.Scheme, o.Port, true) {
 			return true
@@ -115,6 +121,7 @@ func (t *Tree) Contains(o *Origin) bool {
 		if !found {
 			return false
 		}
+		host = prefixOfHost
 		n = &n.children[i]
 	}
 }
@@ -175,13 +182,13 @@ type node struct {
 }
 
 func (n *node) add(scheme string, port int, wildcardSubs bool) {
+	if n.contains(scheme, port, wildcardSubs) {
+		return
+	}
 	wildcardPort := wildcardPort // shadows package-level constant
 	if wildcardSubs {
 		port -= portOffset
 		wildcardPort -= portOffset
-	}
-	if n.contains(scheme, port, wildcardSubs) {
-		return
 	}
 	i, found := slices.BinarySearch(n.schemes, scheme)
 	if !found {
