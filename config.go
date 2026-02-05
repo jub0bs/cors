@@ -425,6 +425,7 @@ func (icfg *internalConfig) validateOriginPatterns(errs []error, patterns []stri
 		}
 		return append(errs, err)
 	}
+	var ps []*origins.Pattern
 	var allowAnyOrigin bool
 	for _, raw := range patterns {
 		if raw == headers.ValueWildcard {
@@ -477,8 +478,11 @@ func (icfg *internalConfig) validateOriginPatterns(errs []error, patterns []stri
 			}
 		}
 		if !allowAnyOrigin {
-			icfg.tree.Insert(&pattern)
+			ps = append(ps, &pattern)
 		}
+	}
+	if !allowAnyOrigin {
+		icfg.tree = origins.NewTree(ps...)
 	}
 	return errs
 }

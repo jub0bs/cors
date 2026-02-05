@@ -1,8 +1,6 @@
 package origins
 
-import (
-	"testing"
-)
+import "testing"
 
 type TestCase struct {
 	name    string
@@ -325,7 +323,7 @@ var parsePatternTestCases = []TestCase{
 			Scheme:      "http",
 			HostPattern: "*.example.com",
 			Kind:        ArbitrarySubdomains,
-			Port:        1 << 16,
+			Port:        wildcardPort,
 		},
 	}, {
 		name:    "leading double asterisk",
