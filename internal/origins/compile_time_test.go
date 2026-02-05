@@ -2,10 +2,9 @@ package origins
 
 import "math"
 
-var ( // compile-time checks
-	_ [absentPort][-absentPort]struct{}            // => absentPort == 0
-	_ [arbitraryPort - 1 - math.MaxUint16]struct{} // arbitraryPort > math.MaxUint16
-	_ [math.MaxInt - arbitraryPort]struct{}        // arbitraryPort <= math.MaxInt
-	_ [portOffset - 1 - arbitraryPort]struct{}     // portOffset > arbitraryPort
-	_ [-(math.MinInt + portOffset)]struct{}        // -portOffset >= math.MinInt
-)
+var _ [absentPort][-absentPort]struct{} // => absentPort == 0
+
+var _ [arbitraryPort + 1][-arbitraryPort - 1]struct{} // => arbitraryPort == -1
+
+// Check that portOffset straddles the entire range of Pattern.Port values.
+var _ [portOffset - math.MaxUint16 - 2]struct{} // portOffset >= math.MaxUint16 + 2

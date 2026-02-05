@@ -3,6 +3,7 @@ package origins
 import (
 	"cmp"
 	"iter"
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -17,70 +18,68 @@ type Tree struct {
 	root node
 }
 
-// IsEmpty reports whether t is empty.
-func (t *Tree) IsEmpty() bool {
-	return t.root.isEmpty()
-}
-
-// Insert inserts p in t.
-func (t *Tree) Insert(p *Pattern) {
-	host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
-	if t.IsEmpty() {
+// NewTree returns a new tree in which all of ps have been inserted.
+func NewTree(ps ...*Pattern) Tree {
+	// Guarantee that the resulting tree be free of redundancy.
+	slices.SortFunc(ps, patternCmp)
+	// Avoid inserting identical patterns multiple times.
+	ps = slices.CompactFunc(ps, func(p1, p2 *Pattern) bool { return *p1 == *p2 })
+	var t Tree
+	if len(ps) > 0 {
+		// Inserting the first pattern is easy, since t is empty.
+		p := ps[0]
+		host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
 		t.root.suf = host
 		t.root.add(p.Scheme, p.Port, wildcardSubs)
-		return
+		// Now deal with the remaining patterns.
+		ps = ps[1:]
 	}
-	n := &t.root
-	for {
-		prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
-		label1, ok1 := lastByte(prefixOfNSuf)
-		label2, ok2 := lastByte(prefixOfHost)
-		if !ok1 {
-			if !ok2 { // n.suf == host
-				n.add(p.Scheme, p.Port, wildcardSubs)
-				return
-			} else { // n.suf is a strict suffix of host.
-				// Example:
-				// - n.suf: kin
-				// - host: akin
-				if n.contains(p.Scheme, p.Port, true) {
-					// Avoid redundancy; keep the tree somewhat compact.
-					return
+	for _, p := range ps {
+		host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
+		n := &t.root
+		for {
+			prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
+			label1, ok1 := lastByte(prefixOfNSuf)
+			label2, ok2 := lastByte(prefixOfHost)
+			if !ok1 {
+				if !ok2 { // n.suf == host
+					n.add(p.Scheme, p.Port, wildcardSubs)
+					break
+				} else { // n.suf is a strict suffix of host.
+					// Example:
+					// - n.suf: kin
+					// - host: akin
+					if n.contains(p.Scheme, p.Port, true) {
+						// Avoid redundancy.
+						break
+					}
+					// Look for an edge labeled label2 stemming from n.
+					i, ok := slices.BinarySearch(n.edges, label2)
+					if !ok { // No such edge found.
+						// Create one leading to the new child:
+						//
+						//  kin - a (child)
+						//
+						child := node{suf: prefixOfHost}
+						child.add(p.Scheme, p.Port, wildcardSubs)
+						n.insertEdge(-1, label2, &child)
+						break
+					}
+					// Edge found. Keep going.
+					host = prefixOfHost
+					n = n.children[i]
+					continue
 				}
-				// Look for an edge labeled label2 stemming from n.
-				i, ok := slices.BinarySearch(n.edges, label2)
-				if !ok { // No such edge found.
-					// Create one leading to the new child:
-					//
-					//  kin - a (child)
-					//
-					child := node{suf: prefixOfHost}
-					child.add(p.Scheme, p.Port, wildcardSubs)
-					n.insertEdge(-1, label2, &child)
-					return
-				}
-				// Edge found. Keep going.
-				host = prefixOfHost
-				n = n.children[i]
-				continue
-			}
-		} else {
-			if !ok2 { // host is a strict suffix of n.suf.
+			} else {
+				// If !ok2, host is a strict suffix of n.suf.
 				// Example:
 				// - n.suf: akin
 				// - host:   kin
-
-				// Perform a one-way split of n:
+				// However, because of how we sort patterns before inserting
+				// them into the tree, this case cannot occur.
 				//
-				//  kin - a (child)
-				//
-				child := *n
-				child.suf = prefixOfNSuf
-				*n = node{suf: suf}
-				n.insertEdge(-1, label1, &child)
-				n.add(p.Scheme, p.Port, wildcardSubs)
-				return
-			} else {
+				// If ok2, neither n.suf nor host is a suffix (strict or not)
+				// of the other.
 				// Example:
 				// - n.suf:    akin
 				// - host:  pumpkin
@@ -98,10 +97,44 @@ func (t *Tree) Insert(p *Pattern) {
 				child2.add(p.Scheme, p.Port, wildcardSubs)
 				i := cmp.Compare(label2, label1) // either -1 or 1 (label1 != label2)
 				n.insertEdge(max(0, i), label2, &child2)
-				return
+				break
+
 			}
 		}
 	}
+	return t
+}
+
+// patternCmp is a comparator function for *Pattern.
+// Patterns sort
+//   - first by lexicographical order of their reversed host patterns,
+//   - second by lexicographical order of their schemes,
+//   - third by increasing order of their ports.
+//
+// Sorting patterns with patternCmp before inserting them in an empty tree
+// guarantees that the resulting tree be as compact as possible, thereby
+// obviating the need to prune the tree of redundant elements afterwards.
+//
+// Precondition: p1 and p2 are non-nil.
+func patternCmp(p1, p2 *Pattern) int {
+	a, b := p1.HostPattern, p2.HostPattern
+	for i, j := len(a)-1, len(b)-1; 0 <= i && 0 <= j; i, j = i-1, j-1 {
+		// Conveniently for us, '*' (0x2A) requires no special handling,
+		// since it is less that all other valid host-pattern bytes.
+		if c := cmp.Compare(a[i], b[j]); c != 0 {
+			return c
+		}
+	}
+	return cmp.Or(
+		cmp.Compare(len(a), len(b)),
+		strings.Compare(p1.Scheme, p2.Scheme),
+		cmp.Compare(p1.Port, p2.Port), // arbitraryPort < all port values
+	)
+}
+
+// IsEmpty reports whether t is empty.
+func (t *Tree) IsEmpty() bool {
+	return t.root.isEmpty()
 }
 
 // Contains reports whether t contains o.
@@ -197,9 +230,6 @@ type node struct {
 }
 
 func (n *node) add(scheme string, port int, wildcardSubs bool) {
-	if n.contains(scheme, port, wildcardSubs) {
-		return
-	}
 	arbitraryPort := arbitraryPort // shadows package-level constant
 	if wildcardSubs {
 		port, arbitraryPort = offset(port, arbitraryPort)
@@ -211,12 +241,16 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 		return
 	}
 	ports := n.ports[i]
-	if port == arbitraryPort {
-		ports = deleteSameSign(ports, port)
+	_, found = slices.BinarySearch(ports, arbitraryPort)
+	if found {
+		// Avoid redundancy.
+		return
 	}
-	ports = append(ports, port)
-	slices.Sort(ports)
-	n.ports[i] = ports
+	// At this stage, because of how we sort patterns before inserting them
+	// into the tree, port is guaranteed to be greater than all elements of
+	// ports; therefore, appending it to ports keeps the latter sorted in
+	// increasing order.
+	n.ports[i] = append(ports, port)
 }
 
 func offset(port, arbitraryPort int) (int, int) {
@@ -224,18 +258,7 @@ func offset(port, arbitraryPort int) (int, int) {
 }
 
 // an offset used for storing ports corresponding to wildcard subs
-const portOffset = arbitraryPort + 1
-
-// deleteSameSign, if v is negative, removes all the negative values from s;
-// otherwise, it removes all the non-negative values from s.
-// Precondition: s is sorted in increasing order.
-func deleteSameSign(s []int, v int) []int {
-	i, _ := slices.BinarySearch(s, 0)
-	if v < 0 {
-		return s[i:]
-	}
-	return s[:i]
-}
+const portOffset = math.MaxUint16 + 2
 
 func (n *node) isEmpty() bool {
 	return n.schemes == nil && n.children == nil
@@ -285,7 +308,7 @@ func (n *node) elems(suf string, f func(string) bool) bool {
 		scheme := nSchemes[i]
 		for _, port := range ports {
 			var maybeWildcard string
-			if port < 0 {
+			if port < arbitraryPort {
 				maybeWildcard = subdomainWildcard
 				port += portOffset
 			}

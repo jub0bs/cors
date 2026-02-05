@@ -1,7 +1,6 @@
 package origins
 
 import (
-	"math"
 	"net/netip"
 	"strings"
 	"sync"
@@ -61,8 +60,7 @@ type Pattern struct {
 	HostPattern string
 	// Port is the positive port number (if any) of this origin pattern.
 	// The zero value marks the absence of an explicit port.
-	// 65536 (math.MaxUint16 + 1) is used as a sentinel value to indicate that
-	// all ports are allowed.
+	// -1 is used as a sentinel value to indicate that all ports are allowed.
 	Port int
 	// Kind is the kind of this origin pattern's host pattern.
 	Kind Kind
@@ -333,7 +331,9 @@ func parsePortPattern(str string) (int, bool) {
 const (
 	absentPort = 0
 	// arbitraryPort is a sentinel value that subsumes all other port numbers.
-	arbitraryPort = math.MaxUint16 + 1
+	// arbitraryPort is, by design (see patternCmp's doc comment), less than
+	// all of the other valid Pattern.Port values.
+	arbitraryPort = -1
 )
 
 // isDefaultPortForScheme returns true for the following combinations

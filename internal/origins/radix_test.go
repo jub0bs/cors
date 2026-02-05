@@ -341,7 +341,6 @@ func TestTree(t *testing.T) {
 				"https://cat",
 			},
 			elems: []string{
-				"https://a.kin", // We don't yet compact the tree as much as possible.
 				"https://*.kin",
 				"https://*.kin:1",
 				"https://cat",
@@ -496,14 +495,15 @@ func TestTree(t *testing.T) {
 	for _, tc := range cases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			tree := new(origins.Tree)
+			var ps []*origins.Pattern
 			for _, raw := range tc.patterns {
 				pattern, err := origins.ParsePattern(raw)
 				if err != nil {
 					t.Fatalf("origins.ParsePattern(%q): got non-nil error; want nil", raw)
 				}
-				tree.Insert(&pattern)
+				ps = append(ps, &pattern)
 			}
+			tree := origins.NewTree(ps...)
 			wantEmpty := len(tc.patterns) == 0
 			gotEmpty := tree.IsEmpty()
 			if gotEmpty != wantEmpty {
