@@ -331,6 +331,63 @@ func TestTree(t *testing.T) {
 				"https://nap.kin:3",
 			},
 		}, {
+			desc: "some wildcard-full patterns in reverse order",
+			patterns: []string{
+				"https://pin",
+				"https://*.kin:1",
+				"https://a.kin",
+				"https://*.kin",
+				"https://concat",
+				"https://cat",
+			},
+			elems: []string{
+				"https://a.kin", // We don't yet compact the tree as much as possible.
+				"https://*.kin",
+				"https://*.kin:1",
+				"https://cat",
+				"https://concat",
+				"https://pin",
+			},
+			accepts: []string{
+				"https://cat",
+				"https://concat",
+				"https://a.kin",
+				"https://pin",
+				// extended host, same port
+				"https://nap.kin",
+				"https://nap.kin:1",
+			},
+			rejects: []string{
+				// different scheme
+				"http://cat",
+				"http://concat",
+				"http://a.kin",
+				"http://pin",
+				"http://nap.kin",
+				"http://nap.kin:1",
+				// different port
+				"http://cat:1",
+				"http://concat:1",
+				"http://pin:1",
+				// truncated host (at the end)
+				"http://ca",
+				"http://conca",
+				"http://nap.ki",
+				"http://p",
+				// truncated host (at the start)
+				"http://at",
+				"http://ncat",
+				"http://in",
+				"http://n",
+				// host prepended with rubbish
+				"https://copycat",
+				"https://stringconcat",
+				"https://bespin",
+				// host prepended with rubbish, different port
+				"https://nap.kin:2",
+				"https://nap.kin:3",
+			},
+		}, {
 			desc: "wildcard-free patterns and wildcard port",
 			patterns: []string{
 				"https://cat",
