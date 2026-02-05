@@ -25,6 +25,22 @@ func TestTree(t *testing.T) {
 				"https://pin",
 			},
 		}, {
+			desc: "one wildcard-free pattern",
+			patterns: []string{
+				"https://cat",
+			},
+			elems: []string{
+				"https://cat",
+			},
+			accepts: []string{
+				"https://cat",
+			},
+			rejects: []string{
+				"https://concat",
+				"https://kin",
+				"https://pin",
+			},
+		}, {
 			desc: "wildcard-free patterns",
 			patterns: []string{
 				"https://cat",
@@ -466,7 +482,9 @@ func TestTree(t *testing.T) {
 			slices.Sort(elems)
 			slices.Sort(tc.elems)
 			if !slices.Equal(elems, tc.elems) {
-				t.Errorf("tree.Elems(): got %q; want %q", elems, tc.elems)
+				t.Error("tree.Elems():")
+				t.Logf("\tgot  %q", elems)
+				t.Logf("\twant %q", tc.elems)
 			}
 		}
 		t.Run(tc.desc, f)
