@@ -25,98 +25,115 @@ func (t *Tree) IsEmpty() bool {
 func (t *Tree) Insert(p *Pattern) {
 	host := p.HostPattern // non-empty by construction
 	host, wildcardSubs := strings.CutPrefix(host, subdomainWildcard)
-	// if t.IsEmpty() {
-	// 	t.root.suf = host
-	// 	t.root.add(p.Scheme, p.Port, wildcardSubs)
-	// 	return
-	// }
+	if t.IsEmpty() {
+		t.root.suf = host
+		t.root.add(p.Scheme, p.Port, wildcardSubs)
+		return
+	}
 	n := &t.root
 	for {
-		// TODO: splitAtCommonSuffix first
-		// ---
-		labelToChild, ok := lastByte(host)
-		if !ok { // host is empty
-			n.add(p.Scheme, p.Port, wildcardSubs)
-			return
-		}
-		if n.contains(p.Scheme, p.Port, true) {
-			return
-		}
-		i, found := slices.BinarySearch(n.edges, labelToChild)
-		if !found { // No matching edge found; create one.
-			child := node{suf: host}
-			child.add(p.Scheme, p.Port, wildcardSubs)
-			n.upsertEdge(labelToChild, child)
-			return
-		}
-		child := &n.children[i]
+		prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
+		label1, ok1 := lastByte(prefixOfNSuf)
+		label2, ok2 := lastByte(prefixOfHost)
+		if !ok1 {
+			if !ok2 { // n.suf == host
+				n.add(p.Scheme, p.Port, wildcardSubs)
+				return
+			} else { // n.suf is a strict suffix of host.
+				// Example:
+				// - n.suf: kin
+				// - host: akin
+				if n.contains(p.Scheme, p.Port, true) {
+					// Avoid redundancy; keep the tree somewhat compact.
+					return
+				}
+				// Look for an edge labeled label2 stemming from n.
+				i, ok := slices.BinarySearch(n.edges, label2)
+				if !ok { // No such edge found.
+					// Create one leading to the new child:
+					//
+					//  kin - a
+					//
+					child := node{suf: prefixOfHost}
+					child.add(p.Scheme, p.Port, wildcardSubs)
+					n.upsertEdge(label2, &child)
+					return
+				}
+				// Edge found. Keep going.
+				host = prefixOfHost
+				n = n.children[i]
+				continue
+			}
+		} else {
+			if !ok2 { // host is a strict suffix of n.suf.
+				// Example:
+				// - n.suf: akin
+				// - host:   kin
 
-		prefixOfHost, prefixOfChildSuf, suf := splitAtCommonSuffix(host, child.suf)
-		labelToGrandChild1, ok := lastByte(prefixOfChildSuf)
-		if !ok { // child.suf is a suffix of host
-			host = prefixOfHost
-			n = child
-			continue
+				// Perform a one-way split of n:
+				//
+				//  kin - a (child)
+				//
+				child := *n
+				child.suf = prefixOfNSuf
+				*n = node{suf: suf}
+				n.upsertEdge(label1, &child)
+				n.add(p.Scheme, p.Port, wildcardSubs)
+				return
+			} else {
+				// Example:
+				// - n.suf:    akin
+				// - host:  pumpkin
+				// Perform a two-way split of n:
+				//
+				//   kin - a (child1)
+				//      \
+				//       pump (child2)
+				//
+				child1 := *n
+				child1.suf = prefixOfNSuf
+				*n = node{suf: suf}
+				n.upsertEdge(label1, &child1)
+				child2 := node{suf: prefixOfHost}
+				child2.add(p.Scheme, p.Port, wildcardSubs)
+				n.upsertEdge(label2, &child2)
+				return
+			}
 		}
-		// child.suf is NOT a suffix of s; we need to split child.
-		//
-		// Before splitting: child
-		//
-		// After splitting:  child' -- grandChild
-		//
-		// ... or perhaps    child' -- grandChild1
-		//                      \
-		//                       grandChild2
-
-		// Create a first grandchild on the basis of the current child.
-		grandChild1 := node{
-			suf:      prefixOfChildSuf,
-			edges:    child.edges,
-			children: child.children,
-			schemes:  child.schemes,
-			ports:    child.ports,
-		}
-
-		// Replace child in n.
-		child = n.upsertEdge(labelToChild, node{suf: suf})
-
-		// Add a first grandchild in child.
-		child.upsertEdge(labelToGrandChild1, grandChild1)
-		labelToGrandChild2, ok := lastByte(prefixOfHost)
-		if !ok {
-			child.add(p.Scheme, p.Port, wildcardSubs)
-			return
-		}
-
-		// Add a second grandchild in child.
-		grandChild2 := node{suf: prefixOfHost}
-		grandChild2.add(p.Scheme, p.Port, wildcardSubs)
-		child.upsertEdge(labelToGrandChild2, grandChild2)
-		return
 	}
 }
 
 // Contains reports whether t contains o.
 func (t *Tree) Contains(o *Origin) bool {
 	host := o.Host
-	n := t.root
+	n := &t.root
 	for {
 		prefixOfHost, _, suf := splitAtCommonSuffix(host, n.suf)
-		if len(suf) != len(n.suf) { // n.suf is NOT a suffix of host
+		if len(suf) != len(n.suf) {
+			// n.suf is NOT a suffix of host. Example:
+			// - n.suf: akin
+			// - host:   kin
 			return false
 		}
-		// n.suf is a suffix of host
+
+		// n.suf is a suffix of host.
+
 		label, ok := lastByte(prefixOfHost)
 		if !ok {
+			// prefixOfHost is empty. Therefore, n.suf == host.
 			return n.contains(o.Scheme, o.Port, false)
 		}
 
-		// prefixOfHost is NOT empty;
-		// check whether n contains port for wildcard subs.
+		// prefixOfHost is NOT empty. Example:
+		// - n.suf: .kin
+		// - host: a.kin
+
+		// Check whether n contains port for wildcard subs.
 		if n.contains(o.Scheme, o.Port, true) {
 			return true
 		}
 
+		// Look for an edge labeled 'a' in n.
 		i, found := slices.BinarySearch(n.edges, label)
 		if !found {
 			return false
@@ -170,10 +187,7 @@ type node struct {
 	// edges are the edges to children of this node.
 	edges []byte
 	// children are the children of this node ("parallels" edges slice).
-	// Using []*node is tempting because it is expedient, but using []node is
-	// more performant (because it involves one fewer lever of indirection) at
-	// the cost of some gymnastics.
-	children []node
+	children []*node
 	// schemes are the schemes of this node.
 	schemes []string
 	// ports are the ports associated to this node's schemes ("parallels"
@@ -242,17 +256,14 @@ func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool)
 	return
 }
 
-// upsertEdge updates or inserts child in n down an edge labeled by label
-// and returns a pointer to the corresponding child in n.
-func (n *node) upsertEdge(label byte, child node) *node {
+// upsertEdge updates or inserts child in n down an edge labeled by label.
+func (n *node) upsertEdge(label byte, child *node) {
 	i, found := slices.BinarySearch(n.edges, label)
 	if !found {
 		n.edges = slices.Insert(n.edges, i, label)
 		n.children = slices.Insert(n.children, i, child)
-		return &n.children[i]
 	}
 	n.children[i] = child
-	return &n.children[i]
 }
 
 // elems reports whether f(x) is true for the textual representation
