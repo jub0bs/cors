@@ -24,8 +24,7 @@ func (t *Tree) IsEmpty() bool {
 
 // Insert inserts p in t.
 func (t *Tree) Insert(p *Pattern) {
-	host := p.HostPattern // non-empty by construction
-	host, wildcardSubs := strings.CutPrefix(host, subdomainWildcard)
+	host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
 	if t.IsEmpty() {
 		t.root.suf = host
 		t.root.add(p.Scheme, p.Port, wildcardSubs)
@@ -53,7 +52,7 @@ func (t *Tree) Insert(p *Pattern) {
 				if !ok { // No such edge found.
 					// Create one leading to the new child:
 					//
-					//  kin - a
+					//  kin - a (child)
 					//
 					child := node{suf: prefixOfHost}
 					child.add(p.Scheme, p.Port, wildcardSubs)
@@ -117,16 +116,16 @@ func (t *Tree) Contains(o *Origin) bool {
 			// - host:   kin
 			return false
 		}
-
 		// n.suf is a suffix of host.
 
 		label, ok := lastByte(prefixOfHost)
 		if !ok {
-			// prefixOfHost is empty. Therefore, n.suf == host.
+			// n.suf == host
 			return n.contains(o.Scheme, o.Port, false)
 		}
 
-		// prefixOfHost is NOT empty. Example:
+		// host is a strict suffix of n.suf.
+		// Example:
 		// - n.suf: .kin
 		// - host: a.kin
 
