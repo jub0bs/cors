@@ -1,6 +1,7 @@
 package origins
 
 import (
+	"cmp"
 	"iter"
 	"slices"
 	"strconv"
@@ -56,7 +57,7 @@ func (t *Tree) Insert(p *Pattern) {
 					//
 					child := node{suf: prefixOfHost}
 					child.add(p.Scheme, p.Port, wildcardSubs)
-					n.upsertEdge(label2, &child)
+					n.insertEdge(i, label2, &child)
 					return
 				}
 				// Edge found. Keep going.
@@ -77,7 +78,7 @@ func (t *Tree) Insert(p *Pattern) {
 				child := *n
 				child.suf = prefixOfNSuf
 				*n = node{suf: suf}
-				n.upsertEdge(label1, &child)
+				n.insertEdge(-1, label1, &child)
 				n.add(p.Scheme, p.Port, wildcardSubs)
 				return
 			} else {
@@ -93,10 +94,11 @@ func (t *Tree) Insert(p *Pattern) {
 				child1 := *n
 				child1.suf = prefixOfNSuf
 				*n = node{suf: suf}
-				n.upsertEdge(label1, &child1)
+				n.insertEdge(-1, label1, &child1)
 				child2 := node{suf: prefixOfHost}
 				child2.add(p.Scheme, p.Port, wildcardSubs)
-				n.upsertEdge(label2, &child2)
+				i := cmp.Compare(label2, label1) // either -1 or 1 (label1 != label2)
+				n.insertEdge(max(0, i), label2, &child2)
 				return
 			}
 		}
@@ -256,14 +258,17 @@ func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool)
 	return
 }
 
-// upsertEdge updates or inserts child in n down an edge labeled by label.
-func (n *node) upsertEdge(label byte, child *node) {
-	i, found := slices.BinarySearch(n.edges, label)
-	if !found {
-		n.edges = slices.Insert(n.edges, i, label)
-		n.children = slices.Insert(n.children, i, child)
+// insertEdge, if i is negative, replaces n's edges by a single edge labeled label and leading to child;
+// otherwise, it inserts an edge labeled label and leading to child at index i in n.edges.
+// Preconditions: i <= len(n.edges)
+func (n *node) insertEdge(i int, label byte, child *node) {
+	if i < 0 { //
+		n.edges = []byte{label}
+		n.children = []*node{child}
+		return
 	}
-	n.children[i] = child
+	n.edges = slices.Insert(n.edges, i, label)
+	n.children = slices.Insert(n.children, i, child)
 }
 
 // elems reports whether f(x) is true for the textual representation
