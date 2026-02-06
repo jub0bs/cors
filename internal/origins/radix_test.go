@@ -91,7 +91,7 @@ func TestTree(t *testing.T) {
 				"https://kpin",
 			},
 		}, {
-			desc: "duplicate patterns",
+			desc: "wildcard-free patterns with some duplicates",
 			patterns: []string{
 				"https://cat",
 				"https://concat",
@@ -331,7 +331,7 @@ func TestTree(t *testing.T) {
 				"https://nap.kin:3",
 			},
 		}, {
-			desc: "some wildcard-full patterns in reverse order",
+			desc: "some wildcard-full patterns in reverse insertion order",
 			patterns: []string{
 				"https://pin",
 				"https://*.kin:1",
