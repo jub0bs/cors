@@ -2,6 +2,7 @@ package origins_test
 
 import (
 	"iter"
+	"math/rand/v2"
 	"slices"
 	"testing"
 
@@ -341,7 +342,7 @@ func TestTree(t *testing.T) {
 				"https://cat",
 			},
 			elems: []string{
-				"https://a.kin", // We don't yet compact the tree as much as possible.
+				//"https://a.kin", // We don't yet compact the tree as much as possible.
 				"https://*.kin",
 				"https://*.kin:1",
 				"https://cat",
@@ -497,13 +498,15 @@ func TestTree(t *testing.T) {
 		f := func(t *testing.T) {
 			t.Parallel()
 			tree := new(origins.Tree)
+			var ps []origins.Pattern
 			for _, raw := range tc.patterns {
 				pattern, err := origins.ParsePattern(raw)
 				if err != nil {
 					t.Fatalf("origins.ParsePattern(%q): got non-nil error; want nil", raw)
 				}
-				tree.Insert(&pattern)
+				ps = append(ps, pattern)
 			}
+			tree.InsertAll(ps...)
 			wantEmpty := len(tc.patterns) == 0
 			gotEmpty := tree.IsEmpty()
 			if gotEmpty != wantEmpty {
@@ -561,4 +564,64 @@ func take[E any](seq iter.Seq[E], count int) iter.Seq[E] {
 			return
 		}
 	}
+}
+
+func FuzzInsensitivityOfTreeElemsToInsertionOrder(f *testing.F) {
+	refRawPatterns := []string{
+		"https://cat:*",
+		"https://concat:*",
+		"https://kin",
+		"https://pin",
+		"https://cat",
+		"https://concat",
+		"https://*.kin",
+		"https://a.kin",
+		"https://*.kin:1",
+		"https://pin",
+		"https://pin",
+		"https://kin",
+		"https://concat",
+		"http://cat",
+	}
+	var refTree origins.Tree
+	var ps []origins.Pattern
+	for _, raw := range refRawPatterns {
+		pattern, err := origins.ParsePattern(raw)
+		if err != nil {
+			f.Fatal(err)
+		}
+		ps = append(ps, pattern)
+	}
+	refTree.InsertAll(ps...)
+	refElems := slices.Collect(refTree.Elems())
+	f.Fuzz(func(t *testing.T, seed uint64) {
+		rawPatterns := slices.Clone(refRawPatterns) // leave original untouched// required
+
+		r := rand.New(randSource(seed))
+		r.Shuffle(len(rawPatterns), func(i, j int) { rawPatterns[i], rawPatterns[j] = rawPatterns[j], rawPatterns[i] })
+		var tree origins.Tree
+		var ps []origins.Pattern
+		for _, raw := range rawPatterns {
+			pattern, err := origins.ParsePattern(raw)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ps = append(ps, pattern)
+		}
+		tree.InsertAll(ps...)
+		elems := slices.Collect(tree.Elems())
+		if !slices.Equal(elems, refElems) {
+			t.Errorf("Tree.Elems is sensitive to insertion order (seed: %d):", seed)
+			t.Logf("ref patterns: %q", refRawPatterns)
+			t.Logf("ref elems: %q", refElems)
+			t.Logf("patterns: %q", rawPatterns)
+			t.Logf("elems: %q", elems)
+		}
+	})
+}
+
+type randSource uint64
+
+func (s randSource) Uint64() uint64 {
+	return uint64(s)
 }
