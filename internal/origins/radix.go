@@ -3,6 +3,7 @@ package origins
 import (
 	"cmp"
 	"iter"
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -108,10 +109,11 @@ func byReverseHostPattern(p1, p2 *Pattern) int {
 			return c
 		}
 	}
-	if c := cmp.Compare(len(a), len(b)); c != 0 {
-		return c
-	}
-	return -cmp.Compare(p1.Port, p2.Port)
+	return cmp.Or(
+		cmp.Compare(len(a), len(b)),
+		cmp.Compare(p1.Scheme, p2.Scheme),
+		cmp.Compare(p1.Port, p2.Port),
+	)
 }
 
 // Contains reports whether t contains o.
@@ -228,7 +230,7 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 }
 
 // an offset used for storing ports corresponding to wildcard subs
-const portOffset = wildcardPort + 1
+const portOffset = math.MaxUint16 + 2
 
 func (n *node) isEmpty() bool {
 	return n.schemes == nil && n.children == nil
@@ -278,7 +280,7 @@ func (n *node) elems(suf string, f func(string) bool) bool {
 		scheme := nSchemes[i]
 		for _, port := range ports {
 			var maybeWildcard string
-			if port < 0 {
+			if port < wildcardPort {
 				maybeWildcard = subdomainWildcard
 				port += portOffset
 			}

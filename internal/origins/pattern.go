@@ -1,7 +1,6 @@
 package origins
 
 import (
-	"math"
 	"net/netip"
 	"strings"
 	"sync"
@@ -331,7 +330,8 @@ func parsePortPattern(str string) (int, bool) {
 }
 
 // wildcardPort is a sentinel value that subsumes all other port numbers.
-const wildcardPort = math.MaxUint16 + 1
+// Note that wildcardPort is less than all of the possible Pattern.Port values.
+const wildcardPort = -1
 
 // isDefaultPortForScheme returns true for the following combinations
 //   - (https, 443)
