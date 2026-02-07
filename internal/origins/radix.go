@@ -23,15 +23,15 @@ func (t *Tree) IsEmpty() bool {
 }
 
 // InsertAll inserts all of ps in t.
-func (t *Tree) InsertAll(ps ...Pattern) {
+func (t *Tree) InsertAll(ps ...*Pattern) {
 	slices.SortFunc(ps, byReverseHostPattern)
 	for _, p := range ps {
-		t.insert(&p)
+		t.insert(p)
 	}
 }
 
 // TODO: document. also mention '*' is less than all other valid
-func byReverseHostPattern(p1, p2 Pattern) int {
+func byReverseHostPattern(p1, p2 *Pattern) int {
 	a, b := p1.HostPattern, p2.HostPattern
 	for i, j := len(a)-1, len(b)-1; 0 <= i && 0 <= j; i, j = i-1, j-1 {
 		if c := cmp.Compare(a[i], b[j]); c != 0 {
