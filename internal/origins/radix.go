@@ -24,9 +24,79 @@ func (t *Tree) IsEmpty() bool {
 
 // InsertAll inserts all of ps in t.
 func (t *Tree) InsertAll(ps ...*Pattern) {
+	// Sort ps in such a way as to guarantee that the resulting
+	// radix tree be as compact as possible, without requiring any pruning.
 	slices.SortFunc(ps, byReverseHostPattern)
 	for _, p := range ps {
-		t.insert(p)
+		host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
+		if t.IsEmpty() {
+			t.root.suf = host
+			t.root.add(p.Scheme, p.Port, wildcardSubs)
+			continue
+		}
+		n := &t.root
+		for {
+			prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
+			label1, ok1 := lastByte(prefixOfNSuf)
+			label2, ok2 := lastByte(prefixOfHost)
+			if !ok1 {
+				if !ok2 { // n.suf == host
+					n.add(p.Scheme, p.Port, wildcardSubs)
+					break
+				} else { // n.suf is a strict suffix of host.
+					// Example:
+					// - n.suf: kin
+					// - host: akin
+					if n.contains(p.Scheme, p.Port, true) {
+						// Avoid redundancy; keep the tree somewhat compact.
+						break
+					}
+					// Look for an edge labeled label2 stemming from n.
+					i, ok := slices.BinarySearch(n.edges, label2)
+					if !ok { // No such edge found.
+						// Create one leading to the new child:
+						//
+						//  kin - a (child)
+						//
+						child := node{suf: prefixOfHost}
+						child.add(p.Scheme, p.Port, wildcardSubs)
+						n.insertEdge(i, label2, &child)
+						break
+					}
+					// Edge found. Keep going.
+					host = prefixOfHost
+					n = n.children[i]
+					continue
+				}
+			} else {
+				if !ok2 { // host is a strict suffix of n.suf.
+					// Example:
+					// - n.suf: akin
+					// - host:   kin
+					// Because we insert the patterns in TODO
+					panic("unreachable")
+				} else {
+					// Example:
+					// - n.suf:    akin
+					// - host:  pumpkin
+					// Perform a two-way split of n:
+					//
+					//   kin - a (child1)
+					//      \
+					//       pump (child2)
+					//
+					child1 := *n
+					child1.suf = prefixOfNSuf
+					*n = node{suf: suf}
+					n.insertEdge(-1, label1, &child1)
+					child2 := node{suf: prefixOfHost}
+					child2.add(p.Scheme, p.Port, wildcardSubs)
+					i := cmp.Compare(label2, label1) // either -1 or 1 (label1 != label2)
+					n.insertEdge(max(0, i), label2, &child2)
+					break
+				}
+			}
+		}
 	}
 }
 
@@ -39,88 +109,6 @@ func byReverseHostPattern(p1, p2 *Pattern) int {
 		}
 	}
 	return cmp.Compare(len(a), len(b))
-}
-
-// Insert inserts p in t.
-func (t *Tree) insert(p *Pattern) {
-	host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
-	if t.IsEmpty() {
-		t.root.suf = host
-		t.root.add(p.Scheme, p.Port, wildcardSubs)
-		return
-	}
-	n := &t.root
-	for {
-		prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
-		label1, ok1 := lastByte(prefixOfNSuf)
-		label2, ok2 := lastByte(prefixOfHost)
-		if !ok1 {
-			if !ok2 { // n.suf == host
-				n.add(p.Scheme, p.Port, wildcardSubs)
-				return
-			} else { // n.suf is a strict suffix of host.
-				// Example:
-				// - n.suf: kin
-				// - host: akin
-				if n.contains(p.Scheme, p.Port, true) {
-					// Avoid redundancy; keep the tree somewhat compact.
-					return
-				}
-				// Look for an edge labeled label2 stemming from n.
-				i, ok := slices.BinarySearch(n.edges, label2)
-				if !ok { // No such edge found.
-					// Create one leading to the new child:
-					//
-					//  kin - a (child)
-					//
-					child := node{suf: prefixOfHost}
-					child.add(p.Scheme, p.Port, wildcardSubs)
-					n.insertEdge(i, label2, &child)
-					return
-				}
-				// Edge found. Keep going.
-				host = prefixOfHost
-				n = n.children[i]
-				continue
-			}
-		} else {
-			if !ok2 { // host is a strict suffix of n.suf.
-				// Example:
-				// - n.suf: akin
-				// - host:   kin
-
-				// Perform a one-way split of n:
-				//
-				//  kin - a (child)
-				//
-				child := *n
-				child.suf = prefixOfNSuf
-				*n = node{suf: suf}
-				n.insertEdge(-1, label1, &child)
-				n.add(p.Scheme, p.Port, wildcardSubs)
-				return
-			} else {
-				// Example:
-				// - n.suf:    akin
-				// - host:  pumpkin
-				// Perform a two-way split of n:
-				//
-				//   kin - a (child1)
-				//      \
-				//       pump (child2)
-				//
-				child1 := *n
-				child1.suf = prefixOfNSuf
-				*n = node{suf: suf}
-				n.insertEdge(-1, label1, &child1)
-				child2 := node{suf: prefixOfHost}
-				child2.add(p.Scheme, p.Port, wildcardSubs)
-				i := cmp.Compare(label2, label1) // either -1 or 1 (label1 != label2)
-				n.insertEdge(max(0, i), label2, &child2)
-				return
-			}
-		}
-	}
 }
 
 // Contains reports whether t contains o.
