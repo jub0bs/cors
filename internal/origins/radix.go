@@ -28,6 +28,9 @@ func (t *Tree) InsertAll(ps ...*Pattern) {
 	// Sort ps in such a way as to guarantee that the resulting
 	// radix tree be as compact as possible, without requiring any pruning.
 	slices.SortFunc(ps, byReverseHostPattern)
+	// Compact ps to avoid inserting identical patterns multiple times.
+	ps = slices.CompactFunc(ps, func(p1, p2 *Pattern) bool { return *p1 == *p2 })
+	// Insert ps in t.
 	for _, p := range ps {
 		host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
 		if t.IsEmpty() {
