@@ -108,7 +108,10 @@ func byReverseHostPattern(p1, p2 *Pattern) int {
 			return c
 		}
 	}
-	return cmp.Compare(len(a), len(b))
+	if c := cmp.Compare(len(a), len(b)); c != 0 {
+		return c
+	}
+	return -cmp.Compare(p1.Port, p2.Port)
 }
 
 // Contains reports whether t contains o.
@@ -219,9 +222,6 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 		return
 	}
 	ports := n.ports[i]
-	if port == wildcardPort {
-		ports = deleteSameSign(ports, port)
-	}
 	ports = append(ports, port)
 	slices.Sort(ports)
 	n.ports[i] = ports
@@ -229,17 +229,6 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 
 // an offset used for storing ports corresponding to wildcard subs
 const portOffset = wildcardPort + 1
-
-// deleteSameSign, if v is negative, removes all the negative values from s;
-// otherwise, it removes all the non-negative values from s.
-// Precondition: s is sorted in increasing order.
-func deleteSameSign(s []int, v int) []int {
-	i, _ := slices.BinarySearch(s, 0)
-	if v < 0 {
-		return s[i:]
-	}
-	return s[:i]
-}
 
 func (n *node) isEmpty() bool {
 	return n.schemes == nil && n.children == nil
