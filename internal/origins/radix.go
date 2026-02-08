@@ -232,8 +232,15 @@ func (n *node) add(scheme string, port int, wildcardSubs bool) {
 		return
 	}
 	ports := n.ports[i]
-	ports = append(ports, port)
-	slices.Sort(ports)
+	_, found = slices.BinarySearch(ports, wildcardPort)
+	if found {
+		return
+	}
+	j, found := slices.BinarySearch(ports, port)
+	if found {
+		return
+	}
+	ports = slices.Insert(ports, j, port)
 	n.ports[i] = ports
 }
 
