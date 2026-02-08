@@ -176,7 +176,6 @@ func isSubsequentSchemeByte(c byte) bool {
 		1<<'.' |
 		(1<<10-1)<<'0' |
 		(1<<26-1)<<'a' |
-		1<<'-' |
 		1<<'_'
 	return ((uint64(1)<<c)&(mask&(1<<64-1)) |
 		(uint64(1)<<(c-64))&(mask>>64)) != 0
@@ -262,10 +261,10 @@ func scanHostPattern(str string) (hostPattern, rest string, wildcardSubs bool) {
 // a hyphen (0x2D), a period (0x2E), or an underscore (0x5F).
 func isDomainByte(c byte) bool {
 	const mask = 0 |
-		(1<<10-1)<<'0' |
-		(1<<26-1)<<'a' |
 		1<<'-' |
 		1<<labelSep |
+		(1<<10-1)<<'0' |
+		(1<<26-1)<<'a' |
 		1<<'_' // see https://stackoverflow.com/q/2180465
 	return ((uint64(1)<<c)&(mask&(1<<64-1)) |
 		(uint64(1)<<(c-64))&(mask>>64)) != 0
