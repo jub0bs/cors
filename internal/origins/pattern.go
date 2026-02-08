@@ -155,11 +155,7 @@ func parseScheme(str string) (scheme, rest string, ok bool) {
 			break
 		}
 	}
-	scheme, rest = str[:i], str[i:]
-	if scheme == "file" {
-		return
-	}
-	return scheme, rest, true
+	return str[:i], str[i:], scheme != "file"
 }
 
 // isLowerAlpha reports whether c is in the 0x61-0x7A ASCII range.
