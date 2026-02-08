@@ -497,7 +497,6 @@ func TestTree(t *testing.T) {
 	for _, tc := range cases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			tree := new(origins.Tree)
 			var ps []*origins.Pattern
 			for _, raw := range tc.patterns {
 				pattern, err := origins.ParsePattern(raw)
@@ -506,7 +505,7 @@ func TestTree(t *testing.T) {
 				}
 				ps = append(ps, &pattern)
 			}
-			tree.InsertAll(ps...)
+			tree := origins.NewTree(ps...)
 			wantEmpty := len(tc.patterns) == 0
 			gotEmpty := tree.IsEmpty()
 			if gotEmpty != wantEmpty {
@@ -583,7 +582,6 @@ func FuzzInsensitivityOfTreeElemsToInsertionOrder(f *testing.F) {
 		"https://concat",
 		"http://cat",
 	}
-	var refTree origins.Tree
 	var ps []*origins.Pattern
 	for _, raw := range refRawPatterns {
 		pattern, err := origins.ParsePattern(raw)
@@ -592,14 +590,13 @@ func FuzzInsensitivityOfTreeElemsToInsertionOrder(f *testing.F) {
 		}
 		ps = append(ps, &pattern)
 	}
-	refTree.InsertAll(ps...)
+	refTree := origins.NewTree(ps...)
 	refElems := slices.Collect(refTree.Elems())
 	f.Fuzz(func(t *testing.T, seed uint64) {
 		rawPatterns := slices.Clone(refRawPatterns) // leave original untouched// required
 
 		r := rand.New(randSource(seed))
 		r.Shuffle(len(rawPatterns), func(i, j int) { rawPatterns[i], rawPatterns[j] = rawPatterns[j], rawPatterns[i] })
-		var tree origins.Tree
 		var ps []*origins.Pattern
 		for _, raw := range rawPatterns {
 			pattern, err := origins.ParsePattern(raw)
@@ -608,7 +605,7 @@ func FuzzInsensitivityOfTreeElemsToInsertionOrder(f *testing.F) {
 			}
 			ps = append(ps, &pattern)
 		}
-		tree.InsertAll(ps...)
+		tree := origins.NewTree(ps...)
 		elems := slices.Collect(tree.Elems())
 		if !slices.Equal(elems, refElems) {
 			t.Errorf("Tree.Elems is sensitive to insertion order (seed: %d):", seed)

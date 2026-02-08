@@ -18,26 +18,23 @@ type Tree struct {
 	root node
 }
 
-// IsEmpty reports whether t is empty.
-func (t *Tree) IsEmpty() bool {
-	return t.root.isEmpty()
-}
-
-// InsertAll inserts all of ps in t.
-func (t *Tree) InsertAll(ps ...*Pattern) {
+// NewTree inserts all of ps in t.
+func NewTree(ps ...*Pattern) Tree {
 	// Sort ps in such a way as to guarantee that the resulting
 	// radix tree be as compact as possible, without requiring any pruning.
 	slices.SortFunc(ps, byReverseHostPattern)
 	// Compact ps to avoid inserting identical patterns multiple times.
 	ps = slices.CompactFunc(ps, func(p1, p2 *Pattern) bool { return *p1 == *p2 })
-	// Insert ps in t.
+	var t Tree
+	if len(ps) > 0 {
+		p := ps[0]
+		host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
+		t.root.suf = host
+		t.root.add(p.Scheme, p.Port, wildcardSubs)
+		ps = ps[1:]
+	}
 	for _, p := range ps {
 		host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
-		if t.IsEmpty() {
-			t.root.suf = host
-			t.root.add(p.Scheme, p.Port, wildcardSubs)
-			continue
-		}
 		n := &t.root
 		for {
 			prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
@@ -52,7 +49,7 @@ func (t *Tree) InsertAll(ps ...*Pattern) {
 					// - n.suf: kin
 					// - host: akin
 					if n.contains(p.Scheme, p.Port, true) {
-						// Avoid redundancy; keep the tree somewhat compact.
+						// Avoid redundancy.
 						break
 					}
 					// Look for an edge labeled label2 stemming from n.
@@ -73,35 +70,37 @@ func (t *Tree) InsertAll(ps ...*Pattern) {
 					continue
 				}
 			} else {
-				if !ok2 { // host is a strict suffix of n.suf.
-					// Example:
-					// - n.suf: akin
-					// - host:   kin
-					// Because we insert the patterns in TODO
-					panic("unreachable")
-				} else {
-					// Example:
-					// - n.suf:    akin
-					// - host:  pumpkin
-					// Perform a two-way split of n:
-					//
-					//   kin - a (child1)
-					//      \
-					//       pump (child2)
-					//
-					child1 := *n
-					child1.suf = prefixOfNSuf
-					*n = node{suf: suf}
-					n.insertEdge(-1, label1, &child1)
-					child2 := node{suf: prefixOfHost}
-					child2.add(p.Scheme, p.Port, wildcardSubs)
-					i := cmp.Compare(label2, label1) // either -1 or 1 (label1 != label2)
-					n.insertEdge(max(0, i), label2, &child2)
-					break
-				}
+				// If !ok2, host is a strict suffix of n.suf.
+				// Example:
+				// - n.suf: akin
+				// - host:   kin
+				// Because we insert the patterns in TODO
+				//
+				// If ok2, neither n.suf nor host is a suffix (strict or not)
+				// of the other.
+				// Example:
+				// - n.suf:    akin
+				// - host:  pumpkin
+				// Perform a two-way split of n:
+				//
+				//   kin - a (child1)
+				//      \
+				//       pump (child2)
+				//
+				child1 := *n
+				child1.suf = prefixOfNSuf
+				*n = node{suf: suf}
+				n.insertEdge(-1, label1, &child1)
+				child2 := node{suf: prefixOfHost}
+				child2.add(p.Scheme, p.Port, wildcardSubs)
+				i := cmp.Compare(label2, label1) // either -1 or 1 (label1 != label2)
+				n.insertEdge(max(0, i), label2, &child2)
+				break
+
 			}
 		}
 	}
+	return t
 }
 
 // TODO: document. also mention '*' is less than all other valid
@@ -117,6 +116,11 @@ func byReverseHostPattern(p1, p2 *Pattern) int {
 		cmp.Compare(p1.Scheme, p2.Scheme),
 		cmp.Compare(p1.Port, p2.Port),
 	)
+}
+
+// IsEmpty reports whether t is empty.
+func (t *Tree) IsEmpty() bool {
+	return t.root.isEmpty()
 }
 
 // Contains reports whether t contains o.
@@ -213,6 +217,7 @@ type node struct {
 
 func (n *node) add(scheme string, port int, wildcardSubs bool) {
 	if n.contains(scheme, port, wildcardSubs) {
+		// Avoid redundancy.
 		return
 	}
 	wildcardPort := wildcardPort // shadows package-level constant
