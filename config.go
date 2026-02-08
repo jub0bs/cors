@@ -418,8 +418,8 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	return &icfg, nil
 }
 
-func (icfg *internalConfig) validateOriginPatterns(errs []error, patterns []string) []error {
-	if len(patterns) == 0 {
+func (icfg *internalConfig) validateOriginPatterns(errs []error, rawPatterns []string) []error {
+	if len(rawPatterns) == 0 {
 		err := &cfgerrors.UnacceptableOriginPatternError{
 			Reason: "missing",
 		}
@@ -427,7 +427,7 @@ func (icfg *internalConfig) validateOriginPatterns(errs []error, patterns []stri
 	}
 	var ps []*origins.Pattern
 	var allowAnyOrigin bool
-	for _, raw := range patterns {
+	for _, raw := range rawPatterns {
 		if raw == headers.ValueWildcard {
 			if icfg.credentialed {
 				err := &cfgerrors.IncompatibleOriginPatternError{
