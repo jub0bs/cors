@@ -1265,7 +1265,7 @@ func TestMiddleware(t *testing.T) {
 	}
 }
 
-func TestWrappedHandlerCannotMutatePackageLevelSlices(t *testing.T) {
+func Test_that_wrapped_handler_cannot_mutate_package_level_slices(t *testing.T) {
 	cases := []MiddlewareTestCase{
 		{
 			desc:       "anonymous",

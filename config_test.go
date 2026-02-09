@@ -14,7 +14,7 @@ import (
 
 // We want cors.Config to be incomparable because, otherwise,
 // client code could rely on its comparability.
-func TestIncomparabilityOfConfig(t *testing.T) {
+func Test_incomparability_of_Config(t *testing.T) {
 	if typ := reflect.TypeFor[cors.Config](); typ.Comparable() {
 		t.Errorf("type %v is comparable, but should not be", typ)
 	}
@@ -22,7 +22,7 @@ func TestIncomparabilityOfConfig(t *testing.T) {
 
 // We don't want client code to rely on unkeyed literals
 // of cors.Config.
-func TestImpossibilityOfUnkeyedStructLiterals(t *testing.T) {
+func Test_that_unkeyed_Config_struct_literals_are_illegal(t *testing.T) {
 	typ := reflect.TypeFor[cors.Config]()
 	var unexportedFields bool
 	for i := range typ.NumField() {
@@ -38,7 +38,7 @@ func TestImpossibilityOfUnkeyedStructLiterals(t *testing.T) {
 
 // Some clients rely on the ability to marshal configuration to JSON;
 // see, for instance, https://github.com/rs/cors/pull/164.
-func TestPossibilityToMarshalConfig(t *testing.T) {
+func Test_that_Config_can_be_JSON_marshaled(t *testing.T) {
 	cfg := cors.Config{
 		Origins:         []string{"https://example.com"},
 		Credentialed:    true,
@@ -702,7 +702,7 @@ var invalidConfigTestCases = []InvalidConfigTestCase{
 	},
 }
 
-func TestIncorrectConfig(t *testing.T) {
+func TestConfig_invalid(t *testing.T) {
 	for _, tc := range invalidConfigTestCases {
 		f := func(t *testing.T) {
 			t.Parallel()
@@ -769,7 +769,7 @@ type PError[T any] interface {
 	*T
 }
 
-func BenchmarkIncorrectConfig(b *testing.B) {
+func BenchmarkConfig_invalid(b *testing.B) {
 	for _, tc := range invalidConfigTestCases {
 		f := func(b *testing.B) {
 			b.ReportAllocs()

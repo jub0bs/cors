@@ -9,7 +9,7 @@ import (
 // This check is important because, otherwise, index expressions
 // involving a http.Header and one of those names would yield
 // unexpected results.
-func TestThatAllRelevantHeaderNamesAreInCanonicalFormat(t *testing.T) {
+func Test_that_all_relevant_header_names_are_in_canonical_format(t *testing.T) {
 	headerNames := []string{
 		Origin,
 		ACRM,
@@ -32,7 +32,7 @@ func TestThatAllRelevantHeaderNamesAreInCanonicalFormat(t *testing.T) {
 // This check doesn't matter much, since we never use this name has a
 // http.Header key; however, for consistency, we prefer consistently writing
 // byte-lowercase header values in CORS response headers.
-func TestThatAuthorizationHeaderIsByteLowercase(t *testing.T) {
+func Test_that_authorization_Header_is_byte_lowercase(t *testing.T) {
 	if strings.ToLower(Authorization) != Authorization {
 		t.Errorf("%q is not byte-lowercase", Authorization)
 	}

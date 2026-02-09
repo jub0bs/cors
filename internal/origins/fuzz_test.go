@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func FuzzConsistencyBetweenParsePatternAndParse(f *testing.F) {
+func Fuzz_consistency_between_ParsePattern_and_Parse(f *testing.F) {
 	for _, c := range parsePatternTestCases {
 		f.Add(c.input)
 	}
@@ -26,7 +26,7 @@ func FuzzConsistencyBetweenParsePatternAndParse(f *testing.F) {
 	})
 }
 
-func FuzzParsePattern(f *testing.F) {
+func Fuzz_ParsePattern(f *testing.F) {
 	for _, c := range parsePatternTestCases {
 		f.Add(c.input)
 	}

@@ -142,7 +142,7 @@ func equal(target error) func(error) bool {
 // see https://go.dev/wiki/TestComments#test-error-semantics.
 // This test only checks that the error message of each concrete error type is
 // prefixed as desired.
-func TestPackageNamePrefixInErrorMessages(t *testing.T) {
+func Test_that_error_messages_are_prefixed_by_package_name(t *testing.T) {
 	errs := []error{
 		&cfgerrors.UnacceptableOriginPatternError{Reason: "missing"},
 		&cfgerrors.UnacceptableOriginPatternError{Value: "foo", Reason: "invalid"},
