@@ -1,9 +1,11 @@
-package headers
+package headers_test
 
 import (
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/jub0bs/cors/internal/headers"
 )
 
 // This check is important because, otherwise, index expressions
@@ -11,16 +13,16 @@ import (
 // unexpected results.
 func Test_that_all_relevant_header_names_are_in_canonical_format(t *testing.T) {
 	headerNames := []string{
-		Origin,
-		ACRM,
-		ACRH,
-		ACAO,
-		ACAC,
-		ACAM,
-		ACAH,
-		ACMA,
-		ACEH,
-		Vary,
+		headers.Origin,
+		headers.ACRM,
+		headers.ACRH,
+		headers.ACAO,
+		headers.ACAC,
+		headers.ACAM,
+		headers.ACAH,
+		headers.ACMA,
+		headers.ACEH,
+		headers.Vary,
 	}
 	for _, name := range headerNames {
 		if http.CanonicalHeaderKey(name) != name {
@@ -33,8 +35,8 @@ func Test_that_all_relevant_header_names_are_in_canonical_format(t *testing.T) {
 // http.Header key; however, for consistency, we prefer consistently writing
 // byte-lowercase header values in CORS response headers.
 func Test_that_authorization_Header_is_byte_lowercase(t *testing.T) {
-	if strings.ToLower(Authorization) != Authorization {
-		t.Errorf("%q is not byte-lowercase", Authorization)
+	if strings.ToLower(headers.Authorization) != headers.Authorization {
+		t.Errorf("%q is not byte-lowercase", headers.Authorization)
 	}
 }
 
@@ -50,7 +52,7 @@ func TestIsValid(t *testing.T) {
 	for _, tc := range cases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			got := IsValid(tc.name)
+			got := headers.IsValid(tc.name)
 			if got != tc.want {
 				const tmpl = "%q: got %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
@@ -95,7 +97,7 @@ func TestFirst(t *testing.T) {
 	for _, tc := range cases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			v, s, ok := First(tc.h, tc.key)
+			v, s, ok := headers.First(tc.h, tc.key)
 			if ok != tc.ok || v != tc.want || len(s) > 1 || len(s) == 1 && s[0] != v {
 				const tmpl = "got %s, %q, %t; want %s, %q, %t"
 				t.Errorf(tmpl, v, s, ok, tc.want, []string{tc.want}, tc.ok)

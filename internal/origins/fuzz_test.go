@@ -1,8 +1,10 @@
-package origins
+package origins_test
 
 import (
 	"strings"
 	"testing"
+
+	"github.com/jub0bs/cors/internal/origins"
 )
 
 func Fuzz_consistency_between_ParsePattern_and_Parse(f *testing.F) {
@@ -13,13 +15,13 @@ func Fuzz_consistency_between_ParsePattern_and_Parse(f *testing.F) {
 		f.Add(c.input)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {
-		pattern, err := ParsePattern(raw)
+		pattern, err := origins.ParsePattern(raw)
 		if err != nil ||
-			pattern.Kind == ArbitrarySubdomains ||
+			pattern.Kind == origins.ArbitrarySubdomains ||
 			strings.HasSuffix(raw, ":*") {
 			t.Skip()
 		}
-		if _, ok := Parse(raw); !ok {
+		if _, ok := origins.Parse(raw); !ok {
 			const tmpl = "pattern without wildcard %q fails to parse as an origin"
 			t.Errorf(tmpl, raw)
 		}
@@ -34,7 +36,7 @@ func Fuzz_ParsePattern(f *testing.F) {
 		f.Add(c.input)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {
-		pattern, err := ParsePattern(raw)
+		pattern, err := origins.ParsePattern(raw)
 		if err != nil {
 			t.Skip()
 		}
@@ -49,7 +51,7 @@ func Fuzz_ParsePattern(f *testing.F) {
 			}
 			return
 		}
-		if strings.Contains(raw, "*") != (pattern.Kind == ArbitrarySubdomains) {
+		if strings.Contains(raw, "*") != (pattern.Kind == origins.ArbitrarySubdomains) {
 			const tmpl = "pattern %q should but does not result in a Pattern that allows arbitrary subdomains"
 			t.Errorf(tmpl, raw)
 		}

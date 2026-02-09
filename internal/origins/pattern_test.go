@@ -1,11 +1,15 @@
-package origins
+package origins_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/jub0bs/cors/internal/origins"
+)
 
 type TestCase struct {
 	name    string
 	input   string
-	want    Pattern
+	want    origins.Pattern
 	failure bool
 }
 
@@ -23,10 +27,10 @@ var parsePatternTestCases = []TestCase{
 	}, {
 		name:  "wildcard character sequence followed by 251 chars",
 		input: "https://*." + validHostOf251chars,
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "https",
 			HostPattern: "*." + validHostOf251chars,
-			Kind:        ArbitrarySubdomains,
+			Kind:        origins.ArbitrarySubdomains,
 		},
 	}, {
 		name:    "null origin",
@@ -67,10 +71,10 @@ var parsePatternTestCases = []TestCase{
 	}, {
 		name:  "non-HTTP scheme",
 		input: "connector://foo",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "connector",
 			HostPattern: "foo",
-			Kind:        Domain,
+			Kind:        origins.Domain,
 		},
 	}, {
 		name:    "file scheme",
@@ -171,10 +175,10 @@ var parsePatternTestCases = []TestCase{
 	}, {
 		name:  "https scheme with IPv4 host",
 		input: "https://127.0.0.1:90",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "https",
 			HostPattern: "127.0.0.1",
-			Kind:        LoopbackIP,
+			Kind:        origins.LoopbackIP,
 			Port:        90,
 		},
 	}, {
@@ -188,27 +192,27 @@ var parsePatternTestCases = []TestCase{
 	}, {
 		name:  "non-loopback IPv4",
 		input: "http://69.254.169.254",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "http",
 			HostPattern: "69.254.169.254",
-			Kind:        NonLoopbackIP,
+			Kind:        origins.NonLoopbackIP,
 		},
 	}, {
 		name:  "loopback IPv4",
 		input: "http://127.0.0.1:90",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "http",
 			HostPattern: "127.0.0.1",
-			Kind:        LoopbackIP,
+			Kind:        origins.LoopbackIP,
 			Port:        90,
 		},
 	}, {
 		name:  "https scheme with IPv6 host",
 		input: "https://[::1]:90",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "https",
 			HostPattern: "::1",
-			Kind:        LoopbackIP,
+			Kind:        origins.LoopbackIP,
 			Port:        90,
 		},
 	}, {
@@ -238,19 +242,19 @@ var parsePatternTestCases = []TestCase{
 	}, {
 		name:  "non-loopback IPv6 with hexadecimal chars",
 		input: "http://[2001:db8:aaaa:1111::100]:9090",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "http",
 			HostPattern: "2001:db8:aaaa:1111::100",
-			Kind:        NonLoopbackIP,
+			Kind:        origins.NonLoopbackIP,
 			Port:        9090,
 		},
 	}, {
 		name:  "loopback IPv6 address with port",
 		input: "http://[::1]:90",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "http",
 			HostPattern: "::1",
-			Kind:        LoopbackIP,
+			Kind:        origins.LoopbackIP,
 			Port:        90,
 		},
 	}, {
@@ -280,19 +284,19 @@ var parsePatternTestCases = []TestCase{
 	}, {
 		name:  "host contains underscores and hyphens",
 		input: "http://ex_am-ple.com:3999",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "http",
 			HostPattern: "ex_am-ple.com",
-			Kind:        Domain,
+			Kind:        origins.Domain,
 			Port:        3999,
 		},
 	}, {
 		name:  "trailing full stop in host",
 		input: "http://example.com.:3999",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "http",
 			HostPattern: "example.com.",
-			Kind:        Domain,
+			Kind:        origins.Domain,
 			Port:        3999,
 		},
 	}, {
@@ -310,19 +314,19 @@ var parsePatternTestCases = []TestCase{
 	}, {
 		name:  "arbitrary subdomains",
 		input: "http://*.example.com:3999",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "http",
 			HostPattern: "*.example.com",
-			Kind:        ArbitrarySubdomains,
+			Kind:        origins.ArbitrarySubdomains,
 			Port:        3999,
 		},
 	}, {
 		name:  "arbitrary subdomains and arbitrary ports",
 		input: "http://*.example.com:*",
-		want: Pattern{
+		want: origins.Pattern{
 			Scheme:      "http",
 			HostPattern: "*.example.com",
-			Kind:        ArbitrarySubdomains,
+			Kind:        origins.ArbitrarySubdomains,
 			Port:        arbitraryPort,
 		},
 	}, {
@@ -348,11 +352,13 @@ var parsePatternTestCases = []TestCase{
 	},
 }
 
+const arbitraryPort = -1 // keep in sync with origins.arbitraryPort
+
 func TestParsePattern(t *testing.T) {
 	for _, c := range parsePatternTestCases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			o, err := ParsePattern(c.input)
+			o, err := origins.ParsePattern(c.input)
 			if err != nil && !c.failure {
 				t.Errorf("%q: got %v; want nil error", c.input, err)
 				return
@@ -407,7 +413,7 @@ func TestIsDeemedInsecure(t *testing.T) {
 	for _, c := range cases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			pattern, err := ParsePattern(c.pattern)
+			pattern, err := origins.ParsePattern(c.pattern)
 			if err != nil {
 				t.Errorf("got %v; want non-nil error", err)
 				return
@@ -443,7 +449,7 @@ func TestHostIsEffectiveTLD(t *testing.T) {
 	for _, c := range cases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			pattern, err := ParsePattern(c.pattern)
+			pattern, err := origins.ParsePattern(c.pattern)
 			if err != nil {
 				t.Errorf("got %v; want non-nil error", err)
 				return
