@@ -714,20 +714,23 @@ func TestConfig_invalid(t *testing.T) {
 				t.Error("got nil error; want non-nil error")
 				return
 			}
+			// Create a clone of tc.want that we can mutate without impacting
+			// package-level variable invalidConfigTestCases.
+			want := slices.Clone(tc.want)
 		iterationOverErrorTree: // O(m * n) isn't ideal, but ok.
 			for err := range cfgerrors.All(err) {
-				for i, m := range tc.want {
+				for i, m := range want {
 					if m == nil {
 						continue
 					}
 					if m.matches(err) {
-						tc.want[i] = nil // Mark as "matched".
+						want[i] = nil // Mark as "matched".
 						continue iterationOverErrorTree
 					}
 				}
 				t.Errorf("unexpected error: %q", err)
 			}
-			for _, m := range tc.want {
+			for _, m := range want {
 				if m == nil { // Already matched.
 					continue
 				}
