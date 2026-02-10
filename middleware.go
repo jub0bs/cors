@@ -91,7 +91,7 @@ func NewMiddleware(cfg Config) (*Middleware, error) {
 //	mw, err := cors.NewMiddleware(cfg)
 //
 // You can safely reconfigure a middleware
-// even as it's concurrently processing requests.
+// even as it's concurrently handling requests.
 //
 // Mutating the fields of cfg after Reconfigure has returned does not alter
 // m's behavior.
