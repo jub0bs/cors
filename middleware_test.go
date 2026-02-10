@@ -136,7 +136,7 @@ func TestMiddleware(t *testing.T) {
 				{
 					desc:      "non-CORS GET",
 					reqMethod: "GET",
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -148,7 +148,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACEH: {"x-bar,x-foo"},
@@ -160,7 +160,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -169,7 +169,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -178,7 +178,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACEH: {"x-bar,x-foo"},
@@ -196,8 +196,8 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"GET"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACMA: {"30"},
@@ -209,8 +209,8 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"PURGE"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAM: {"PURGE"},
@@ -224,7 +224,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   {"content-type"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with PURGE and Authorization from allowed",
 					reqMethod: "OPTIONS",
@@ -233,8 +233,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   {"authorization"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAM: {"PURGE"},
@@ -249,8 +249,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   {",,authorization,,"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAM: {"PURGE"},
@@ -265,7 +265,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   {"authorization" + strings.Repeat(",", 17)},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				}, {
 					desc:      "preflight with PURGE and Authorization with some empty ACRH header lines from allowed",
 					reqMethod: "OPTIONS",
@@ -274,8 +274,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   append(make([]string, 16), "authorization"),
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAM: {"PURGE"},
@@ -290,7 +290,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   append(make([]string, 17), "authorization"),
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				}, {
 					desc:      "fake preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
@@ -298,7 +298,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 						headerACRM:   {"GET"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "fake preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
@@ -306,7 +306,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"invalid_origin"},
 						headerACRM:   {"GET"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with PUT from allowed",
 					reqMethod: "OPTIONS",
@@ -314,7 +314,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"PUT"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				}, {
 					desc:      "preflight with PUT from disallowed",
 					reqMethod: "OPTIONS",
@@ -322,7 +322,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 						headerACRM:   {"PUT"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with GET and headers from allowed",
 					reqMethod: "OPTIONS",
@@ -331,7 +331,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				}, {
 					desc:      "preflight with GET and headers from disallowed",
 					reqMethod: "OPTIONS",
@@ -340,7 +340,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				},
 			},
 		}, {
@@ -362,8 +362,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo"},
@@ -377,8 +377,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar , baz\t, foo\t"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAH: {"bar , baz\t, foo\t"},
@@ -392,8 +392,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar \t, baz\t, foo\t"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAH: {"bar \t, baz\t, foo\t"},
@@ -407,8 +407,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo" + strings.Repeat(",", 16)},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo" + strings.Repeat(",", 16)},
@@ -422,8 +422,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo" + strings.Repeat(",", 17)},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo" + strings.Repeat(",", 17)},
@@ -437,8 +437,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   append(make([]string, 16), "bar,baz,foo"),
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAH: append(make([]string, 16), "bar,baz,foo"),
@@ -452,8 +452,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   append(make([]string, 17), "bar,baz,foo"),
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAH: append(make([]string, 17), "bar,baz,foo"),
@@ -479,7 +479,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				},
 			},
 		}, {
@@ -501,8 +501,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 					},
@@ -513,8 +513,8 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"PUT"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 					},
@@ -540,8 +540,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAH: {"authorization"},
@@ -569,8 +569,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   {"content-type"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACAM: {wildcard},
 						headerACAH: {wildcard},
@@ -593,14 +593,14 @@ func TestMiddleware(t *testing.T) {
 				{
 					desc:      "non-CORS GET request",
 					reqMethod: "GET",
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACEH: {wildcard},
 					},
 				}, {
 					desc:      "non-CORS OPTIONS request",
 					reqMethod: "OPTIONS",
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACEH: {wildcard},
 					},
@@ -610,7 +610,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACEH: {wildcard},
 					},
@@ -620,7 +620,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACEH: {wildcard},
 					},
@@ -630,7 +630,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACEH: {wildcard},
 					},
@@ -641,8 +641,8 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"GET"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACMA: {"30"},
 					},
@@ -653,8 +653,8 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"PURGE"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACAM: {wildcard},
 						headerACMA: {"30"},
@@ -667,8 +667,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   {"content-type"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACAM: {wildcard},
 						headerACAH: {wildcardAndAuth},
@@ -681,8 +681,8 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"invalid_origin"},
 						headerACRM:   {"GET"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACMA: {"30"},
 					},
@@ -693,8 +693,8 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"PUT"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACAM: {wildcard},
 						headerACMA: {"30"},
@@ -707,8 +707,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {wildcard},
 						headerACAH: {wildcardAndAuth},
 						headerACMA: {"30"},
@@ -747,7 +747,7 @@ func TestMiddleware(t *testing.T) {
 				{
 					desc:      "non-CORS GET request",
 					reqMethod: "GET",
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headers.Origin},
 					},
 				}, {
@@ -759,7 +759,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com:8080"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"https://example.com:8080"},
 						headerACAC: {"true"},
 						headerACEH: {"x-bar,x-foo"},
@@ -771,7 +771,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com:6060"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -780,7 +780,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -789,7 +789,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com:8080"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"https://example.com:8080"},
 						headerACAC: {"true"},
 						headerACEH: {"x-bar,x-foo"},
@@ -808,8 +808,8 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"https://example.com:8080"},
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo"},
@@ -828,7 +828,7 @@ func TestMiddleware(t *testing.T) {
 				{
 					desc:      "non-CORS GET",
 					reqMethod: "GET",
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -840,7 +840,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerVary: {headerOrigin},
 					},
@@ -850,7 +850,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -859,7 +859,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -868,7 +868,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 					},
 				}, {
@@ -884,7 +884,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"GET"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with PURGE from allowed",
 					reqMethod: "OPTIONS",
@@ -892,7 +892,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"PURGE"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				}, {
 					desc:      "preflight with PURGE and Content-Type from allowed",
 					reqMethod: "OPTIONS",
@@ -901,7 +901,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   {"content-type"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "fake preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
@@ -909,7 +909,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 						headerACRM:   {"GET"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "fake preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
@@ -917,7 +917,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"invalid_origin"},
 						headerACRM:   {"GET"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with PUT from allowed",
 					reqMethod: "OPTIONS",
@@ -925,7 +925,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"PUT"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				}, {
 					desc:      "preflight with PUT from disallowed",
 					reqMethod: "OPTIONS",
@@ -933,7 +933,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 						headerACRM:   {"PUT"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with GET and headers from allowed",
 					reqMethod: "OPTIONS",
@@ -942,7 +942,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				}, {
 					desc:      "preflight with GET and headers from disallowed",
 					reqMethod: "OPTIONS",
@@ -951,7 +951,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				},
 			},
 		}, {
@@ -970,7 +970,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"https://barfoo.com"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -979,7 +979,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"https://foobar.com"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -1001,7 +1001,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://barfoo.com"},
 						headerACRM:   {"GET"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "fake preflight with CORS-safelisted method from disallowed 2",
 					reqMethod: "OPTIONS",
@@ -1009,7 +1009,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://foobar.com"},
 						headerACRM:   {"GET"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with PUT from disallowed",
 					reqMethod: "OPTIONS",
@@ -1017,7 +1017,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://barfoo.com"},
 						headerACRM:   {"PUT"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with PUT from disallowed 2",
 					reqMethod: "OPTIONS",
@@ -1025,7 +1025,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://foobar.com"},
 						headerACRM:   {"PUT"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with GET and headers from disallowed",
 					reqMethod: "OPTIONS",
@@ -1034,7 +1034,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with GET and headers from disallowed 2",
 					reqMethod: "OPTIONS",
@@ -1043,7 +1043,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				},
 			},
 		}, {
@@ -1060,7 +1060,7 @@ func TestMiddleware(t *testing.T) {
 				{
 					desc:      "non-CORS GET request",
 					reqMethod: "GET",
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headers.Origin},
 					},
 				}, {
@@ -1072,7 +1072,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"connector://example.com"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"connector://example.com"},
 						headerACAC: {"true"},
 						headerVary: {headerOrigin},
@@ -1083,7 +1083,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"connector://example.com:6060"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -1092,7 +1092,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -1101,7 +1101,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"connector://example.com"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"connector://example.com"},
 						headerACAC: {"true"},
 					},
@@ -1119,7 +1119,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				},
 			},
 		}, {
@@ -1135,7 +1135,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://foo.example.com"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://foo.example.com"},
 						headerVary: {headerOrigin},
 					},
@@ -1145,7 +1145,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://foo.example.com:6060"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://foo.example.com:6060"},
 						headerVary: {headerOrigin},
 					},
@@ -1155,7 +1155,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://bar.foo.example.com"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://bar.foo.example.com"},
 						headerVary: {headerOrigin},
 					},
@@ -1165,7 +1165,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://bar.foo.example.com:8080"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://bar.foo.example.com:8080"},
 						headerVary: {headerOrigin},
 					},
@@ -1175,7 +1175,7 @@ func TestMiddleware(t *testing.T) {
 					reqHeaders: http.Header{
 						headerOrigin: {"http://example.com"},
 					},
-					respHeaders: http.Header{
+					wantRespHeaders: http.Header{
 						headerVary: {headerOrigin},
 					},
 				}, {
@@ -1186,7 +1186,7 @@ func TestMiddleware(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				},
 			},
 		},
@@ -1230,12 +1230,12 @@ func TestMiddleware(t *testing.T) {
 					if !ok {
 						t.Fatalf("handler is not a *spyHandler")
 					}
-					if tc.outcome.isPreflight() { // preflight request
+					if tc.wantOutcome.isPreflight() { // preflight request
 						if spy.called.Load() {
 							t.Error("wrapped handler was called, but it should not have been")
 						}
 						assertPreflightStatus(t, spy.statusCode, res.StatusCode, &mwtc, &tc)
-						wantHeaders := []http.Header{tc.respHeaders}
+						wantHeaders := []http.Header{tc.wantRespHeaders}
 						if mwtc.outerMw != nil {
 							wantHeaders = append(wantHeaders, mwtc.outerMw.hdrs)
 						}
@@ -1250,7 +1250,7 @@ func TestMiddleware(t *testing.T) {
 						const tmpl = "got status code %d; want %d"
 						t.Errorf(tmpl, res.StatusCode, spy.statusCode)
 					}
-					wantHeaders := []http.Header{spy.respHeaders, tc.respHeaders}
+					wantHeaders := []http.Header{spy.respHeaders, tc.wantRespHeaders}
 					if mwtc.outerMw != nil {
 						wantHeaders = append(wantHeaders, mwtc.outerMw.hdrs)
 					}
@@ -1513,8 +1513,8 @@ func TestReconfigure(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 					},
@@ -1525,7 +1525,7 @@ func TestReconfigure(t *testing.T) {
 						headerOrigin: {"invalid_origin"},
 						headerACRM:   {"PUT"},
 					},
-					outcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
 					desc:      "preflight with disallowed method",
 					reqMethod: "OPTIONS",
@@ -1533,8 +1533,8 @@ func TestReconfigure(t *testing.T) {
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"PUT"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 					},
@@ -1560,8 +1560,8 @@ func TestReconfigure(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo"},
@@ -1575,7 +1575,7 @@ func TestReconfigure(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   {"bar,baz,foo,qux"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				},
 			},
 		}, {
@@ -1602,8 +1602,8 @@ func TestReconfigure(t *testing.T) {
 						headerACRM:   {"GET"},
 						headerACRH:   {"bar,baz,foo"},
 					},
-					outcome: isPreflightAndSucceeds,
-					respHeaders: http.Header{
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
 						headerACAO: {"http://localhost:9090"},
 						headerACAC: {"true"},
 						headerACAH: {"bar,baz,foo"},
@@ -1617,7 +1617,7 @@ func TestReconfigure(t *testing.T) {
 						headerACRM:   {"PURGE"},
 						headerACRH:   {"bar,baz,foo,qux"},
 					},
-					outcome: isPreflightAndFailsAfterCORSCheck,
+					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				},
 			},
 		}, {
@@ -1667,12 +1667,12 @@ func TestReconfigure(t *testing.T) {
 					if !ok {
 						t.Fatalf("handler is not a *spyHandler")
 					}
-					if tc.outcome.isPreflight() { // preflight request
+					if tc.wantOutcome.isPreflight() { // preflight request
 						if spy.called.Load() {
 							t.Error("wrapped handler was called, but it should not have been")
 						}
 						assertPreflightStatus(t, spy.statusCode, res.StatusCode, &mwtc, &tc)
-						wantHeaders := []http.Header{tc.respHeaders}
+						wantHeaders := []http.Header{tc.wantRespHeaders}
 						if mwtc.outerMw != nil {
 							wantHeaders = append(wantHeaders, mwtc.outerMw.hdrs)
 						}
@@ -1687,7 +1687,7 @@ func TestReconfigure(t *testing.T) {
 						const tmpl = "got status code %d; want %d"
 						t.Errorf(tmpl, res.StatusCode, spy.statusCode)
 					}
-					wantHeaders := []http.Header{spy.respHeaders, tc.respHeaders}
+					wantHeaders := []http.Header{spy.respHeaders, tc.wantRespHeaders}
 					if mwtc.outerMw != nil {
 						wantHeaders = append(wantHeaders, mwtc.outerMw.hdrs)
 					}

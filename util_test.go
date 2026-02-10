@@ -54,13 +54,11 @@ type MiddlewareTestCase struct {
 }
 
 type ReqTestCase struct {
-	desc string
-	// request
-	reqMethod  string
-	reqHeaders http.Header
-	// expectations
-	outcome     ReqOutcome
-	respHeaders http.Header
+	desc            string
+	reqMethod       string
+	reqHeaders      http.Header
+	wantOutcome     ReqOutcome
+	wantRespHeaders http.Header
 }
 
 type ReqOutcome uint8
@@ -158,10 +156,10 @@ func assertPreflightStatus(
 	var wantStatusCode int
 	switch {
 	case mwtc.cfg == nil,
-		tc.outcome == isActual:
+		tc.wantOutcome == isActual:
 		wantStatusCode = spyStatus
-	case tc.outcome == isPreflightAndFailsDuringCORSCheck,
-		!mwtc.debug && tc.outcome == isPreflightAndFailsAfterCORSCheck:
+	case tc.wantOutcome == isPreflightAndFailsDuringCORSCheck,
+		!mwtc.debug && tc.wantOutcome == isPreflightAndFailsAfterCORSCheck:
 		wantStatusCode = http.StatusForbidden // keep in sync with preflightFailStatus
 	default:
 		wantStatusCode = http.StatusNoContent // keep in sync with preflightOKStatus
