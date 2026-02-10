@@ -1630,6 +1630,7 @@ func TestReconfigure(t *testing.T) {
 	var oldDebug bool
 	for _, mwtc := range cases {
 		f := func(t *testing.T) {
+			// No t.Parallel() here: these cases must be run sequentially.
 			err := mw.Reconfigure(mwtc.cfg)
 			if err != nil && !mwtc.invalid {
 				t.Fatalf("failure to reconfigure CORS middleware: %v", err)
@@ -1647,6 +1648,7 @@ func TestReconfigure(t *testing.T) {
 			oldDebug = mwtc.debug
 			for _, tc := range mwtc.cases {
 				f := func(t *testing.T) {
+					t.Parallel()
 					// --- arrange ---
 					innerHandler := mwtc.newHandler()
 					handler := mw.Wrap(innerHandler)
