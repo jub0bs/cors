@@ -2,6 +2,7 @@ package cors_test
 
 import (
 	"bytes"
+	"cmp"
 	"crypto/rand"
 	"io"
 	"net/http"
@@ -171,71 +172,68 @@ func assertPreflightStatus(
 	}
 }
 
-// note: this function mutates gotHeaders (to ease subsequent assertions)
-func assertResponseHeaders(t *testing.T, gotHeaders, wantHeaders http.Header) {
+// assertHeadersEqual checks that gotHeader contains the union of all of
+// wantHeaders and nothing more. It is insensitive to the order of elements of
+// values of list-based header fields.
+func assertHeadersEqual(
+	t *testing.T,
+	gotHeader http.Header,
+	wantHeaders ...http.Header,
+) {
 	t.Helper()
-	for name, want := range wantHeaders {
-		listBased := isListBasedField(name)
-		got := gotHeaders[name]
-		if !listBased { // name is a singleton field
-			if !slices.Equal(got, want) {
-				t.Errorf("Response header %q = %q, want %q", name, got, want)
-				continue
+	// Produce a normalized copy of gotHeader that we can safely mutate.
+	gotHeader = coalesce(t, gotHeader)
+	for name, want := range coalesce(t, wantHeaders...) {
+		got, found := gotHeader[name]
+		if !isListBasedField(name) {
+			switch {
+			case !found:
+				const tmpl = "missing header %q: %q"
+				t.Errorf(tmpl, name, want)
+			case !slices.Equal(got, want):
+				const tmpl = "header %q: got %q; want %q"
+				t.Errorf(tmpl, name, got, want)
 			}
-			delete(gotHeaders, name)
+			delete(gotHeader, name)
 			continue
 		}
-		// name is a list-based field
-		if !deleteKV(gotHeaders, name, want) {
-			t.Errorf("Response header %q = %q, want %q", name, got, want)
-			continue
+		// Perform a detailed diff of want versus got.
+		const (
+			missingElemTmpl = "header %q does not list %q but should"
+			extraElemTmpl   = "header %q lists %q but should not"
+		)
+		var i, j int
+	diffLoop:
+		for {
+			switch {
+			case i < len(got) && j < len(want):
+				switch cmp.Compare(got[i], want[j]) {
+				case -1:
+					t.Errorf(extraElemTmpl, name, got[i])
+					i++
+				case 0:
+					i, j = i+1, j+1
+				case +1:
+					t.Errorf(missingElemTmpl, name, want[j])
+					j++
+				}
+			case i < len(got) && j >= len(want):
+				t.Errorf(extraElemTmpl, name, got[i])
+				i++
+			case i >= len(got) && j < len(want):
+				t.Errorf(missingElemTmpl, name, want[j])
+				j++
+			default:
+				break diffLoop
+			}
 		}
+		delete(gotHeader, name)
 	}
-}
-
-func assertNoMoreResponseHeaders(t *testing.T, left http.Header) {
-	t.Helper()
-	for k, v := range left {
-		t.Errorf("unexpected header value(s) %q: %q", k, v)
+	// Assert that gotHeader is now empty.
+	for name, vs := range gotHeader {
+		const tmpl = "unexpected header %q: %q"
+		t.Errorf(tmpl, name, vs)
 	}
-}
-
-func assertBody(t *testing.T, body io.ReadCloser, want string) {
-	t.Helper()
-	defer body.Close()
-	var buf bytes.Buffer
-	_, err := io.Copy(&buf, body)
-	if got := buf.String(); err != nil || got != want {
-		t.Errorf("got body %q; want body %q", got, want)
-	}
-}
-
-func deleteKV(h http.Header, k string, v []string) bool {
-	vh, found := h[k]
-	if !found {
-		return false
-	}
-	if !isListBasedField(k) { // k is a singleton field
-		return slices.Equal(h[k], v)
-	}
-	// k is a list-based field
-	v = normalize(v)
-	vh = normalize(vh)
-	if len(vh) < len(v) {
-		return false
-	}
-	for i := range len(vh) - len(v) + 1 {
-		if !slices.Equal(v, vh[i:i+len(v)]) {
-			continue
-		}
-		vh = slices.Delete(vh, i, i+len(v))
-		h[k] = vh
-		if len(vh) == 0 {
-			delete(h, k)
-		}
-		return true
-	}
-	return false
 }
 
 // isListBasedField reports whether name is a known list-based response header
@@ -257,20 +255,62 @@ func isListBasedField(name string) bool {
 		headerACAC,
 		headerACMA:
 		return false
-	default: // assume singleton field
+	default: // assume a singleton header field
 		return false
 	}
 }
 
-func normalize(s []string) (res []string) {
-	const owsChars = " \t"
-	for _, str := range s {
-		for e := range strings.SplitSeq(str, ",") {
-			e = strings.Trim(e, owsChars)
-			res = append(res, e)
+// coalesce normalizes and merges all the name-value pairs of hs in a single
+// http.Header and returns the result. The values of each list-based field are
+// sorted and freed of duplicate elements. If a conflict between the values of
+// a singleton field occurs, coalesce fails.
+func coalesce(t *testing.T, hs ...http.Header) http.Header {
+	t.Helper()
+	res := make(http.Header)
+	for _, h := range hs {
+		for name, vs := range h {
+			if isListBasedField(name) {
+				var vs2 []string
+				for _, v := range vs {
+					for e := range strings.SplitSeq(v, ",") {
+						// Trim optional whitespace around e;
+						// see https://httpwg.org/specs/rfc9110.html#abnf.extension,
+						// https://httpwg.org/specs/rfc9110.html#whitespace, and
+						// https://fetch.spec.whatwg.org/#header-value-get-decode-and-split.
+						const owsChars = " \t"
+						e = strings.Trim(e, owsChars)
+						vs2 = append(vs2, e)
+					}
+				}
+				res[name] = append(res[name], vs2...)
+			} else { // name is assumed to be a singleton header field
+				if len(res[name]) != 0 {
+					const tmpl = "conflicting values for singleton (?) header %q: current %q; incoming %q"
+					t.Fatalf(tmpl, name, res[name], vs)
+				}
+				res[name] = vs
+			}
 		}
 	}
-	return
+	// Sort and compact the value of each list-based field.
+	for name, vs := range res {
+		if !isListBasedField(name) {
+			continue
+		}
+		slices.Sort(vs)
+		res[name] = slices.Compact(vs)
+	}
+	return res
+}
+
+func assertBodyEqual(t *testing.T, body io.ReadCloser, want string) {
+	t.Helper()
+	defer body.Close()
+	var buf bytes.Buffer
+	_, err := io.Copy(&buf, body)
+	if got := buf.String(); err != nil || got != want {
+		t.Errorf("got body %q; want body %q", got, want)
+	}
 }
 
 func newMutatingHandler() http.Handler {

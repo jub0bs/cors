@@ -1235,12 +1235,12 @@ func TestMiddleware(t *testing.T) {
 							t.Error("wrapped handler was called, but it should not have been")
 						}
 						assertPreflightStatus(t, spy.statusCode, res.StatusCode, &mwtc, &tc)
-						assertResponseHeaders(t, res.Header, tc.respHeaders)
+						wantHeaders := []http.Header{tc.respHeaders}
 						if mwtc.outerMw != nil {
-							assertResponseHeaders(t, res.Header, mwtc.outerMw.hdrs)
+							wantHeaders = append(wantHeaders, mwtc.outerMw.hdrs)
 						}
-						assertNoMoreResponseHeaders(t, res.Header)
-						assertBody(t, res.Body, "")
+						assertHeadersEqual(t, res.Header, wantHeaders...)
+						assertBodyEqual(t, res.Body, "")
 						return
 					} // non-preflight request
 					if !spy.called.Load() {
@@ -1250,13 +1250,13 @@ func TestMiddleware(t *testing.T) {
 						const tmpl = "got status code %d; want %d"
 						t.Errorf(tmpl, res.StatusCode, spy.statusCode)
 					}
-					assertResponseHeaders(t, res.Header, spy.respHeaders)
-					assertResponseHeaders(t, res.Header, tc.respHeaders)
+					wantHeaders := []http.Header{spy.respHeaders, tc.respHeaders}
 					if mwtc.outerMw != nil {
-						assertResponseHeaders(t, res.Header, mwtc.outerMw.hdrs)
+						wantHeaders = append(wantHeaders, mwtc.outerMw.hdrs)
 					}
-					assertNoMoreResponseHeaders(t, res.Header)
-					assertBody(t, res.Body, spy.body)
+					assertHeadersEqual(t, res.Header, wantHeaders...)
+
+					assertBodyEqual(t, res.Body, spy.body)
 				}
 				t.Run(tc.desc, f)
 			}
@@ -1670,12 +1670,12 @@ func TestReconfigure(t *testing.T) {
 							t.Error("wrapped handler was called, but it should not have been")
 						}
 						assertPreflightStatus(t, spy.statusCode, res.StatusCode, &mwtc, &tc)
-						assertResponseHeaders(t, res.Header, tc.respHeaders)
+						wantHeaders := []http.Header{tc.respHeaders}
 						if mwtc.outerMw != nil {
-							assertResponseHeaders(t, res.Header, mwtc.outerMw.hdrs)
+							wantHeaders = append(wantHeaders, mwtc.outerMw.hdrs)
 						}
-						assertNoMoreResponseHeaders(t, res.Header)
-						assertBody(t, res.Body, "")
+						assertHeadersEqual(t, res.Header, wantHeaders...)
+						assertBodyEqual(t, res.Body, "")
 						return
 					} // non-preflight request
 					if !spy.called.Load() {
@@ -1685,13 +1685,12 @@ func TestReconfigure(t *testing.T) {
 						const tmpl = "got status code %d; want %d"
 						t.Errorf(tmpl, res.StatusCode, spy.statusCode)
 					}
-					assertResponseHeaders(t, res.Header, spy.respHeaders)
-					assertResponseHeaders(t, res.Header, tc.respHeaders)
+					wantHeaders := []http.Header{spy.respHeaders, tc.respHeaders}
 					if mwtc.outerMw != nil {
-						assertResponseHeaders(t, res.Header, mwtc.outerMw.hdrs)
+						wantHeaders = append(wantHeaders, mwtc.outerMw.hdrs)
 					}
-					assertNoMoreResponseHeaders(t, res.Header)
-					assertBody(t, res.Body, spy.body)
+					assertHeadersEqual(t, res.Header, wantHeaders...)
+					assertBodyEqual(t, res.Body, spy.body)
 				}
 				t.Run(tc.desc, f)
 			}
