@@ -11,16 +11,15 @@ import (
 )
 
 // A Middleware is a CORS middleware.
-// Call its [*Middleware.Wrap] method to apply it to a [http.Handler].
+// Call [*Middleware.Wrap] to apply a middleware to a [http.Handler].
 //
 // The zero value is ready to use but is a mere "passthrough" middleware,
 // i.e. a middleware that simply delegates to the handler(s) it wraps.
 // To obtain a proper CORS middleware, you should call [NewMiddleware]
 // and pass it a valid [Config].
 //
-// Middleware have a debug mode,
-// which can be toggled by calling their [*Middleware.SetDebug] method
-// and queried by calling their [*Middleware.Debug] method.
+// Middleware have a debug mode, which can be turned on or off via
+// [*Middleware.SetDebug] and queried via [*Middleware.Debug].
 // You should turn debug mode on whenever you're struggling to troubleshoot
 // some [CORS-preflight] issue;
 // however, be aware that keeping debug mode on may lead to observably poorer
