@@ -242,7 +242,8 @@ func TestParse(t *testing.T) {
 			t.Parallel()
 			o, ok := origins.Parse(c.input)
 			if ok == c.failure || ok && o != c.want {
-				t.Errorf("%q: got %v, %t; want %v, %t", c.input, o, ok, c.want, !c.failure)
+				const tmpl = "origins.Parse(%q): %v, %t; want %v, %t"
+				t.Errorf(tmpl, c.input, o, ok, c.want, !c.failure)
 			}
 		}
 		t.Run(c.desc, f)

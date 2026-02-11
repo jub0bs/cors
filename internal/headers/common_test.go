@@ -54,7 +54,7 @@ func TestIsValid(t *testing.T) {
 			t.Parallel()
 			got := headers.IsValid(tc.name)
 			if got != tc.want {
-				const tmpl = "%q: got %t; want %t"
+				const tmpl = "%q: %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
 			}
 		}

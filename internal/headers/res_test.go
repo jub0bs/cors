@@ -21,7 +21,7 @@ func TestIsForbiddenResponseHeaderName(t *testing.T) {
 			t.Parallel()
 			got := headers.IsForbiddenResponseHeaderName(tc.name)
 			if got != tc.want {
-				const tmpl = "%q: got %t; want %t"
+				const tmpl = "%q: %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
 			}
 		}
@@ -51,7 +51,7 @@ func TestIsProhibitedResponseHeaderName(t *testing.T) {
 			t.Parallel()
 			got := headers.IsProhibitedResponseHeaderName(tc.name)
 			if got != tc.want {
-				const tmpl = "%q: got %t; want %t"
+				const tmpl = "%q: %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
 			}
 		}
@@ -78,7 +78,7 @@ func TestIsSafelistedResponseHeaderName(t *testing.T) {
 			t.Parallel()
 			got := headers.IsSafelistedResponseHeaderName(tc.name)
 			if got != tc.want {
-				const tmpl = "%q: got %t; want %t"
+				const tmpl = "%q: %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
 			}
 		}

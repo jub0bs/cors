@@ -304,39 +304,39 @@ func assertConfigEqual(t *testing.T, got, want *cors.Config) {
 	}
 	// origins
 	if !slices.Equal(got.Origins, want.Origins) {
-		t.Errorf("Origins: got %q; want %q", got.Origins, want.Origins)
+		t.Errorf("Origins: %q; want %q", got.Origins, want.Origins)
 	}
 	// credentialed
 	if got.Credentialed != want.Credentialed {
-		const tmpl = "Credentialed: got %t; want %t"
+		const tmpl = "Credentialed: %t; want %t"
 		t.Errorf(tmpl, got.Credentialed, want.Credentialed)
 	}
 	// methods
 	if !slices.Equal(got.Methods, want.Methods) {
-		t.Errorf("Methods: got %q; want %q", got.Methods, want.Methods)
+		t.Errorf("Methods: %q; want %q", got.Methods, want.Methods)
 	}
 	// request headers
 	if !slices.Equal(got.RequestHeaders, want.RequestHeaders) {
-		const tmpl = "RequestHeaders: got %q; want %q"
+		const tmpl = "RequestHeaders: %q; want %q"
 		t.Errorf(tmpl, got.RequestHeaders, want.RequestHeaders)
 	}
 	// max age
 	if got.MaxAgeInSeconds != want.MaxAgeInSeconds {
-		const tmpl = "MaxAgeInSeconds: got %d; want %d"
+		const tmpl = "MaxAgeInSeconds: %d; want %d"
 		t.Errorf(tmpl, got.MaxAgeInSeconds, want.MaxAgeInSeconds)
 	}
 	// response headers
 	if !slices.Equal(got.ResponseHeaders, want.ResponseHeaders) {
-		const tmpl = "ResponseHeaders: got %q; want %q"
+		const tmpl = "ResponseHeaders: %q; want %q"
 		t.Errorf(tmpl, got.ResponseHeaders, want.ResponseHeaders)
 	}
 	// rest of the config
 	if got.DangerouslyTolerateInsecureOrigins != want.DangerouslyTolerateInsecureOrigins {
-		const tmpl = "DangerouslyTolerateInsecureOrigins: got %t; want %t"
+		const tmpl = "DangerouslyTolerateInsecureOrigins: %t; want %t"
 		t.Errorf(tmpl, got.DangerouslyTolerateInsecureOrigins, want.DangerouslyTolerateInsecureOrigins)
 	}
 	if got.DangerouslyTolerateSubdomainsOfPublicSuffixes != want.DangerouslyTolerateSubdomainsOfPublicSuffixes {
-		const tmpl = "DangerouslyTolerateSubdomainsOfPublicSuffixes: got %t; want %t"
+		const tmpl = "DangerouslyTolerateSubdomainsOfPublicSuffixes: %t; want %t"
 		t.Errorf(tmpl, got.DangerouslyTolerateSubdomainsOfPublicSuffixes, want.DangerouslyTolerateSubdomainsOfPublicSuffixes)
 	}
 }

@@ -20,7 +20,7 @@ func TestIsValid(t *testing.T) {
 			t.Parallel()
 			got := methods.IsValid(tc.name)
 			if got != tc.want {
-				const tmpl = "%q: got %t; want %t"
+				const tmpl = "%q: %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
 			}
 		}
@@ -52,7 +52,7 @@ func TestIsForbidden(t *testing.T) {
 			t.Parallel()
 			got := methods.IsForbidden(tc.name)
 			if got != tc.want {
-				const tmpl = "%q: got %t; want %t"
+				const tmpl = "%q: %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
 			}
 		}
@@ -80,7 +80,7 @@ func TestIsSafelisted(t *testing.T) {
 			t.Parallel()
 			got := methods.IsSafelisted(tc.name)
 			if got != tc.want {
-				const tmpl = "%q: got %t; want %t"
+				const tmpl = "%q: %t; want %t"
 				t.Errorf(tmpl, tc.name, got, tc.want)
 			}
 		}
@@ -118,7 +118,7 @@ func TestNormalize(t *testing.T) {
 			t.Parallel()
 			got := methods.Normalize(tc.name)
 			if got != tc.want {
-				const tmpl = "%q: got %q; want %q"
+				const tmpl = "%q: %q; want %q"
 				t.Errorf(tmpl, tc.name, got, tc.want)
 			}
 		}

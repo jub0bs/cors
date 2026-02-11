@@ -360,15 +360,18 @@ func TestParsePattern(t *testing.T) {
 			t.Parallel()
 			o, err := origins.ParsePattern(c.input)
 			if err != nil && !c.failure {
-				t.Errorf("%q: got %v; want nil error", c.input, err)
+				const tmpl = "origins.ParsePattern(%q): got %v; want nil error"
+				t.Errorf(tmpl, c.input, err)
 				return
 			}
 			if err == nil && c.failure {
-				t.Errorf("%q: got nil error; want non-nil error", c.input)
+				const tmpl = "origins.ParsePattern(%q): got nil error; want non-nil error"
+				t.Errorf(tmpl, c.input)
 				return
 			}
 			if err == nil && o != c.want {
-				t.Errorf("%q: got  %+v; want %+v", c.input, o, c.want)
+				const tmpl = "origins.ParsePattern(%q): got %+v; want %+v"
+				t.Errorf(tmpl, c.input, o, c.want)
 				return
 			}
 		}
