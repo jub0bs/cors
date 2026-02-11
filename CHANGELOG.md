@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] (2026-02-12)
+
+### Changed
+
+- **Behavior**: Middleware's Config method is now guaranteed to return a
+  configuration free of redundant origin patterns.
+- **Performance**: Middleware's Config method now allocates less, especially
+  for some middleware whose configuration consists of many redundant origin
+  patterns.
+- **Performance**: Middleware initialization allocates less overall (more for
+  configurations that consist of inordinately many origin patterns, but less
+  for common configurations).
+- **Tests**: Relax assertions on expected values of list-based response
+  headers; the order of list elements no longer matters and duplicate elements
+  are now tolerated.
+- **Tests**: other minor improvements
+- **Documentation**: various improvements
+- **Dependencies**: Go 1.25 (or above) is now required.
+- **Dependencies**: update to golang.org/x/net v0.50.0
+
 ## [0.11.0] (2026-01-31)
 
 ### Added
@@ -329,6 +349,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[0.12.0]: https://github.com/jub0bs/cors/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/jub0bs/cors/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/jub0bs/cors/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/jub0bs/cors/compare/v0.9.1...v0.9.2
