@@ -237,28 +237,28 @@ var parseTestCases = []struct {
 }
 
 func TestParse(t *testing.T) {
-	for _, c := range parseTestCases {
+	for _, tc := range parseTestCases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			o, ok := origins.Parse(c.input)
-			if ok == c.failure || ok && o != c.want {
+			o, ok := origins.Parse(tc.input)
+			if ok == tc.failure || ok && o != tc.want {
 				const tmpl = "origins.Parse(%q): %v, %t; want %v, %t"
-				t.Errorf(tmpl, c.input, o, ok, c.want, !c.failure)
+				t.Errorf(tmpl, tc.input, o, ok, tc.want, !tc.failure)
 			}
 		}
-		t.Run(c.desc, f)
+		t.Run(tc.desc, f)
 	}
 }
 
 func BenchmarkParse(b *testing.B) {
-	for _, c := range parseTestCases {
+	for _, tc := range parseTestCases {
 		f := func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for range b.N {
-				origins.Parse(c.input)
+				origins.Parse(tc.input)
 			}
 		}
-		b.Run(c.desc, f)
+		b.Run(tc.desc, f)
 	}
 }
