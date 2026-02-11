@@ -54,7 +54,7 @@ for favoring libraries like the more popular [rs/cors][rs-cors]:
 go get github.com/jub0bs/cors
 ```
 
-This library requires [Go 1.24.0][go1.24] or above. Note that it only
+This library requires [Go 1.25.0][go1.25] or above. Note that it only
 [supports][release-policy] the two most recent minor versions of Go.
 
 ## Example
@@ -189,7 +189,7 @@ All source code is covered by the [MIT License][license].
 [fearless-cors]: https://jub0bs.com/posts/2023-02-08-fearless-cors/
 [fetch]: https://fetch.spec.whatwg.org
 [funcopts]: https://www.youtube.com/watch?v=5uM6z7RnReE
-[go1.24]: https://tip.golang.org/doc/go1.24
+[go1.25]: https://tip.golang.org/doc/go1.25
 [golang]: https://go.dev/
 [license]: https://github.com/jub0bs/cors/blob/main/LICENSE
 [logging]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/#debug-mode
