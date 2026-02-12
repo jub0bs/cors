@@ -62,7 +62,7 @@ func NewTree(ps ...*Pattern) Tree {
 						//
 						child := node{suf: prefixOfHost}
 						child.add(p.Scheme, p.Port, wildcardSubs)
-						n.insertEdge(-1, label2, &child)
+						n.insertEdge(i, label2, &child)
 						break
 					}
 					// Edge found. Keep going.
