@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.1] (2026-02-12)
+
+### Fixed
+
+- **Bug**: Some middleware would disallow origins that they should have
+  allowed (see https://github.com/jub0bs/cors/issues/12).
+
 ## [0.12.0] (2026-02-12)
 
 ### Changed
@@ -349,6 +356,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[0.12.1]: https://github.com/jub0bs/cors/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/jub0bs/cors/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/jub0bs/cors/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/jub0bs/cors/compare/v0.9.2...v0.10.0
