@@ -74,8 +74,8 @@ func ParsePattern(str string) (p Pattern, err error) {
 	// mismatch between that function's behavior and our needs is too great;
 	// not only does this function allocates too much for our taste, but it
 	// is in some ways too permissive and in other ways too strict.
-	// Relying on manual scanning and parsing and on [net/netip]
-	// and [golang.org/x/net] packages seems like a good alternative.
+	// Relying on manual scanning and parsing and on net/netip
+	// and golang.org/x/net packages seems like a good alternative.
 
 	// As a defensive measure against maliciously long origin patterns,
 	// let's first check the length of str.
