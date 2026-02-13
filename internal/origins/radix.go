@@ -1,7 +1,6 @@
 package origins
 
 import (
-	"cmp"
 	"iter"
 	"math"
 	"slices"
@@ -20,10 +19,12 @@ type Tree struct {
 
 // NewTree returns a new tree in which all of ps have been inserted.
 func NewTree(ps ...*Pattern) Tree {
-	// Guarantee that the resulting tree be free of redundancy.
-	slices.SortFunc(ps, patternCmp)
+	// Sorting patterns with (*Pattern).Compare before inserting them in an
+	// empty tree guarantees that the resulting tree be free of redundant
+	// elements, thereby obviating any need to subsequently prune the tree.
+	slices.SortFunc(ps, (*Pattern).Compare)
 	// Avoid inserting identical patterns multiple times.
-	ps = slices.CompactFunc(ps, func(p1, p2 *Pattern) bool { return *p1 == *p2 })
+	ps = slices.CompactFunc(ps, (*Pattern).Equal)
 	var t Tree
 	if len(ps) > 0 {
 		// Inserting the first pattern is easy, since t is empty.
@@ -103,33 +104,6 @@ func NewTree(ps ...*Pattern) Tree {
 		}
 	}
 	return t
-}
-
-// patternCmp is a comparator function for *Pattern.
-// Patterns sort
-//   - first by lexicographical order of their reversed host patterns,
-//   - second by lexicographical order of their schemes,
-//   - third by increasing order of their ports.
-//
-// Sorting patterns with patternCmp before inserting them in an empty tree
-// guarantees that the resulting tree be as compact as possible, thereby
-// obviating the need to prune the tree of redundant elements afterwards.
-//
-// Precondition: p1 and p2 are non-nil.
-func patternCmp(p1, p2 *Pattern) int {
-	a, b := p1.HostPattern, p2.HostPattern
-	for i, j := len(a)-1, len(b)-1; 0 <= i && 0 <= j; i, j = i-1, j-1 {
-		// Conveniently for us, '*' (0x2A) requires no special handling,
-		// since it is less that all other valid host-pattern bytes.
-		if c := cmp.Compare(a[i], b[j]); c != 0 {
-			return c
-		}
-	}
-	return cmp.Or(
-		cmp.Compare(len(a), len(b)),
-		strings.Compare(p1.Scheme, p2.Scheme),
-		cmp.Compare(p1.Port, p2.Port), // arbitraryPort < all port values
-	)
 }
 
 // IsEmpty reports whether t is empty.

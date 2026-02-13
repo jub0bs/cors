@@ -1,6 +1,7 @@
 package origins
 
 import (
+	"cmp"
 	"net/netip"
 	"strings"
 	"sync"
@@ -326,8 +327,8 @@ func parsePortPattern(str string) (int, bool) {
 const (
 	absentPort = 0
 	// arbitraryPort is a sentinel value that subsumes all other port numbers.
-	// arbitraryPort is, by design (see patternCmp's doc comment), less than
-	// all of the other valid Pattern.Port values.
+	// arbitraryPort is, by design, less than all of the other valid
+	// Pattern.Port values.
 	arbitraryPort = -1
 )
 
@@ -375,4 +376,37 @@ func (p *Pattern) HostIsEffectiveTLD() bool {
 	// it's false for some listed eTLDs (e.g. github.io)
 	etld, _ := publicsuffix.PublicSuffix(host)
 	return etld == host
+}
+
+// Compare returns an integer comparing two [*Pattern] values
+//   - first by lexicographical order of their reversed host patterns,
+//   - second by lexicographical order of their schemes,
+//   - third by increasing order of their ports.
+//
+// The result will be
+//   - -1 if *p is less than *p2,
+//   - 0 if *p == *p2,
+//   - +1 if *p is greater than *p2.
+//
+// Precondition: p and p2 are non-nil.
+func (p *Pattern) Compare(p2 *Pattern) int {
+	a, b := p.HostPattern, p2.HostPattern
+	for i, j := len(a)-1, len(b)-1; 0 <= i && 0 <= j; i, j = i-1, j-1 {
+		// Conveniently for us, '*' (0x2A) requires no special handling,
+		// since it is less that all other valid host-pattern bytes.
+		if c := cmp.Compare(a[i], b[j]); c != 0 {
+			return c
+		}
+	}
+	return cmp.Or(
+		cmp.Compare(len(a), len(b)),
+		strings.Compare(p.Scheme, p2.Scheme),
+		cmp.Compare(p.Port, p2.Port), // arbitraryPort < all port values
+	)
+}
+
+// Equal reports whether *p == *p2.
+// Precondition: p and p2 are non-nil.
+func (p *Pattern) Equal(p2 *Pattern) bool {
+	return *p == *p2
 }
