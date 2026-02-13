@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Bug**: Some middleware would disallow origins that they should have
-  allowed (see https://github.com/jub0bs/cors/issues/12).
+- **Bug**: In v0.12.0, some middleware would disallow origins that they should
+  have allowed (see https://github.com/jub0bs/cors/issues/12).
 
 ## [0.12.0] (2026-02-12)
 
