@@ -1,7 +1,7 @@
 # jub0bs/cors
 
 [![tag](https://img.shields.io/github/tag/jub0bs/cors.svg)](https://github.com/jub0bs/cors/tags)
-[![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.24-%23007d9c)][go1.24]
+[![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.25-%23007d9c)][go1.25]
 [![Go Reference](https://pkg.go.dev/badge/github.com/jub0bs/cors.svg)](https://pkg.go.dev/github.com/jub0bs/cors)
 [![license](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](https://github.com/jub0bs/cors/raw/main/LICENSE)
 [![build](https://github.com/jub0bs/cors/actions/workflows/cors.yml/badge.svg)](https://github.com/jub0bs/cors/actions/workflows/cors.yml)
