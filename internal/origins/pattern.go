@@ -182,7 +182,7 @@ func isSubsequentSchemeByte(c byte) bool {
 // If it succeeds, it returns the host pattern, its kind, the unconsumed part
 // of str, and nil; otherwise, its err result is some non-nil error.
 func parseHostPattern(str, rawOriginPattern string) (hostPattern string, kind Kind, rest string, err error) {
-	var assumeIP, wildcardSubs bool
+	var assumeIP, arbitrarySubs bool
 	if str != "" && str[0] == '[' { // str must be an IPv6 address.
 		var ok bool
 		hostPattern, rest, ok = strings.Cut(str[1:], "]")
@@ -192,8 +192,8 @@ func parseHostPattern(str, rawOriginPattern string) (hostPattern string, kind Ki
 		}
 		assumeIP = true
 	} else { // str must be either an IPv4 address or a domain pattern.
-		hostPattern, rest, wildcardSubs = scanHostPattern(str)
-		if wildcardSubs {
+		hostPattern, rest, arbitrarySubs = scanHostPattern(str)
+		if arbitrarySubs {
 			kind = ArbitrarySubdomains
 		}
 		// If the last non-empty label starts with a digit,
@@ -201,7 +201,7 @@ func parseHostPattern(str, rawOriginPattern string) (hostPattern string, kind Ki
 		// (see https://www.iana.org/domains/root/db).
 		var ok bool
 		assumeIP, ok = firstByteOfRightmostLabelIsDigit(hostPattern)
-		if !ok || assumeIP && wildcardSubs {
+		if !ok || assumeIP && arbitrarySubs {
 			err = invalidOriginPatternError(rawOriginPattern)
 			return
 		}
@@ -225,8 +225,8 @@ func parseHostPattern(str, rawOriginPattern string) (hostPattern string, kind Ki
 		return hostPattern, kind, rest, nil
 	}
 	// hostPattern must be a domain pattern.
-	host, wildcardSubs := strings.CutPrefix(hostPattern, wildcardSeq)
-	if wildcardSubs && len(host) > maxHostLen-len(wildcardSeq) {
+	host, arbitrarySubs := strings.CutPrefix(hostPattern, wildcardSeq)
+	if arbitrarySubs && len(host) > maxHostLen-len(wildcardSeq) {
 		err = invalidOriginPatternError(rawOriginPattern)
 		return
 	}
@@ -242,16 +242,16 @@ func parseHostPattern(str, rawOriginPattern string) (hostPattern string, kind Ki
 // attempt to validate the resulting host pattern.
 // It returns the scanned host pattern, the unconsumed part of str, and reports
 // whether the host pattern starts with the *. sequence.
-func scanHostPattern(str string) (hostPattern, rest string, wildcardSubs bool) {
+func scanHostPattern(str string) (hostPattern, rest string, arbitrarySubs bool) {
 	var start, i int
 	// Skip over "*." if needed.
-	if wildcardSubs = strings.HasPrefix(str, wildcardSeq); wildcardSubs {
+	if arbitrarySubs = strings.HasPrefix(str, wildcardSeq); arbitrarySubs {
 		start += len(wildcardSeq)
 	}
 	for i = start; i < len(str) && isDomainByte(str[i]); i++ {
 		// deliberately empty
 	}
-	return str[:i], str[i:], wildcardSubs
+	return str[:i], str[i:], arbitrarySubs
 }
 
 // isDomainByte reports whether c is an ASCII lowercase letter, an ASCII digit,

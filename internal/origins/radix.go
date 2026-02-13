@@ -29,14 +29,14 @@ func NewTree(ps ...*Pattern) Tree {
 	if len(ps) > 0 {
 		// Inserting the first pattern is easy, since t is empty.
 		p := ps[0]
-		host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
+		host, arbitrarySubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
 		t.root.suf = host
-		t.root.add(p.Scheme, p.Port, wildcardSubs)
+		t.root.add(p.Scheme, p.Port, arbitrarySubs)
 		// Now deal with the remaining patterns.
 		ps = ps[1:]
 	}
 	for _, p := range ps {
-		host, wildcardSubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
+		host, arbitrarySubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
 		n := &t.root
 		for {
 			prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
@@ -44,7 +44,7 @@ func NewTree(ps ...*Pattern) Tree {
 			label2, ok2 := lastByte(prefixOfHost)
 			if !ok1 {
 				if !ok2 { // n.suf == host
-					n.add(p.Scheme, p.Port, wildcardSubs)
+					n.add(p.Scheme, p.Port, arbitrarySubs)
 					break
 				} else { // n.suf is a strict suffix of host.
 					// Example:
@@ -62,7 +62,7 @@ func NewTree(ps ...*Pattern) Tree {
 						//  kin - a (child)
 						//
 						child := node{suf: prefixOfHost}
-						child.add(p.Scheme, p.Port, wildcardSubs)
+						child.add(p.Scheme, p.Port, arbitrarySubs)
 						n.insertEdge(i, label2, &child)
 						break
 					}
@@ -95,7 +95,7 @@ func NewTree(ps ...*Pattern) Tree {
 				child1 := *n
 				child1.suf = prefixOfNSuf
 				child2 := node{suf: prefixOfHost}
-				child2.add(p.Scheme, p.Port, wildcardSubs)
+				child2.add(p.Scheme, p.Port, arbitrarySubs)
 				*n = node{suf: suf}
 				n.insertEdge(0, label1, &child1)
 				n.insertEdge(1, label2, &child2)
@@ -136,7 +136,7 @@ func (t *Tree) Contains(o *Origin) bool {
 		// - n.suf: .kin
 		// - host: a.kin
 
-		// Check whether n contains port for wildcard subs.
+		// Check whether n contains port for arbitrary subdomains.
 		if n.contains(o.Scheme, o.Port, true) {
 			return true
 		}
@@ -203,9 +203,9 @@ type node struct {
 	ports [][]int
 }
 
-func (n *node) add(scheme string, port int, wildcardSubs bool) {
+func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 	arbitraryPort := arbitraryPort // shadows package-level constant
-	if wildcardSubs {
+	if arbitrarySubs {
 		port, arbitraryPort = offset(port, arbitraryPort)
 	}
 	i, found := slices.BinarySearch(n.schemes, scheme)
@@ -231,16 +231,16 @@ func offset(port, arbitraryPort int) (int, int) {
 	return port - portOffset, arbitraryPort - portOffset
 }
 
-// an offset used for storing ports corresponding to wildcard subs
+// an offset used for storing ports corresponding to arbitrary subs
 const portOffset = math.MaxUint16 + 2
 
 func (n *node) isEmpty() bool {
 	return n.schemes == nil && n.children == nil
 }
 
-func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool) {
+func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool) {
 	arbitraryPort := arbitraryPort // shadows package-level constant
-	if wildcardSubs {
+	if arbitrarySubs {
 		port, arbitraryPort = offset(port, arbitraryPort)
 	}
 	i, found := slices.BinarySearch(n.schemes, scheme)
