@@ -79,7 +79,9 @@ func NewTree(ps ...*Pattern) Tree {
 				// them into the tree, this case cannot occur.
 				//
 				// If ok2, neither n.suf nor host is a suffix (strict or not)
-				// of the other.
+				// of the other. Moreover, because of how we sort patterns
+				// before inserting them into the tree, we know that
+				// label1 < label2.
 				// Example:
 				// - n.suf:    akin
 				// - host:  pumpkin
@@ -91,14 +93,12 @@ func NewTree(ps ...*Pattern) Tree {
 				//
 				child1 := *n
 				child1.suf = prefixOfNSuf
-				*n = node{suf: suf}
-				n.insertEdge(-1, label1, &child1)
 				child2 := node{suf: prefixOfHost}
 				child2.add(p.Scheme, p.Port, wildcardSubs)
-				i := cmp.Compare(label2, label1) // either -1 or 1 (label1 != label2)
-				n.insertEdge(max(0, i), label2, &child2)
+				*n = node{suf: suf}
+				n.insertEdge(0, label1, &child1)
+				n.insertEdge(1, label2, &child2)
 				break
-
 			}
 		}
 	}
@@ -282,16 +282,10 @@ func (n *node) contains(scheme string, port int, wildcardSubs bool) (found bool)
 	return
 }
 
-// insertEdge, if i is negative, replaces n's edges by a single edge labeled
-// label and leading to child; otherwise, it inserts an edge labeled label and
-// leading to child at index i in n.edges.
+// insertEdge inserts an edge labeled label and leading to child at index i
+// in n.edges.
 // Precondition: i <= len(n.edges)
 func (n *node) insertEdge(i int, label byte, child *node) {
-	if i < 0 {
-		n.edges = []byte{label}
-		n.children = []*node{child}
-		return
-	}
 	n.edges = slices.Insert(n.edges, i, label)
 	n.children = slices.Insert(n.children, i, child)
 }
