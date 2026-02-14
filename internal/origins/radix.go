@@ -108,7 +108,7 @@ func NewTree(ps ...*Pattern) Tree {
 
 // IsEmpty reports whether t is empty.
 func (t *Tree) IsEmpty() bool {
-	return t.root.isEmpty()
+	return t.root.schemes == nil && t.root.children == nil
 }
 
 // Contains reports whether t contains o.
@@ -233,10 +233,6 @@ func offset(port, arbitraryPort int) (int, int) {
 
 // an offset used for storing ports corresponding to arbitrary subs
 const portOffset = math.MaxUint16 + 2
-
-func (n *node) isEmpty() bool {
-	return n.schemes == nil && n.children == nil
-}
 
 func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool) {
 	arbitraryPort := arbitraryPort // shadows package-level constant
