@@ -8,16 +8,15 @@ import (
 	"strings"
 )
 
-// A Tree is a radix tree that represents a set of Web origins.
-// The zero value corresponds to an empty tree.
-//
-// A Tree can be grown by inserting values of type [Pattern] in it, and
-// a Tree can be queried about whether it contains some [Origin] value.
+// A Tree is a specialized radix tree that represents a (possibly infinite) set
+// of Web origins. Once built, a Tree is read-only. The zero value corresponds
+// to an empty tree.
 type Tree struct {
 	root node
 }
 
-// NewTree returns a new tree in which all of ps have been inserted.
+// NewTree returns a new tree in which all of ps (and no other origin patterns)
+// have been inserted.
 func NewTree(ps ...*Pattern) Tree {
 	// Sorting patterns with (*Pattern).Compare before inserting them in an
 	// empty tree guarantees that the resulting tree be free of redundant
@@ -48,25 +47,29 @@ func NewTree(ps ...*Pattern) Tree {
 					break
 				} else { // n.suf is a strict suffix of host.
 					// Example:
-					// - n.suf: kin
-					// - host: akin
+					// - n.suf:     kin
+					// - host:  pumpkin
 					if n.contains(p.Scheme, p.Port, true) {
-						// Avoid redundancy.
+						// Inserting p in t would generate redundancy.
 						break
 					}
 					// Look for an edge labeled label2 stemming from n.
 					i, ok := slices.BinarySearch(n.edges, label2)
-					if !ok { // No such edge found.
+					if !ok { // No such edge was found.
 						// Create one leading to the new child:
 						//
-						//  kin - a (child)
+						//      ...
+						//     /
+						//  kin - ...
+						//     \
+						//      pump (child)
 						//
 						child := node{suf: prefixOfHost}
 						child.add(p.Scheme, p.Port, arbitrarySubs)
 						n.insertEdge(i, label2, &child)
 						break
 					}
-					// Edge found. Keep going.
+					// Such an edge was found. Follow it and keep searching.
 					host = prefixOfHost
 					n = n.children[i]
 					continue
@@ -141,16 +144,19 @@ func (t *Tree) Contains(o *Origin) bool {
 			return true
 		}
 
-		// Look for an edge labeled 'a' in n.
+		// Look for an edge labeled label stemming from n.
 		i, found := slices.BinarySearch(n.edges, label)
 		if !found {
 			return false
 		}
+		// Such an edge was found. Follow it and keep searching.
 		host = prefixOfHost
 		n = n.children[i]
 	}
 }
 
+// lastByte, if str is not empty, returns the last byte in str and true;
+// otherwise, it returns 0 and false.
 func lastByte(str string) (byte, bool) {
 	if str == "" {
 		return 0, false
@@ -189,10 +195,9 @@ func (t *Tree) Elems() iter.Seq[string] {
 //   - len(edges) == len(children)
 //   - len(schemes) == len(ports)
 type node struct {
-	// suf is the suffix of this node (not restricted to ASCII or even valid
-	// UTF-8).
+	// suf is the suffix of this node (ASCII only).
 	suf string
-	// edges are the edges to children of this node.
+	// edges are the edges to the children of this node.
 	edges []byte
 	// children are the children of this node ("parallels" edges slice).
 	children []*node
@@ -203,6 +208,7 @@ type node struct {
 	ports [][]int
 }
 
+// add adds the pair (scheme, port) in n, possibly with arbitrary subdomains.
 func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 	arbitraryPort := arbitraryPort // shadows package-level constant
 	if arbitrarySubs {
@@ -227,6 +233,8 @@ func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 	n.ports[i] = append(ports, port)
 }
 
+// offset returns the results of subtracting portOffset from both port and
+// arbitraryPort.
 func offset(port, arbitraryPort int) (int, int) {
 	return port - portOffset, arbitraryPort - portOffset
 }
@@ -234,6 +242,8 @@ func offset(port, arbitraryPort int) (int, int) {
 // an offset used for storing ports corresponding to arbitrary subs
 const portOffset = math.MaxUint16 + 2
 
+// contains reports whether n contains the pair (scheme, port), possibly with
+// arbitrary subdomains.
 func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool) {
 	arbitraryPort := arbitraryPort // shadows package-level constant
 	if arbitrarySubs {
