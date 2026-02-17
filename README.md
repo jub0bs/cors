@@ -47,6 +47,9 @@ for favoring libraries like the more popular [rs/cors][rs-cors]:
   [excessive flexibility in this regard implies security risks][danger].
 - You want to log a message for every single request processed
   by your CORS middleware; [but do you really?][logging]
+- Some of your clients do not comply with the Fetch standard and choke on
+  CORS-preflight responses whose status code is anything other than 200;
+  but such non-compliant clients remain rare.
 
 ## Installation
 
