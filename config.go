@@ -803,6 +803,16 @@ func newConfig(icfg *internalConfig) *Config {
 		cfg.ResponseHeaders = strings.Split(icfg.aceh, headers.ValueSep)
 	}
 
+	// max age (retain it even if no preflight is possible)
+	if len(icfg.acma) > 0 {
+		maxAge, _ := strconv.Atoi(icfg.acma[0]) // safe, by construction
+		if maxAge != 0 {
+			cfg.MaxAgeInSeconds = maxAge
+		} else {
+			cfg.MaxAgeInSeconds = -1
+		}
+	}
+
 	if !icfg.preflight {
 		return &cfg
 	}
@@ -823,16 +833,6 @@ func newConfig(icfg *internalConfig) *Config {
 		cfg.RequestHeaders = []string{headers.ValueWildcard}
 	case icfg.allowedReqHdrs.Size() > 0:
 		cfg.RequestHeaders = icfg.allowedReqHdrs.ToSlice()
-	}
-
-	// max age
-	if len(icfg.acma) > 0 {
-		maxAge, _ := strconv.Atoi(icfg.acma[0]) // safe, by construction
-		if maxAge != 0 {
-			cfg.MaxAgeInSeconds = maxAge
-		} else {
-			cfg.MaxAgeInSeconds = -1
-		}
 	}
 
 	return &cfg

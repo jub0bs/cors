@@ -267,6 +267,16 @@ func TestConfig(t *testing.T) {
 				Origins:         []string{"http://example.com"},
 				ResponseHeaders: []string{"*"},
 			},
+		}, {
+			desc: "max age with no possible preflight",
+			cfg: &cors.Config{
+				Origins:         []string{"http://example.com"},
+				MaxAgeInSeconds: 10,
+			},
+			want: &cors.Config{
+				Origins:         []string{"http://example.com"},
+				MaxAgeInSeconds: 10,
+			},
 		},
 	}
 	for _, tc := range cases {
