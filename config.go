@@ -493,9 +493,6 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 }
 
 func (icfg *internalConfig) validateMethods(errs []error, names []string) []error {
-	if len(names) == 0 {
-		return errs
-	}
 	for _, name := range names {
 		if name == headers.ValueWildcard {
 			if icfg.allowAnyMethod {
