@@ -19,7 +19,7 @@ in the chain, and the ultimate handler. Follow the rules listed below:
     and browser-based clients will likely experience CORS-related errors.
     The [testable examples] associated with the [*Middleware.Wrap] method
     provide more guidance about avoiding such pitfalls when you rely
-    on Go 1.22's enhanced routing features.
+    on [net/http]'s enhanced routing features, [available since Go 1.22].
   - Because [CORS-preflight requests are not authenticated], authentication
     [SHOULD NOT] take place "ahead of" a CORS middleware
     (e.g. in a reverse proxy or in some middleware further up the chain).
@@ -63,6 +63,7 @@ in the chain, and the ultimate handler. Follow the rules listed below:
 [SHOULD NOT]: https://www.ietf.org/rfc/rfc2119.txt
 [SHOULD]: https://www.ietf.org/rfc/rfc2119.txt
 [Vary]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary
+[available since Go 1.22]: https://go.dev/doc/go1.22#enhanced_routing_patterns
 [cache poisoning]: https://portswigger.net/web-security/web-cache-poisoning
 [dysfunctional or insecure CORS middleware]: https://jub0bs.com/posts/2023-02-08-fearless-cors/
 [list-based field]: https://httpwg.org/specs/rfc9110.html#abnf.extension

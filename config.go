@@ -42,8 +42,8 @@ import (
 // Omitting to specify at least one origin pattern is prohibited;
 // so is specifying one or more invalid or prohibited origin pattern(s).
 //
-// All valid schemes (no longer than 64 bytes) other than file are permitted,
-// with one caveat about schemes other than https explained further down:
+// All valid schemes (no longer than 64 bytes) other than file are permitted
+// (with one caveat about schemes other than https explained further down):
 //
 //	http://example.com    // permitted
 //	https://example.com   // permitted
@@ -71,7 +71,7 @@ import (
 //
 // Valid port values range from 1 to 65,535 (inclusive):
 //
-//	https://example.com       // permitted (no port)
+//	https://example.com       // permitted (no explicit port)
 //	https://example.com:1     // permitted
 //	https://example.com:65535 // permitted
 //	https://example.com:0     // prohibited
@@ -145,7 +145,7 @@ import (
 // as such, they are by default prohibited when credentialed access is enabled.
 // If, even in such cases,
 // you deliberately wish to allow some insecure origins,
-// you must also set the DangerouslyTolerateInsecureOrigins field.
+// you must also set the [Config.DangerouslyTolerateInsecureOrigins] field.
 //
 // Allowing arbitrary subdomains of a base domain that happens to be a
 // [public suffix] is dangerous; as such, doing so is by default prohibited:
@@ -156,7 +156,7 @@ import (
 //
 // If you deliberately wish to allow arbitrary subdomains of some public
 // suffix, you must also set the
-// DangerouslyTolerateSubdomainsOfPublicSuffixes field.
+// [Config.DangerouslyTolerateSubdomainsOfPublicSuffixes] field.
 //
 // # Credentialed
 //
@@ -174,7 +174,7 @@ import (
 //
 // to you server, you can likely leave Credentialed unset;
 // instead, you should simply allow request-header name "Authorization"
-// via the RequestHeaders field.
+// via the [Config.RequestHeaders] field.
 //
 // # Methods
 //
@@ -206,6 +206,7 @@ import (
 // code:
 //
 //	fetch('https://example.com', {method: 'OPTIONS'})
+//		.then(/* ... */)
 //
 // In the great majority of cases, specifying OPTIONS as an allowed method
 // in your CORS configuration is unnecessary.
@@ -218,7 +219,7 @@ import (
 //	RequestHeaders: []string{"Content-Type"},
 //
 // When credentialed access is enabled
-// (i.e. when the Credentialed field is set),
+// (i.e. when the [Config.Credentialed] field is set),
 // a single asterisk denotes all request-header names:
 //
 //	Credentialed:   true,
@@ -228,7 +229,7 @@ import (
 // and allowing all request-header names; otherwise, middleware performance may
 // indeed suffer in the face of some adversarial preflight requests.
 //
-// For both technical and security reasons, the asterisk
+// For both [technical and security reasons], the asterisk
 // has a different meaning when credentialed access is disabled;
 // it then denotes all request-header names other than [Authorization]:
 //
@@ -280,13 +281,13 @@ import (
 //	ResponseHeaders: []string{"X-Response-Time"},
 //
 // When credentialed access is disabled
-// (i.e. when the Credentialed field is unset),
+// (i.e. when the [Config.Credentialed] field is unset),
 // a single asterisk denotes all response-header names:
 //
 //	ResponseHeaders: []string{"*"},
 //
-// However, for technical reasons, this is only permitted if the Credentialed
-// field is unset.
+// However, for [technical reasons], this is only permitted if the
+// [Config.Credentialed] field is unset.
 //
 // The CORS protocol defines a number of so-called
 // "[CORS-safelisted response-header names]",
@@ -355,6 +356,8 @@ import (
 // [public suffix]: https://publicsuffix.org/
 // [security reasons]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
 // [subdomain takeover]: https://labs.detectify.com/writeups/hostile-subdomain-takeover-using-heroku-github-desk-more/
+// [technical and security reasons]: https://github.com/whatwg/fetch/issues/251#issuecomment-209265586
+// [technical reasons]: https://github.com/rs/cors/issues/79#issuecomment-1694622148
 // [the talk he gave at AppSec EU 2017]: https://www.youtube.com/watch?v=wgkj4ZgxI4c&t=1305s
 type Config struct {
 	// Precludes comparability, unkeyed struct literals, and conversion to and

@@ -21,17 +21,19 @@ import (
 // Middleware have a debug mode, which can be turned on or off via
 // [*Middleware.SetDebug] and queried via [*Middleware.Debug].
 // You should turn debug mode on whenever you're struggling to troubleshoot
-// some [CORS-preflight] issue;
-// however, be aware that keeping debug mode on may lead to observably poorer
-// middleware performance in the face of some adversarial preflight requests.
-// When debug mode is off, the information that the middleware includes in
-// preflight responses is minimal, for efficiency and confidentiality reasons;
-// however, when preflight fails, the browser then lacks enough contextual
-// information about the failure to produce a helpful CORS error message.
-// In contrast, when debug mode is on and preflight fails,
-// the middleware includes enough contextual information about the
-// preflight failure in the response for browsers to produce
-// a helpful CORS error message.
+// some [CORS-preflight] issue:
+//   - When debug mode is off, the information that the middleware includes in
+//     preflight responses is minimal, for efficiency and confidentiality reasons;
+//     however, when preflight fails, the browser then lacks enough contextual
+//     information about the failure to produce a helpful CORS error message.
+//   - When debug mode is on and preflight fails,
+//     the middleware includes enough contextual information about the
+//     preflight failure in the response for browsers to produce
+//     a helpful CORS error message.
+//
+// However, be aware that keeping debug mode on may lead to observably poorer
+// middleware performance, especially in the face of some adversarial preflight
+// requests.
 //
 // A Middleware must not be copied after first use.
 //
