@@ -533,12 +533,12 @@ func (icfg *internalConfig) validateMethods(errs []error, names []string) []erro
 }
 
 func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string) []error {
-	if len(names) == 0 {
+	if len(names) == 0 { // micro-optimization
 		return errs
 	}
 	var (
 		allowedHeaders util.SortedSet
-		nbErrors       = len(errs)
+		nbErrors       = len(errs) // number of errors accumulated so far
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
@@ -601,7 +601,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 			allowedHeaders.Add(normalized)
 		}
 	}
-	if len(errs) > nbErrors {
+	if len(errs) > nbErrors { // micro-optimization
 		return errs
 	}
 	switch {
