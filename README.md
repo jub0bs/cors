@@ -175,7 +175,7 @@ All source code is covered by the [MIT License][license].
 - [_Reconfigurable CORS middleware with jub0bs/cors_][reconfigurable] (blog post)
 - [_Programmatic handling of CORS-configuration errors with jub0bs/cors_][programmatic] (blog post)
 - [_Useful Functional-Options Tricks for Better Libraries_ (GopherCon Europe 2023)][funcopts] (video)
-- [github.com/jub0bs/fcors][fcors] (this library's predecessor)
+- [github.com/jub0bs/fcors][fcors] (this library's predecessor, now archived)
 
 [a-better-cors-lib]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/
 [acrh]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Headers
