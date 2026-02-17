@@ -36,7 +36,7 @@ libraries by providing the following features:
 - [strong performance guarantees][benchmark-results];
 - [a useful debug mode][debug];
 - [on-the-fly, concurrency-safe middleware reconfigurability][reconfigurable];
-- [programmatic handling of configuration errors][cfgerrors].
+- [programmatic handling of configuration errors][reconfigurable].
 
 Despite all of this library's goodness, here are some valid reasons
 for favoring libraries like the more popular [rs/cors][rs-cors]:
