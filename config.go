@@ -647,12 +647,12 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 
 func (icfg *internalConfig) validateMaxAge(errs []error, delta int) []error {
 	const (
-		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7.9
+		// See https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7.9.
 		defaultMaxAge = 5
 		// Current upper bounds:
-		//  - Firefox: 86400 (24h)
-		//  - Chromium: 7200 (2h)
-		//  - WebKit/Safari: 600 (10m)
+		//  - Firefox: 86400s (24h)
+		//  - Chromium: 7200s (2h)
+		//  - WebKit/Safari: 600s (10m)
 		//
 		// See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#delta-seconds.
 		upperBound = 86400
@@ -667,26 +667,24 @@ func (icfg *internalConfig) validateMaxAge(errs []error, delta int) []error {
 			Max:     upperBound,
 			Disable: disableCaching,
 		}
-		return append(errs, err)
+		errs = append(errs, err)
 	case delta == disableCaching:
 		icfg.acma = []string{"0"}
-		return errs
 	case delta == 0:
-		return errs
 	default:
 		icfg.acma = []string{strconv.Itoa(delta)}
-		return errs
 	}
+	return errs
 }
 
 func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string) []error {
-	if len(names) == 0 {
+	if len(names) == 0 { // micro-optimization
 		return errs
 	}
 	var (
 		exposedHeaders   util.Set
 		exposeAllResHdrs bool
-		nbErrors         = len(errs)
+		nbErrors         = len(errs) // number of errors accumulated so far
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
@@ -751,7 +749,7 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 			exposedHeaders.Add(normalized)
 		}
 	}
-	if len(errs) > nbErrors {
+	if len(errs) > nbErrors { // micro-optimization
 		return errs
 	}
 	switch {
