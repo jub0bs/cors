@@ -407,7 +407,6 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	errs = icfg.validateRequestHeaders(errs, cfg.RequestHeaders)
 	errs = icfg.validateMaxAge(errs, cfg.MaxAgeInSeconds)
 	errs = icfg.validateResponseHeaders(errs, cfg.ResponseHeaders)
-
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}
@@ -417,6 +416,7 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 		icfg.asteriskReqHdrs ||
 		icfg.allowAuthorization ||
 		icfg.allowedReqHdrs.Size() > 0
+
 	return &icfg, nil
 }
 
