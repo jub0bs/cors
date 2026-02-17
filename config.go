@@ -402,8 +402,7 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 
 	// Accumulate errors in a slice so as to call errors.Join at most once,
 	// for better performance.
-	var errs []error
-	errs = icfg.validateOriginPatterns(errs, cfg.Origins)
+	errs := icfg.validateOriginPatterns(cfg.Origins)
 	errs = icfg.validateMethods(errs, cfg.Methods)
 	errs = icfg.validateRequestHeaders(errs, cfg.RequestHeaders)
 	errs = icfg.validateMaxAge(errs, cfg.MaxAgeInSeconds)
@@ -421,15 +420,18 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	return &icfg, nil
 }
 
-func (icfg *internalConfig) validateOriginPatterns(errs []error, rawPatterns []string) []error {
+func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error {
 	if len(rawPatterns) == 0 {
 		err := &cfgerrors.UnacceptableOriginPatternError{
 			Reason: "missing",
 		}
-		return append(errs, err)
+		return []error{err}
 	}
-	var ps []*origins.Pattern
-	var allowAnyOrigin bool
+	var (
+		ps             []*origins.Pattern
+		allowAnyOrigin bool
+		errs           []error
+	)
 	for _, raw := range rawPatterns {
 		if raw == headers.ValueWildcard {
 			if icfg.credentialed {
@@ -453,32 +455,32 @@ func (icfg *internalConfig) validateOriginPatterns(errs []error, rawPatterns []s
 			errs = append(errs, err)
 			continue
 		}
-		if pattern.IsDeemedInsecure() && !icfg.tolerateInsecureOrigins {
-			// We require DangerouslyTolerateInsecureOrigins to
-			// be set only when
-			// - users specify one or more insecure origin patterns, and
-			// - enable credentialed access.
+		if !icfg.tolerateInsecureOrigins &&
+			icfg.credentialed &&
+			pattern.IsDeemedInsecure() {
+			// We require DangerouslyTolerateInsecureOrigins to be set only if
+			//  - enable credentialed access, and
+			//  - users specify one or more insecure origin patterns.
+			//
 			// In all other cases, insecure origins like http://example.com are
-			// indeed no less insecure than * is, which itself doesn't require
-			// DangerouslyTolerateInsecureOrigins to be set.
-			if icfg.credentialed {
-				err := &cfgerrors.IncompatibleOriginPatternError{
-					Value:  raw,
-					Reason: "credentialed",
-				}
-				errs = append(errs, err)
-				continue
+			// indeed no less insecure than origin pattern "*" is, which itself
+			// doesn't require DangerouslyTolerateInsecureOrigins to be set.
+			err := &cfgerrors.IncompatibleOriginPatternError{
+				Value:  raw,
+				Reason: "credentialed",
 			}
+			errs = append(errs, err)
+			continue
 		}
-		if pattern.Kind == origins.ArbitrarySubdomains && !icfg.tolerateSubsOfPublicSuffixes {
-			if pattern.HostIsEffectiveTLD() {
-				err := &cfgerrors.IncompatibleOriginPatternError{
-					Value:  raw,
-					Reason: "psl",
-				}
-				errs = append(errs, err)
-				continue
+		if !icfg.tolerateSubsOfPublicSuffixes &&
+			pattern.Kind == origins.ArbitrarySubdomains &&
+			pattern.HostIsEffectiveTLD() {
+			err := &cfgerrors.IncompatibleOriginPatternError{
+				Value:  raw,
+				Reason: "psl",
 			}
+			errs = append(errs, err)
+			continue
 		}
 		if !allowAnyOrigin {
 			ps = append(ps, &pattern)
@@ -654,7 +656,8 @@ func (icfg *internalConfig) validateMaxAge(errs []error, delta int) []error {
 		//  - Firefox: 86400 (24h)
 		//  - Chromium: 7200 (2h)
 		//  - WebKit/Safari: 600 (10m)
-		// see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#delta-seconds
+		//
+		// See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#delta-seconds.
 		upperBound = 86400
 		// sentinel value for disabling preflight caching
 		disableCaching = -1
