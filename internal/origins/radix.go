@@ -12,7 +12,7 @@ import (
 // of Web origins. Once built, a Tree is read-only. The zero value corresponds
 // to an empty tree.
 type Tree struct {
-	root node
+	root *node
 }
 
 // NewTree returns a new tree in which all of ps (and no other origin patterns)
@@ -29,14 +29,14 @@ func NewTree(ps ...*Pattern) Tree {
 		// Inserting the first pattern is easy, since t is empty.
 		p := ps[0]
 		host, arbitrarySubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
-		t.root.suf = host
+		t.root = &node{suf: host}
 		t.root.add(p.Scheme, p.Port, arbitrarySubs)
 		// Now deal with the remaining patterns.
 		ps = ps[1:]
 	}
 	for _, p := range ps {
 		host, arbitrarySubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
-		n := &t.root
+		n := t.root
 		for {
 			prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
 			label1, ok1 := lastByte(prefixOfNSuf)
@@ -111,13 +111,16 @@ func NewTree(ps ...*Pattern) Tree {
 
 // IsEmpty reports whether t is empty.
 func (t *Tree) IsEmpty() bool {
-	return t.root.schemes == nil && t.root.children == nil
+	return t.root == nil
 }
 
 // Contains reports whether t contains o.
 func (t *Tree) Contains(o *Origin) bool {
+	if t.IsEmpty() {
+		return false
+	}
 	host := o.Host
-	n := &t.root
+	n := t.root
 	for {
 		prefixOfHost, _, suf := splitAtCommonSuffix(host, n.suf)
 		if len(suf) != len(n.suf) {
@@ -186,6 +189,9 @@ func splitAtCommonSuffix(a, b string) (string, string, string) {
 // same order.
 func (t *Tree) Elems() iter.Seq[string] {
 	return func(yield func(string) bool) {
+		if t.IsEmpty() {
+			return
+		}
 		t.root.elems("", yield)
 	}
 }
