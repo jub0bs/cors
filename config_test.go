@@ -81,6 +81,20 @@ func TestConfig(t *testing.T) {
 				ResponseHeaders: []string{"*"},
 			},
 		}, {
+			desc: "anonymous allow all but not Authorization request header",
+			cfg: &cors.Config{
+				Origins:         []string{"*"},
+				Methods:         []string{"*"},
+				RequestHeaders:  []string{"*"},
+				ResponseHeaders: []string{"*"},
+			},
+			want: &cors.Config{
+				Origins:         []string{"*"},
+				Methods:         []string{"*"},
+				RequestHeaders:  []string{"*"},
+				ResponseHeaders: []string{"*"},
+			},
+		}, {
 			desc: "discrete methods discrete headers zero max age",
 			cfg: &cors.Config{
 				Origins: []string{
@@ -276,6 +290,16 @@ func TestConfig(t *testing.T) {
 			want: &cors.Config{
 				Origins:         []string{"http://example.com"},
 				MaxAgeInSeconds: 10,
+			},
+		}, {
+			desc: "wildcard pattern encompassing subdomains of a public suffix",
+			cfg: &cors.Config{
+				Origins: []string{"https://*.com"},
+				DangerouslyTolerateSubdomainsOfPublicSuffixes: true,
+			},
+			want: &cors.Config{
+				Origins: []string{"https://*.com"},
+				DangerouslyTolerateSubdomainsOfPublicSuffixes: true,
 			},
 		},
 	}
