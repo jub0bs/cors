@@ -372,7 +372,8 @@ type Config struct {
 }
 
 type internalConfig struct {
-	tree                         origins.Tree   // tree.IsEmpty() <=> any origin allowed
+	tree                         origins.Tree // tree.IsEmpty() <=> any origin allowed
+	aceh                         string
 	allowedMethods               util.Set       // allowedMethods.Size() > 0 => !allowAnyMethod
 	allowedReqHdrs               util.SortedSet // allowedReqHdrs.Size() > 0 => !asteriskReqHdrs
 	acah                         []string
@@ -384,7 +385,6 @@ type internalConfig struct {
 	tolerateInsecureOrigins      bool
 	preflight                    bool // reports whether preflight may succeed
 	acma                         []string
-	aceh                         string
 }
 
 func newInternalConfig(cfg *Config) (*internalConfig, error) {
