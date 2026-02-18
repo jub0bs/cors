@@ -434,11 +434,12 @@ func (icfg *internalConfig) processACRH(
 	case icfg.asteriskReqHdrs && !icfg.credentialed:
 		buf[headers.ACAH] = icfg.acah
 		return true
-	case debug && icfg.acah != nil:
+	case debug:
+		if icfg.acah == nil {
+			return false
+		}
 		buf[headers.ACAH] = icfg.acah
 		return true
-	case debug && icfg.acah == nil:
-		return false
 	case !headers.Check(icfg.allowedReqHdrs, acrh):
 		return false
 	}
