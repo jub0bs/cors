@@ -158,7 +158,7 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
 	// the wrapped handler an undesirable affordance: mutation of those slices.
 	// See https://github.com/rs/cors/issues/198.
 
-	if !icfg.tree.IsEmpty() {
+	if !icfg.allowsAnyOrigin() {
 		if !isOPTIONS {
 			// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
 			// Note that we deliberately list "Origin" in the Vary header of
@@ -196,7 +196,7 @@ func (icfg *internalConfig) handleCORSActual(
 	// the wrapped handler an undesirable affordance: mutation of those slices.
 	// See https://github.com/rs/cors/issues/198.
 
-	if icfg.tree.IsEmpty() {
+	if icfg.allowsAnyOrigin() {
 		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
 	} else {
 		if !isOPTIONS {
@@ -327,7 +327,7 @@ func (icfg *internalConfig) processOriginForPreflight(
 	origin string,
 	originSgl []string,
 ) bool {
-	if icfg.tree.IsEmpty() {
+	if icfg.allowsAnyOrigin() {
 		buf[headers.ACAO] = headers.WildcardSgl
 		return true
 	}
@@ -346,6 +346,10 @@ func (icfg *internalConfig) processOriginForPreflight(
 		buf[headers.ACAC] = headers.TrueSgl
 	}
 	return true
+}
+
+func (icfg *internalConfig) allowsAnyOrigin() bool {
+	return icfg.tree.IsEmpty()
 }
 
 func (icfg *internalConfig) processACRM(
