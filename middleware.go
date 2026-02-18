@@ -151,45 +151,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 	})
 }
 
-func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) {
-	// It's tempting to rely (for performance) on some precomputed slices for
-	// the response headers we add/set here, as we do in handleCORSPreflight.
-	// However, doing so here is fraught with peril, because it would provide
-	// the wrapped handler an undesirable affordance: mutation of those slices.
-	// See https://github.com/rs/cors/issues/198.
-
-	if !icfg.allowsAnyOrigin() {
-		if !isOPTIONS {
-			// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
-			// Note that we deliberately list "Origin" in the Vary header of
-			// responses to actual requests even in cases where a single origin
-			// is allowed, because doing so is simpler to implement and
-			// unlikely to be detrimental to Web caches.
-			// Moreover, official guidance about this special case is likely to
-			// change; see https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
-			//
-			// Note that we must add rather than set a Vary header here,
-			// because outer middleware may have already added/set a Vary
-			// header, which we wouldn't want to clobber.
-			resHdrs.Add(headers.Vary, headers.Origin)
-		}
-		return
-	}
-
-	resHdrs.Set(headers.ACAO, headers.ValueWildcard)
-	if icfg.aceh != "" {
-		// see https://github.com/whatwg/fetch/issues/1601#issuecomment-1420881527
-		resHdrs.Set(headers.ACEH, icfg.aceh)
-	}
-}
-
-// Note: only for _non-preflight_ CORS requests
-func (icfg *internalConfig) handleCORSActual(
-	resHdrs http.Header,
-	origin string,
-	originSgl []string,
-	isOPTIONS bool,
-) {
+func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) (allOriginsAllowed bool) {
 	// It's tempting to rely (for performance) on some precomputed slices for
 	// the response headers we add/set here, as we do in handleCORSPreflight.
 	// However, doing so here is fraught with peril, because it would provide
@@ -198,37 +160,64 @@ func (icfg *internalConfig) handleCORSActual(
 
 	if icfg.allowsAnyOrigin() {
 		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
-	} else {
-		if !isOPTIONS {
-			// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
-			// Note that we deliberately list "Origin" in the Vary header of
-			// responses to actual requests even in cases where a single origin
-			// is allowed, because doing so is simpler to implement and
-			// unlikely to be detrimental to Web caches.
-			// Moreover, official guidance about this special case is likely to
-			// change; see https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
-			//
-			// Note that we must add rather than set a Vary header here,
-			// because outer middleware may have already added/set a Vary
-			// header, which we wouldn't want to clobber.
-			resHdrs.Add(headers.Vary, headers.Origin)
+		if icfg.aceh != "" {
+			// If any origin is allowed, do include ACEH even in responses to
+			// non-CORS requests; see
+			// https://github.com/whatwg/fetch/issues/1601#issuecomment-1420881527.
+			resHdrs.Set(headers.ACEH, icfg.aceh)
 		}
-		o, ok := origins.Parse(origin)
-		if !ok || !icfg.tree.Contains(&o) {
-			return
-		}
-		resHdrs[headers.ACAO] = originSgl
-		if icfg.credentialed {
-			// We make no attempt to infer whether the request is credentialed;
-			// in fact, a request’s credentials mode is not necessarily observable
-			// on the server.
-			// Instead, we systematically include "ACAC: true" if credentialed
-			// access is enabled and request's origin is allowed.
-			// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
-			resHdrs.Set(headers.ACAC, headers.ValueTrue)
-		}
+		return true
 	}
+	// Not all origins are allowed.
+	if isOPTIONS {
+		// Even though some caching intermediaries can be configured to cache
+		// responses to OPTIONS requests, such caching contravenes RFC 9110;
+		// see https://httpwg.org/specs/rfc9110.html#rfc.section.9.3.7.
+		// Some CORS middleware libraries (such as github.com/rs/cors) do cater
+		// for such non-compliant behavior; let's not.
+	} else {
+		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
+		// Note that we deliberately list "Origin" in the Vary header of
+		// responses to actual requests even in cases where a single origin is
+		// allowed, because doing so is simpler to implement and unlikely to
+		// be detrimental to Web caches. Moreover, official guidance about this
+		// special case is likely to change; see
+		// https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
+		//
+		// Note that we must add (rather than set) a Vary header here, because
+		// outer middleware may have already added/set a Vary header, which we
+		// wouldn't want to clobber.
+		resHdrs.Add(headers.Vary, headers.Origin)
+	}
+	return false
+}
 
+func (icfg *internalConfig) handleCORSActual(
+	resHdrs http.Header,
+	origin string,
+	originSgl []string,
+	isOPTIONS bool,
+) {
+	// The logic for handling non-CORS requests can be re-used here.
+	if icfg.handleNonCORS(resHdrs, isOPTIONS) {
+		return
+	}
+	// Not all origins are allowed.
+	o, ok := origins.Parse(origin)
+	if !ok || !icfg.tree.Contains(&o) {
+		return
+	}
+	// origin is allowed.
+	resHdrs[headers.ACAO] = originSgl
+	if icfg.credentialed {
+		// We make no attempt to infer whether the request is credentialed;
+		// in fact, a request’s credentials mode is not necessarily observable
+		// on the server.
+		// Instead, we systematically include "ACAC: true" if credentialed
+		// access is enabled and request's origin is allowed.
+		// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
+		resHdrs.Set(headers.ACAC, headers.ValueTrue)
+	}
 	if icfg.aceh != "" {
 		resHdrs.Set(headers.ACEH, icfg.aceh)
 	}
@@ -269,7 +258,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 		return
 	}
 
-	// Populating a small (8 keys or fewer) local map incurs 0 heap
+	// Populating a local map of modest size (8 keys or fewer) incurs 0 heap
 	// allocations on average; see https://go.dev/play/p/RQdNE-pPCQq.
 	buf := make(http.Header)
 
@@ -278,7 +267,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
 
-	if !icfg.processOriginForPreflight(buf, origin, originSgl) {
+	if !icfg.performCORSCheckForPreflight(buf, origin, originSgl) {
 		if debug {
 			maps.Copy(resHdrs, buf)
 		}
@@ -315,14 +304,14 @@ func (icfg *internalConfig) handleCORSPreflight(
 
 	maps.Copy(resHdrs, buf)
 
-	if icfg.acma != nil {
+	if len(icfg.acma) != 0 {
 		resHdrs[headers.ACMA] = icfg.acma
 	}
 
 	w.WriteHeader(preflightOKStatus)
 }
 
-func (icfg *internalConfig) processOriginForPreflight(
+func (icfg *internalConfig) performCORSCheckForPreflight(
 	buf http.Header,
 	origin string,
 	originSgl []string,
@@ -331,13 +320,12 @@ func (icfg *internalConfig) processOriginForPreflight(
 		buf[headers.ACAO] = headers.WildcardSgl
 		return true
 	}
+	// Not all origins are allowed.
 	o, ok := origins.Parse(origin)
-	if !ok {
+	if !ok || !icfg.tree.Contains(&o) {
 		return false
 	}
-	if !icfg.tree.Contains(&o) {
-		return false
-	}
+	// origin is allowed.
 	buf[headers.ACAO] = originSgl
 	if icfg.credentialed {
 		// We make no attempt to infer whether the request is credentialed,
@@ -357,32 +345,30 @@ func (icfg *internalConfig) processACRM(
 	acrm string,
 	acrmSgl []string,
 ) bool {
-	if methods.IsSafelisted(acrm) {
-		// CORS-safelisted methods get a free pass; see
-		// https://fetch.spec.whatwg.org/#ref-for-cors-safelisted-method%E2%91%A2.
-		// Therefore, no need to set the ACAM header in this case.
-		return true
-	}
 	// Note that middleware only ever list a single method in the ACAM header.
 	// One inconvenience of this behavior is that it leads to less than ideal
 	// utilization of the CORS-preflight cache;
 	// see https://fetch.spec.whatwg.org/#cors-preflight-cache.
 	//
-	// However, this behavior presents two advantages with respect to responses
-	// to CORS-preflight requests:
-	//   - those responses disclose no other allowed methods than the one
-	//     required for preflight to succeed; and
-	//   - those responses are smaller than they would otherwise be,
-	//     thereby saving some bandwidth.
-	if icfg.allowAnyMethod && !icfg.credentialed {
+	// However, one advantage of this behavior is that responses to
+	// CORS-preflight requests disclose no other allowed methods than the one
+	// required for preflight to succeed.
+
+	switch {
+	case methods.IsSafelisted(acrm):
+		// CORS-safelisted methods get a free pass; see
+		// https://fetch.spec.whatwg.org/#ref-for-cors-safelisted-method%E2%91%A2.
+		// Therefore, no ACAM header needs be set in this case.
+		return true
+	case icfg.allowAnyMethod && !icfg.credentialed:
 		buf[headers.ACAM] = headers.WildcardSgl
 		return true
-	}
-	if icfg.allowAnyMethod || icfg.allowedMethods.Contains(acrm) {
+	case icfg.allowAnyMethod || icfg.allowedMethods.Contains(acrm):
 		buf[headers.ACAM] = acrmSgl
 		return true
+	default:
+		return false
 	}
-	return false
 }
 
 func (icfg *internalConfig) processACRH(
@@ -399,63 +385,58 @@ func (icfg *internalConfig) processACRH(
 	if !found {
 		return true
 	}
-
 	switch {
 	case icfg.wildcardRequestHeaders && icfg.credentialed:
-		// If credentialed access is enabled,
-		// the single-asterisk pattern denotes all request-header names,
-		// including Authorization.
+		// If credentialed access is enabled, the single-asterisk pattern
+		// denotes all request-header names, including Authorization.
 		// Therefore, users of jub0bs/cors cannot both
-		// allow all request-header names other than Authorization
-		// and allow credentialed access.
-		// This limitation is the result of a deliberate design choice.
+		//   - allow credentialed access, and
+		//   - allow all request-header names other than Authorization.
 		//
-		// First, rare are the cases where all request-header names
-		// other than Authorization should be allowed
-		// with credentialed access enabled.
+		// This limitation is the result of a deliberate design choice:
+		//  1. Rare are the cases where all request-header names other than
+		//     Authorization should be allowed with credentialed access
+		//     enabled.
+		//  2. Because jub0bs/cors prohibits its users from allowing all
+		//     origins with credentialed access, allowing all request headers
+		//     from select origins along with credentialed access presents
+		//     little risk for security.
+		//  3. If we followed an alternative approach in which * doesn't cover
+		//     Authorization, we would need to scan the ACRH header in search
+		//     of "authorization"; such a computation would introduce
+		//     performance issues. Moreover, if "authorization" were found in
+		//     ACRH, we couldn't simply echo ACRH in ACAH, because we'd have
+		//     to omit "authorization" in ACAH. Incidentally, this could be
+		//     achieved without incurring heap allocations, e.g. by cutting
+		//     ACRH around "authorization" and echoing the results in up to two
+		//     ACAH header(s); but the whole alternative approach is not worth
+		//     the trouble anyway.
 		//
-		// Second, because jub0bs/cors prohibits its users from
-		// allowing all origins with credentialed access,
-		// allowing all request headers from select origins along
-		// with credentialed access presents little security-related risks.
-		//
-		// Third, if we followed an alternative approach
-		// in which * doesn't cover Authorization,
-		// we would need to scan the ACRH header in search of "authorization";
-		// as explained in an implementation comment above,
-		// such a computation would introduce performance issues.
-		// Moreover, if "authorization" were found in ACRH,
-		// we couldn't simply echo ACRH in ACAH,
-		// because we'd have to omit "authorization" in ACAH.
-		// Incidentally, this could be achieved
-		// without incurring heap allocations,
-		// e.g. by cutting ACRH around "authorization" and
-		// echoing the results in up to two ACAH header(s);
-		// but the whole alternative approach is not worth the trouble anyway.
-		break
+		// We can simply reflect all the ACRH header lines as ACAH header lines
+		// because the Fetch standard requires browsers to handle multiple ACAH
+		// header lines;
+		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
+		buf[headers.ACAH] = acrh
+		return true
 	case icfg.wildcardRequestHeaders && !icfg.credentialed:
 		buf[headers.ACAH] = icfg.acah
 		return true
 	case debug:
-		if icfg.acah == nil {
+		if len(icfg.acah) == 0 {
 			return false
 		}
 		buf[headers.ACAH] = icfg.acah
 		return true
-	case !headers.Check(icfg.allowedRequestHeaders, acrh):
+	case headers.Check(icfg.allowedRequestHeaders, acrh):
+		// We can simply reflect all the ACRH header lines as ACAH header lines
+		// because the Fetch standard requires browsers to handle multiple ACAH
+		// header lines;
+		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
+		buf[headers.ACAH] = acrh
+		return true
+	default:
 		return false
 	}
-	// We can simply reflect all the ACRH header lines as ACAH header lines
-	// because the Fetch standard requires browsers to handle multiple ACAH
-	// header lines;
-	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
-	//
-	// Reflecting ACRH into ACAH isn't ideal for performance in cases where
-	// ACRH is full of junk, but there isn't much else we can do, other than
-	// discourage users from keeping debug mode on for extended periods of
-	// time.
-	buf[headers.ACAH] = acrh
-	return true
 }
 
 // SetDebug turns debug mode on (if b is true) or off (otherwise).
@@ -469,7 +450,7 @@ func (m *Middleware) Debug() bool {
 }
 
 // Config returns a pointer to a deep copy of m's current configuration;
-// if m is a passthrough middleware, it simply returns nil.
+// if m is a passthrough middleware, Config simply returns nil.
 // The result may differ from the [Config] with which m was created or last
 // reconfigured, but the following statement is guaranteed to be a no-op
 // (albeit a relatively expensive one):
