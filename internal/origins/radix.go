@@ -39,23 +39,27 @@ func NewTree(ps ...*Pattern) Tree {
 		n := t.root
 		for {
 			prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
-			label1, ok1 := lastByte(prefixOfNSuf)
-			label2, ok2 := lastByte(prefixOfHost)
+			label1, ok1 := last([]byte(prefixOfNSuf))
+			label2, ok2 := last([]byte(prefixOfHost))
 			if !ok1 {
-				if !ok2 { // n.suf == host
+				if !ok2 {
+					// n.suf and host are equal.
 					n.add(p.Scheme, p.Port, arbitrarySubs)
 					break
-				} else { // n.suf is a strict suffix of host.
+				} else {
+					// n.suf is a strict suffix of host.
 					// Example:
-					// - n.suf:     kin
-					// - host:  pumpkin
+					//  - n.suf:     kin
+					//  - host:  pumpkin
 					if n.contains(p.Scheme, p.Port, true) {
-						// Inserting p in t would generate redundancy.
+						// Inserting p in t would cause redundancy. Let's not.
 						break
 					}
 					// Look for an edge labeled label2 stemming from n.
-					i, ok := slices.BinarySearch(n.edges, label2)
-					if !ok { // No such edge was found.
+					// Because of how we sort ps before inserting them into t,
+					// if label2 appears in n.edges, it has to be at the end.
+					if lastLabel, ok := last(n.edges); !ok || lastLabel != label2 {
+						// No such edge was found.
 						// Create one leading to the new child:
 						//
 						//      ...
@@ -66,29 +70,30 @@ func NewTree(ps ...*Pattern) Tree {
 						//
 						child := node{suf: prefixOfHost}
 						child.add(p.Scheme, p.Port, arbitrarySubs)
-						n.insertEdge(i, label2, &child)
+						n.addEdge(label2, &child)
 						break
 					}
 					// Such an edge was found. Follow it and keep searching.
 					host = prefixOfHost
-					n = n.children[i]
+					n, _ = last(n.children)
 					continue
 				}
 			} else {
 				// If !ok2, host is a strict suffix of n.suf.
 				// Example:
-				// - n.suf: akin
-				// - host:   kin
-				// However, because of how we sort patterns before inserting
-				// them into the tree, this case cannot occur.
+				//  - n.suf: akin
+				//  - host:   kin
+				//
+				// However, because of how we sort ps before inserting
+				// them into t, this case cannot occur.
 				//
 				// If ok2, neither n.suf nor host is a suffix (strict or not)
-				// of the other. Moreover, because of how we sort patterns
-				// before inserting them into the tree, we know that
-				// label1 < label2.
+				// of the other. Moreover, because of how we sort ps before
+				// inserting them into t, we know that label1 < label2.
 				// Example:
-				// - n.suf:    akin
-				// - host:  pumpkin
+				//  - n.suf:    akin
+				//  - host:  pumpkin
+				//
 				// Perform a two-way split of n:
 				//
 				//   kin - a (child1)
@@ -100,8 +105,8 @@ func NewTree(ps ...*Pattern) Tree {
 				child2 := node{suf: prefixOfHost}
 				child2.add(p.Scheme, p.Port, arbitrarySubs)
 				*n = node{suf: suf}
-				n.insertEdge(0, label1, &child1)
-				n.insertEdge(1, label2, &child2)
+				n.addEdge(label1, &child1)
+				n.addEdge(label2, &child2)
 				break
 			}
 		}
@@ -131,7 +136,7 @@ func (t *Tree) Contains(o *Origin) bool {
 		}
 		// n.suf is a suffix of host.
 
-		label, ok := lastByte(prefixOfHost)
+		label, ok := last([]byte(prefixOfHost))
 		if !ok {
 			// n.suf == host
 			return n.contains(o.Scheme, o.Port, false)
@@ -158,13 +163,14 @@ func (t *Tree) Contains(o *Origin) bool {
 	}
 }
 
-// lastByte, if str is not empty, returns the last byte in str and true;
-// otherwise, it returns 0 and false.
-func lastByte(str string) (byte, bool) {
-	if str == "" {
-		return 0, false
+// last, if s is not empty, returns the last element in s and true;
+// otherwise, it returns the zero value and false.
+func last[S []T, T any](s S) (T, bool) {
+	if len(s) == 0 {
+		var zero T
+		return zero, false
 	}
-	return str[len(str)-1], true
+	return s[len(s)-1], true
 }
 
 // splitAtCommonSuffix finds the longest suffix common to a and b and returns
@@ -220,23 +226,22 @@ func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 	if arbitrarySubs {
 		port, arbitraryPort = offset(port, arbitraryPort)
 	}
-	i, found := slices.BinarySearch(n.schemes, scheme)
-	if !found {
-		n.schemes = slices.Insert(n.schemes, i, scheme)
-		n.ports = slices.Insert(n.ports, i, []int{port})
+	// Because of how we sort patterns before inserting them into the tree,
+	// if scheme appears in n.schemes, it has to be at the end.
+	if lastScheme, ok := last(n.schemes); !ok || lastScheme != scheme {
+		n.schemes = append(n.schemes, scheme)
+		n.ports = append(n.ports, []int{port})
 		return
 	}
-	ports := n.ports[i]
-	_, found = slices.BinarySearch(ports, arbitraryPort)
-	if found {
-		// Avoid redundancy.
+	ports, _ := last(n.ports) // Since n.schemes is non-empty, so is n.ports.
+	if _, found := slices.BinarySearch(ports, arbitraryPort); found {
+		// Adding (scheme, port) in n would cause redundancy. Let's not.
 		return
 	}
-	// At this stage, because of how we sort patterns before inserting them
-	// into the tree, port is guaranteed to be greater than all elements of
-	// ports; therefore, appending it to ports keeps the latter sorted in
-	// increasing order.
-	n.ports[i] = append(ports, port)
+	// Because of how we sort and compact patterns before inserting them into
+	// the tree, we know that ports[len(ports)-1] < port.
+	ports = append(ports, port)
+	n.ports[len(n.ports)-1] = ports
 }
 
 // offset returns the results of subtracting portOffset from both port and
@@ -245,7 +250,7 @@ func offset(port, arbitraryPort int) (int, int) {
 	return port - portOffset, arbitraryPort - portOffset
 }
 
-// an offset used for storing ports corresponding to arbitrary subs
+// An offset used for storing ports corresponding to arbitrary subdomains.
 const portOffset = math.MaxUint16 + 2
 
 // contains reports whether n contains the pair (scheme, port), possibly with
@@ -268,12 +273,13 @@ func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool
 	return
 }
 
-// insertEdge inserts an edge labeled label and leading to child at index i
-// in n.edges.
-// Precondition: i <= len(n.edges)
-func (n *node) insertEdge(i int, label byte, child *node) {
-	n.edges = slices.Insert(n.edges, i, label)
-	n.children = slices.Insert(n.children, i, child)
+// addEdge adds an edge labeled label and leading to child in n.
+// Preconditions:
+//   - n.edges is sorted in increasing order
+//   - n.edges[len(n.edges)-1] < label
+func (n *node) addEdge(label byte, child *node) {
+	n.edges = append(n.edges, label)
+	n.children = append(n.children, child)
 }
 
 // elems reports whether f(x) is true for the textual representation
