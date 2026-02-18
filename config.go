@@ -529,6 +529,7 @@ func (icfg *internalConfig) validateMethods(errs []error, names []string) []erro
 			icfg.allowedMethods.Add(name)
 		}
 	}
+	icfg.allowedMethods.Fix()
 	return errs
 }
 
@@ -604,6 +605,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 	if len(errs) > nbErrors { // micro-optimization
 		return errs
 	}
+	allowedHeaders.Fix()
 	switch {
 	case icfg.asteriskReqHdrs && !icfg.credentialed:
 		if icfg.allowAuthorization {
@@ -752,6 +754,7 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 	if len(errs) > nbErrors { // micro-optimization
 		return errs
 	}
+	exposedHeaders.Fix()
 	switch {
 	case exposeAllResHdrs:
 		icfg.aceh = headers.ValueWildcard

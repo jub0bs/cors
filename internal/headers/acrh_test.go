@@ -176,6 +176,7 @@ func TestCheck(t *testing.T) {
 			for _, elem := range tc.elems {
 				set.Add(elem)
 			}
+			set.Fix()
 			slice := set.ToSlice()
 			for _, a := range tc.accepted {
 				allocs := testing.AllocsPerRun(10, func() { headers.Check(set, a) })

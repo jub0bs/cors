@@ -52,6 +52,7 @@ func TestSortedSet(t *testing.T) {
 			for _, elem := range tc.elems {
 				set.Add(elem)
 			}
+			set.Fix()
 			size := set.Size()
 			if size != tc.size {
 				const tmpl = "SortedSet built from %#v: Size(): got %d; want %d"

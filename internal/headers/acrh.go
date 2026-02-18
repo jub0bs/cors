@@ -32,6 +32,8 @@ import "github.com/jub0bs/cors/internal/util"
 // This function also tolerates a small number (16) of empty list elements,
 // in accordance with [RFC 9110] ([section 5.6.1.2]).
 //
+// Precondition: set.Add was not called since set.Fix was last called.
+//
 // [RFC 9110]: https://httpwg.org/specs/rfc9110.html
 // [list-based field values]: https://httpwg.org/specs/rfc9110.html#abnf.extension
 // [section 5.3]: https://httpwg.org/specs/rfc9110.html#rfc.section.5.3
