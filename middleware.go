@@ -63,12 +63,10 @@ type Middleware struct {
 // If you need to programmatically handle the configuration errors constitutive
 // of the resulting error, rely on package [github.com/jub0bs/cors/cfgerrors].
 func NewMiddleware(cfg Config) (*Middleware, error) {
-	icfg, err := newInternalConfig(&cfg)
-	if err != nil {
+	var m Middleware
+	if err := m.Reconfigure(&cfg); err != nil {
 		return nil, err
 	}
-	var m Middleware
-	m.icfg.Store(icfg)
 	return &m, nil
 }
 
