@@ -377,7 +377,7 @@ type Config struct {
 type internalConfig struct {
 	tree                         origins.Tree // tree.IsEmpty() <=> any origin allowed
 	aceh                         string
-	allowedMethods               util.Set       // allowedMethods.Size() > 0 => !allowAnyMethod
+	allowedMethods               util.SortedSet // allowedMethods.Size() > 0 => !allowAnyMethod
 	allowedReqHdrs               util.SortedSet // allowedReqHdrs.Size() > 0 => !asteriskReqHdrs
 	acah                         []string
 	credentialed                 bool // tree.IsEmpty() => !credentialed
@@ -499,7 +499,7 @@ func (icfg *internalConfig) validateMethods(errs []error, names []string) []erro
 				continue
 			}
 			// We no longer need to maintain a set of allowed methods.
-			icfg.allowedMethods = util.Set{}
+			icfg.allowedMethods = util.SortedSet{}
 			icfg.allowAnyMethod = true
 			continue
 		}
@@ -682,7 +682,7 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 		return errs
 	}
 	var (
-		exposedHeaders   util.Set
+		exposedHeaders   util.SortedSet
 		exposeAllResHdrs bool
 		nbErrors         = len(errs) // number of errors accumulated so far
 	)
@@ -710,7 +710,7 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 			}
 			exposeAllResHdrs = true
 			// We no longer need to maintain a set of exposed headers.
-			exposedHeaders = util.Set{}
+			exposedHeaders = util.SortedSet{}
 			continue
 		}
 		if !headers.IsValid(name) {

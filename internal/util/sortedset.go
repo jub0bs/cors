@@ -1,3 +1,5 @@
+// Package util provides a data structure that represents a sorted set of
+// strings.
 package util
 
 import "slices"
@@ -30,6 +32,11 @@ func (set SortedSet) Size() int {
 // or 0 if set is empty.
 func (set SortedSet) MaxLen() uint {
 	return set.maxLen
+}
+
+// Contains reports whether e is an element of set.
+func (set SortedSet) Contains(e string) bool {
+	return set.IndexAfter(-1, e) >= 0
 }
 
 // IndexAfter returns the position of e in set if it occurs

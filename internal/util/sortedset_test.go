@@ -61,7 +61,17 @@ func TestSortedSet(t *testing.T) {
 				const tmpl = "SortedSet built from %#v: MaxLen(): got %d; want %d"
 				t.Errorf(tmpl, tc.elems, got, tc.maxLen)
 			}
+			for _, e := range tc.elems {
+				if !set.Contains(e) {
+					const tmpl = "SortedSet built from %#v: Contains(%q): got false; want true"
+					t.Errorf(tmpl, tc.elems, e)
+				}
+			}
 			for _, e := range tc.notElems {
+				if set.Contains(e) {
+					const tmpl = "SortedSet built from %#v: Contains(%q): got true; want false"
+					t.Errorf(tmpl, tc.elems, e)
+				}
 				for n := -1; n < size; n++ {
 					const want = -1
 					got := set.IndexAfter(n, e)
