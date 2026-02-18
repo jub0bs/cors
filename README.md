@@ -87,7 +87,7 @@ func main() {
   mux.HandleFunc("GET /hello", handleHello) // note: not configured for CORS
 
   // create CORS middleware
-  corsMw, err := cors.NewMiddleware(cors.Config{
+  cors, err := cors.NewMiddleware(cors.Config{
     Origins:        []string{"https://example.com"},
     Methods:        []string{http.MethodGet, http.MethodPost},
     RequestHeaders: []string{"Authorization"},
@@ -95,12 +95,12 @@ func main() {
   if err != nil {
     log.Fatal(err)
   }
-  corsMw.SetDebug(true) // turn debug mode on (optional)
+  cors.SetDebug(true) // turn debug mode on (optional)
 
   api := http.NewServeMux()
   api.HandleFunc("GET  /users", handleUsersGet)
   api.HandleFunc("POST /users", handleUsersPost)
-  mux.Handle("/api/", http.StripPrefix("/api", corsMw.Wrap(api))) // note: method-less pattern here
+  mux.Handle("/api/", http.StripPrefix("/api", cors.Wrap(api))) // note: method-less pattern here
 
   if err := http.ListenAndServe(":8080", mux); err != http.ErrServerClosed {
     log.Fatal(err)

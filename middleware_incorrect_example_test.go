@@ -14,7 +14,7 @@ import (
 // not for a "method-full" pattern (e.g. "GET /api/dogs"),
 // but for a "method-less" pattern; see the other example.
 func ExampleMiddleware_Wrap_incorrect() {
-	corsMw, err := cors.NewMiddleware(cors.Config{
+	cors, err := cors.NewMiddleware(cors.Config{
 		Origins: []string{"https://example"},
 	})
 	if err != nil {
@@ -27,7 +27,7 @@ func ExampleMiddleware_Wrap_incorrect() {
 	// CORS-preflight requests to /api/dogs cannot reach the CORS middleware.
 	// Therefore, CORS preflight will systematically fail
 	// and you'll have a bad day...
-	mux.Handle("GET /api/dogs", corsMw.Wrap(http.HandlerFunc(handleDogsGet))) // incorrect!
+	mux.Handle("GET /api/dogs", cors.Wrap(http.HandlerFunc(handleDogsGet))) // incorrect!
 	if err := http.ListenAndServe(":8080", mux); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
