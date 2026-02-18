@@ -399,7 +399,7 @@ func (icfg *internalConfig) processACRH(
 	}
 
 	switch {
-	case icfg.asteriskReqHdrs && icfg.credentialed:
+	case icfg.wildcardRequestHeaders && icfg.credentialed:
 		// If credentialed access is enabled,
 		// the single-asterisk pattern denotes all request-header names,
 		// including Authorization.
@@ -431,7 +431,7 @@ func (icfg *internalConfig) processACRH(
 		// echoing the results in up to two ACAH header(s);
 		// but the whole alternative approach is not worth the trouble anyway.
 		break
-	case icfg.asteriskReqHdrs && !icfg.credentialed:
+	case icfg.wildcardRequestHeaders && !icfg.credentialed:
 		buf[headers.ACAH] = icfg.acah
 		return true
 	case debug:
@@ -440,7 +440,7 @@ func (icfg *internalConfig) processACRH(
 		}
 		buf[headers.ACAH] = icfg.acah
 		return true
-	case !headers.Check(icfg.allowedReqHdrs, acrh):
+	case !headers.Check(icfg.allowedRequestHeaders, acrh):
 		return false
 	}
 	// We can simply reflect all the ACRH header lines as ACAH header lines

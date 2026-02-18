@@ -378,11 +378,11 @@ type internalConfig struct {
 	tree                         origins.Tree // tree.IsEmpty() <=> any origin allowed
 	aceh                         string
 	allowedMethods               util.SortedSet // allowedMethods.Size() > 0 => !allowAnyMethod
-	allowedReqHdrs               util.SortedSet
+	allowedRequestHeaders        util.SortedSet
 	acah                         []string
 	credentialed                 bool // tree.IsEmpty() => !credentialed
 	allowAnyMethod               bool
-	asteriskReqHdrs              bool
+	wildcardRequestHeaders       bool
 	tolerateSubsOfPublicSuffixes bool
 	tolerateInsecureOrigins      bool
 	preflight                    bool // reports whether preflight may succeed
@@ -412,8 +412,8 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 
 	icfg.preflight = icfg.allowAnyMethod ||
 		icfg.allowedMethods.Size() > 0 ||
-		icfg.asteriskReqHdrs ||
-		icfg.allowedReqHdrs.Size() > 0
+		icfg.wildcardRequestHeaders ||
+		icfg.allowedRequestHeaders.Size() > 0
 
 	return &icfg, nil
 }
@@ -544,10 +544,10 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
-			if icfg.asteriskReqHdrs {
+			if icfg.wildcardRequestHeaders {
 				continue
 			}
-			icfg.asteriskReqHdrs = true
+			icfg.wildcardRequestHeaders = true
 			// We no longer need to maintain a set of allowed request headers
 			// other than Authorization (if we've seen it).
 			allowedHeaders = util.SortedSet{}
@@ -600,7 +600,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 			errs = append(errs, err)
 			continue
 		}
-		if !icfg.asteriskReqHdrs {
+		if !icfg.wildcardRequestHeaders {
 			allowedHeaders.Add(normalized)
 		}
 	}
@@ -609,7 +609,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 	}
 	allowedHeaders.Fix()
 	switch {
-	case icfg.asteriskReqHdrs && !icfg.credentialed:
+	case icfg.wildcardRequestHeaders && !icfg.credentialed:
 		if allowedHeaders.Contains(headers.Authorization) {
 			// According to the Fetch standard, the wildcard does not cover
 			// request-header name Authorization; see
@@ -634,13 +634,13 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 			// containing a maliciously long ACRH header in order to exercise
 			// this costly execution path and thereby generate undue load
 			// on the server.
-			icfg.allowedReqHdrs = allowedHeaders
+			icfg.allowedRequestHeaders = allowedHeaders
 			icfg.acah = headers.WildcardAuthSgl
 		} else {
 			icfg.acah = headers.WildcardSgl
 		}
 	case allowedHeaders.Size() > 0:
-		icfg.allowedReqHdrs = allowedHeaders
+		icfg.allowedRequestHeaders = allowedHeaders
 		s := allowedHeaders.ToSlice()
 		// The elements of a header-field value may be separated simply by commas;
 		// since whitespace is optional, let's not use any.
@@ -833,15 +833,15 @@ func newConfig(icfg *internalConfig) *Config {
 
 	// request headers
 	switch {
-	case icfg.asteriskReqHdrs:
+	case icfg.wildcardRequestHeaders:
 		if !icfg.credentialed &&
-			icfg.allowedReqHdrs.Contains(headers.Authorization) {
+			icfg.allowedRequestHeaders.Contains(headers.Authorization) {
 			cfg.RequestHeaders = []string{headers.ValueWildcard, headers.Authorization}
 		} else {
 			cfg.RequestHeaders = []string{headers.ValueWildcard}
 		}
-	case icfg.allowedReqHdrs.Size() > 0:
-		cfg.RequestHeaders = icfg.allowedReqHdrs.ToSlice()
+	case icfg.allowedRequestHeaders.Size() > 0:
+		cfg.RequestHeaders = icfg.allowedRequestHeaders.ToSlice()
 	}
 
 	return &cfg
