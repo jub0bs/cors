@@ -183,12 +183,13 @@ func assertHeadersEqual(
 	gotHeader = coalesce(t, gotHeader)
 	for name, want := range coalesce(t, wantHeaders...) {
 		got, found := gotHeader[name]
+		if !found {
+			const tmpl = "missing header %q: %q"
+			t.Errorf(tmpl, name, want)
+			continue
+		}
 		if !isListBasedField(name) {
-			switch {
-			case !found:
-				const tmpl = "missing header %q: %q"
-				t.Errorf(tmpl, name, want)
-			case !slices.Equal(got, want):
+			if !slices.Equal(got, want) {
 				const tmpl = "header %q: got %q; want %q"
 				t.Errorf(tmpl, name, got, want)
 			}
