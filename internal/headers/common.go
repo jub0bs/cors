@@ -6,8 +6,7 @@ import (
 	"golang.org/x/net/http/httpguts"
 )
 
-// header names in canonical format
-const (
+const ( // header names in canonical format
 	// common request headers
 	Origin = "Origin"
 
