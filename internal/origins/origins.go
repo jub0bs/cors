@@ -1,6 +1,9 @@
 package origins
 
-import "strings"
+import (
+	"math"
+	"strings"
+)
 
 // Origin represents a (tuple) [Web origin].
 //
@@ -88,13 +91,11 @@ func parsePort(str string) (int, bool) {
 		}
 		port = base*port + intFromDigit(c)
 	}
-	if port == 0 || maxUint16 < port {
+	if port == 0 || math.MaxUint16 < port {
 		return 0, false
 	}
 	return port, true
 }
-
-const maxUint16 = 1<<16 - 1 // maximum value for uint16 type
 
 // intFromDigit returns the numerical value of ASCII digit c.
 // For instance, if c is '9', the result is 9.
