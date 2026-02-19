@@ -4,8 +4,8 @@ configuration errors produced by package [github.com/jub0bs/cors].
 
 Most users of package [github.com/jub0bs/cors] have no use for this package.
 However, multi-tenant SaaS companies that allow their tenants to configure CORS
-(e.g. via some Web portal) may find this package useful:
-it indeed allows those companies to inform their tenants about
+(e.g. via some Web portal or some command-line interface) may find this package
+useful: it indeed allows those companies to inform their tenants about
 CORS-configuration mistakes via custom, human-friendly error messages,
 perhaps even ones written in a natural language other than English
 and/or generated on the client side.

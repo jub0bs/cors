@@ -84,6 +84,8 @@ func (app *TenantApp) handleReconfigureCORS(w http.ResponseWriter, r *http.Reque
 
 func adaptCORSConfigErrorMessagesForClient(err error) []string {
 	// Modify the following logic to suit your needs.
+	// Alternatively, such human-friendly error messages could be produced on
+	// the client side rather than on the server side.
 	var msgs []string
 	for err := range cfgerrors.All(err) {
 		switch err := err.(type) {
