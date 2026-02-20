@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Bug**: In v0.11.0 to v0.12.1 (included), for some configurations,
-  the result of Middleware's Config method would fail to reflect the max-age
-  value that the middleware was configured (or last reconfigured) with.
+  the result of `*Middleware`'s `Config` method would fail to reflect the
+  max-age value that the middleware was configured (or last reconfigured) with.
 
 ### Changed
 
@@ -30,11 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Behavior**: Middleware's Config method is now guaranteed to return a
+- **Behavior**: `*Middleware`'s `Config` method is now guaranteed to return a
   configuration free of redundant origin patterns.
-- **Performance**: Middleware's Config method now allocates less, especially
-  for some middleware whose configuration consists of many redundant origin
-  patterns.
+- **Performance**: `*Middleware`'s `Config` method now allocates less,
+  especially for some middleware whose configuration consists of many redundant
+  origin patterns.
 - **Performance**: Middleware initialization allocates less overall (more for
   configurations that consist of inordinately many origin patterns, but less
   for common configurations).
@@ -90,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Performance**: Middleware initialization and reconfiguration is now faster
   but requires (in some cases) more heap allocation, because of a performance
   regression in golang.org/x/net/publicsuffix; see [issue #76766][issue76766].
-- **Performance**: Middleware's Config method is now faster.
+- **Performance**: `*Middleware`'s `Config` method is now faster.
 - **Performance**: Middleware execution is now faster.
 - **Documentation**: minor improvements
 - **Dependencies**: update to golang.org/x/net v0.49.0
@@ -105,7 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Performance**: Middleware's Config method is now faster.
+- **Performance**: `*Middleware`'s `Config` method is now faster.
 - **Performance**: other minor improvements
 - **Dependencies**: update to golang.org/x/net v0.44.0
 
@@ -187,7 +187,8 @@ Private-Network Access was never fully implemented by browsers and has been put
 ### Changed
 
 - **Performance**: Middleware initialization now requires less heap allocation.
-- **Performance**: Middleware's Config method now requires less heap allocation.
+- **Performance**: `*Middleware`'s `Config` method now requires less heap
+  allocation.
 - **Tests**: minor improvements
 - **Documentation**: minor improvements
 
@@ -196,7 +197,8 @@ Private-Network Access was never fully implemented by browsers and has been put
 ### Changed
 
 - **Performance**: Middleware initialization now requires less heap allocation.
-- **Performance**: Middleware's Config method now requires less heap allocation.
+- **Performance**: `*Middleware`'s `Config` method now requires less heap
+  allocation.
 - **Dependencies**: update to golang.org/x/net v0.35.0
 - **Tests**: various improvements
 - **Documentation**: minor improvements
@@ -206,7 +208,8 @@ Private-Network Access was never fully implemented by browsers and has been put
 ### Changed
 
 - **Performance**: Middleware initialization now requires less heap allocation.
-- **Performance**: Middleware's Config method now requires less heap allocation.
+- **Performance**: `*Middleware`'s `Config` method now requires less heap
+  allocation.
 
 ## [0.5.3] (2025-01-24)
 
