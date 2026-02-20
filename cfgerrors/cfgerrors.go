@@ -104,7 +104,8 @@ func (err *MaxAgeOutOfBoundsError) Error() string {
 //     was specified and credentialed access was enabled without also setting
 //     [github.com/jub0bs/cors.Config.DangerouslyTolerateInsecureOriginPatterns].
 //   - Reason == "psl": an origin pattern that encompasses arbitrary subdomains
-//     of a public suffix was specified without also setting
+//     of a public suffix was specified and credentialed access was enabled
+//     without also setting
 //     [github.com/jub0bs/cors.Config.DangerouslyTolerateSubdomainsOfPublicSuffixes].
 //
 // For more details, see [github.com/jub0bs/cors.Config.Origins].

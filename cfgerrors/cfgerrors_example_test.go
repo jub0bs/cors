@@ -152,7 +152,7 @@ func adaptCORSConfigErrorMessagesForClient(err error) []string {
 					msg = fmt.Sprintf(tmpl, err.Value)
 				}
 			case "psl":
-				const tmpl = "For security reasons, you cannot specify %q as an origin pattern, because it covers all subdomains of a registrable domain."
+				const tmpl = "For security reasons, you cannot both allow credentialed access and specify an origin pattern like %q that covers all subdomains of a registrable domain."
 				msg = fmt.Sprintf(tmpl, err.Value)
 			default:
 				panic("unknown reason")

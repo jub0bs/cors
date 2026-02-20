@@ -647,9 +647,10 @@ var invalidConfigTestCases = []InvalidConfigTestCase{
 			}),
 		},
 	}, {
-		desc: "wildcard pattern encompassing subdomains of a public suffix without DangerouslyTolerateSubdomainsOfPublicSuffixes",
+		desc: "wildcard pattern encompassing subdomains of a public suffix with Credentialed without DangerouslyTolerateSubdomainsOfPublicSuffixes",
 		cfg: &cors.Config{
-			Origins: []string{"https://*.com"},
+			Origins:      []string{"https://*.com"},
+			Credentialed: true,
 		},
 		want: []*errorMatcher{
 			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{

@@ -170,7 +170,8 @@ import (
 //	}
 //
 // Allowing arbitrary subdomains of a base domain that happens to be a
-// [public suffix] is dangerous; as such, doing so is by default prohibited:
+// [public suffix] is dangerous; as such, doing so is by default prohibited
+// when credentialed access is enabled:
 //
 //	cors.Config{
 //	  Origins: []string{
@@ -178,10 +179,11 @@ import (
 //		https://*.com         // prohibited (by default): com is a public suffix
 //		https://*.github.io   // prohibited (by default): github.io is a public suffix
 //	  },
+//	  Credentialed: true,
 //	}
 //
-// If you deliberately wish to allow arbitrary subdomains of some public
-// suffix, you must also set the
+// If you deliberately wish to both allow arbitrary subdomains of some public
+// suffix and enable credentialed access, you must also set the
 // [Config.DangerouslyTolerateSubdomainsOfPublicSuffixes] field:
 //
 //	cors.Config{
@@ -190,6 +192,7 @@ import (
 //		https://*.com         // permitted
 //		https://*.github.io   // permitted
 //	  },
+//	  Credentialed: true,
 //	  DangerouslyTolerateSubdomainsOfPublicSuffixes: true,
 //	}
 //
@@ -377,7 +380,7 @@ import (
 // DangerouslyTolerateSubdomainsOfPublicSuffixes enables you to allow all
 // subdomains of some [public suffix]
 // (also known as "effective top-level domain"),
-// which is by default prohibited.
+// which is by default prohibited when credentialed access is enabled.
 //
 // Be aware that allowing all subdomains of a public suffix (e.g. com)
 // is dangerous, because such domains are typically registrable by anyone,
@@ -527,8 +530,19 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 			continue
 		}
 		if !icfg.tolerateSubsOfPublicSuffixes &&
+			icfg.credentialed &&
 			pattern.Kind == origins.ArbitrarySubdomains &&
 			pattern.HostIsEffectiveTLD() {
+			// We require DangerouslyTolerateSubdomainsOfPublicSuffixes to be
+			// set only if users
+			//  - enable credentialed access, and
+			//  - specify one or more origin patterns that encompass subdomains
+			//    of a public suffix.
+			//
+			// If credentialed access isn't enabled, origin patterns like
+			// https://*.com are indeed no less insecure than origin pattern
+			// "*" is, which itself doesn't require
+			// DangerouslyTolerateSubdomainsOfPublicSuffixes to be set.
 			err := &cfgerrors.IncompatibleOriginPatternError{
 				Value:  raw,
 				Reason: "psl",
