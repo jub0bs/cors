@@ -144,13 +144,11 @@ func adaptCORSConfigErrorMessagesForClient(err error) []string {
 		case *cfgerrors.IncompatibleOriginPatternError:
 			var msg string
 			switch err.Reason {
-			case "credentialed":
-				if err.Value == "*" {
-					msg = "For security reasons, you cannot both allow credentialed access and allow all Web origins."
-				} else {
-					const tmpl = "For security reasons, you cannot both allow credentialed access and allow insecure origins like %q."
-					msg = fmt.Sprintf(tmpl, err.Value)
-				}
+			case "wildcard":
+				msg = "For security reasons, you cannot both allow credentialed access and allow all Web origins."
+			case "insecure":
+				const tmpl = "For security reasons, you cannot both allow credentialed access and allow insecure origins like %q."
+				msg = fmt.Sprintf(tmpl, err.Value)
 			case "psl":
 				const tmpl = "For security reasons, you cannot both allow credentialed access and specify an origin pattern like %q that covers all subdomains of a registrable domain."
 				msg = fmt.Sprintf(tmpl, err.Value)

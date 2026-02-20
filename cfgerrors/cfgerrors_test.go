@@ -159,8 +159,8 @@ func Test_that_error_messages_are_prefixed_by_package_name(t *testing.T) {
 		//
 		&cfgerrors.MaxAgeOutOfBoundsError{Value: -2, Default: 5, Max: 86_400, Disable: -1},
 		//
-		&cfgerrors.IncompatibleOriginPatternError{Value: "*", Reason: "credentialed"},
-		&cfgerrors.IncompatibleOriginPatternError{Value: "http://example.com", Reason: "credentialed"},
+		&cfgerrors.IncompatibleOriginPatternError{Value: "*", Reason: "wildcard"},
+		&cfgerrors.IncompatibleOriginPatternError{Value: "http://example.com", Reason: "insecure"},
 		&cfgerrors.IncompatibleOriginPatternError{Value: "https://*.com", Reason: "psl"},
 		&cfgerrors.IncompatibleOriginPatternError{Reason: "unknown"},
 		//

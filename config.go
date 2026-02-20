@@ -492,7 +492,7 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 			if icfg.credentialed {
 				err := &cfgerrors.IncompatibleOriginPatternError{
 					Value:  headers.ValueWildcard,
-					Reason: "credentialed",
+					Reason: "wildcard",
 				}
 				errs = append(errs, err)
 				continue
@@ -524,7 +524,7 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 			// DangerouslyTolerateInsecureOrigins to be set.
 			err := &cfgerrors.IncompatibleOriginPatternError{
 				Value:  raw,
-				Reason: "credentialed",
+				Reason: "insecure",
 			}
 			errs = append(errs, err)
 			continue

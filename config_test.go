@@ -624,7 +624,7 @@ var invalidConfigTestCases = []InvalidConfigTestCase{
 		want: []*errorMatcher{
 			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
 				Value:  "*",
-				Reason: "credentialed",
+				Reason: "wildcard",
 			}),
 		},
 	}, {
@@ -639,11 +639,11 @@ var invalidConfigTestCases = []InvalidConfigTestCase{
 		want: []*errorMatcher{
 			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
 				Value:  "http://example.com:6060",
-				Reason: "credentialed",
+				Reason: "insecure",
 			}),
 			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
 				Value:  "http://*.example.com:6060",
-				Reason: "credentialed",
+				Reason: "insecure",
 			}),
 		},
 	}, {

@@ -97,31 +97,35 @@ func (err *MaxAgeOutOfBoundsError) Error() string {
 }
 
 // An IncompatibleOriginPatternError indicates an origin pattern that conflicts
-// with other elements of the configuration. Three cases are possible:
-//   - Value == "*" and Reason == "credentialed": the wildcard origin was
-//     specified and credentialed access was enabled.
-//   - Value != "*" and Reason == "credentialed": an insecure origin pattern
-//     was specified and credentialed access was enabled without also setting
-//     [github.com/jub0bs/cors.Config.DangerouslyTolerateInsecureOriginPatterns].
-//   - Reason == "psl": an origin pattern that encompasses arbitrary subdomains
-//     of a public suffix was specified and credentialed access was enabled
-//     without also setting
-//     [github.com/jub0bs/cors.Config.DangerouslyTolerateSubdomainsOfPublicSuffixes].
+// with credentialed access and possibly other elements of the configuration.
+//
+// The Reason field may take one of three values:
+//   - "wildcard": origin pattern "*" was specified and
+//     [github.com/jub0bs/cors.Config.Credentialed] was set.
+//   - "insecure": an insecure origin pattern was specified and
+//     [github.com/jub0bs/cors.Config.Credentialed] was set but
+//     [github.com/jub0bs/cors.Config.DangerouslyTolerateInsecureOriginPatterns]
+//     was not set.
+//   - "psl": an origin pattern that encompasses arbitrary subdomains of a
+//     public suffix was specified and
+//     [github.com/jub0bs/cors.Config.Credentialed] was set but
+//     [github.com/jub0bs/cors.Config.DangerouslyTolerateSubdomainsOfPublicSuffixes]
+//     was not set.
 //
 // For more details, see [github.com/jub0bs/cors.Config.Origins].
 type IncompatibleOriginPatternError struct {
-	Value  string // "*" | some other origin pattern
-	Reason string // credentialed | psl
+	Value  string // the conflicting origin pattern that was specified
+	Reason string // wildcard | insecure | psl
 }
 
 func (err *IncompatibleOriginPatternError) Error() string {
-	switch {
-	case err.Value == "*" && err.Reason == "credentialed":
+	switch err.Reason {
+	case "wildcard":
 		return "cors: for security reasons, you cannot both allow all origins and enable credentialed access"
-	case err.Reason == "credentialed":
+	case "insecure":
 		const tmpl = "cors: for security reasons, insecure origin patterns like %q are by default prohibited when credentialed access is enabled"
 		return fmt.Sprintf(tmpl, err.Value)
-	case err.Reason == "psl":
+	case "psl":
 		const tmpl = "cors: for security reasons, origin patterns like %q that encompass subdomains of a public suffix are by default prohibited"
 		return fmt.Sprintf(tmpl, err.Value)
 	default:
