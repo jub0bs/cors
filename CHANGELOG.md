@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] (2026-02-20)
+
+### Changed
+
+- **Behavior**: The need for setting field
+  `DangerouslyTolerateSubdomainsOfPublicSuffixes` has been relaxed; you now
+  only need to set that field if you wish to both allow arbitrary subdomains of
+  some public suffix and enable credentialed access.
+- **Behavior** (breaking change): The set of possible values for the `Reason`
+  field of type `cfgerrors.IncompatibleOriginPatternError` has been changed.
+  That field may now take one of three possible values: `"wildcard"` (new),
+  `"insecure"` (new), and `"psl"`. That field may no longer take value
+  `"credentialed"`. Code that doesn't explicitly depend on package `cfgerrors`
+  is not affected by this change.
+- **Tests**: minor improvements
+- **Documentation**: minor improvements
+
 ## [0.12.2] (2026-02-19)
 
 ### Fixed
@@ -373,6 +390,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[0.13.0]: https://github.com/jub0bs/cors/compare/v0.12.2...v0.13.0
 [0.12.2]: https://github.com/jub0bs/cors/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/jub0bs/cors/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/jub0bs/cors/compare/v0.11.0...v0.12.0
