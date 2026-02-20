@@ -172,7 +172,7 @@ import (
 //
 //	Authorization: Bearer xyz
 //
-// to you server, you can likely leave Credentialed unset;
+// to your server, you can likely leave Credentialed unset;
 // instead, you should simply allow request-header name "Authorization"
 // via the [Config.RequestHeaders] field.
 //
