@@ -457,12 +457,14 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 			icfg.credentialed &&
 			pattern.IsDeemedInsecure() {
 			// We require DangerouslyTolerateInsecureOrigins to be set only if
+			// users
 			//  - enable credentialed access, and
-			//  - users specify one or more insecure origin patterns.
+			//  - specify one or more insecure origin patterns.
 			//
-			// In all other cases, insecure origins like http://example.com are
-			// indeed no less insecure than origin pattern "*" is, which itself
-			// doesn't require DangerouslyTolerateInsecureOrigins to be set.
+			// If credentialed access isn't enabled, origins like
+			// http://example.com are indeed no less insecure than origin
+			// pattern "*" is, which itself doesn't require
+			// DangerouslyTolerateInsecureOrigins to be set.
 			err := &cfgerrors.IncompatibleOriginPatternError{
 				Value:  raw,
 				Reason: "credentialed",
