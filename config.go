@@ -24,10 +24,12 @@ import (
 // Origins configures a CORS middleware to allow access from any of the
 // [Web origins] encompassed by the specified origin patterns:
 //
-//	Origins: []string{
-//	  "https://example.com",
-//	  "https://*.example.com",
-//	},
+//	cors.Config{
+//	  Origins: []string{
+//	    "https://example.com",
+//	    "https://*.example.com",
+//	  },
+//	}
 //
 // Security considerations: Bear in mind that, by allowing Web origins
 // in your server's CORS configuration, you engage in a trust relationship
@@ -97,8 +99,10 @@ import (
 // For [security reasons], specifying this origin pattern is prohibited
 // when credentialed access is enabled:
 //
-//	Credentialed: true,
-//	Origins:      []string{"*"}, // prohibited
+//	cors.Config{
+//	  Origins:      []string{"*"}, // prohibited
+//	  Credentialed: true,
+//	}
 //
 // A leading asterisk followed by a period (.) in a host pattern
 // denotes one or more period-separated arbitrary DNS labels.
@@ -142,21 +146,52 @@ import (
 //
 // Origin patterns whose scheme is not https and whose host is neither localhost
 // nor a [loopback IP address] are deemed insecure;
-// as such, they are by default prohibited when credentialed access is enabled.
-// If, even in such cases,
-// you deliberately wish to allow some insecure origins,
-// you must also set the [Config.DangerouslyTolerateInsecureOrigins] field.
+// as such, they are by default prohibited when credentialed access is enabled:
+//
+//	cors.Config{
+//	  Origins: []string{
+//	    https://example.com // permitted
+//	    http://example.com  // prohibited (by default): insecure origin
+//	  },
+//	  Credentialed: true,
+//	}
+//
+// If you deliberately wish to both allow some insecure origins and enable
+// credentialed access, you must also set the
+// [Config.DangerouslyTolerateInsecureOrigins] field:
+//
+//	cors.Config{
+//	  Origins: []string{
+//	    https://example.com // permitted
+//	    http://example.com  // permitted
+//	  },
+//	  Credentialed: true,
+//	  DangerouslyTolerateInsecureOrigins: true,
+//	}
 //
 // Allowing arbitrary subdomains of a base domain that happens to be a
 // [public suffix] is dangerous; as such, doing so is by default prohibited:
 //
-//	https://*.example.com // permitted: example.com is not a public suffix
-//	https://*.com         // prohibited (by default): com is a public suffix
-//	https://*.github.io   // prohibited (by default): github.io is a public suffix
+//	cors.Config{
+//	  Origins: []string{
+//	    https://*.example.com // permitted
+//		https://*.com         // prohibited (by default): com is a public suffix
+//		https://*.github.io   // prohibited (by default): github.io is a public suffix
+//	  },
+//	}
 //
 // If you deliberately wish to allow arbitrary subdomains of some public
 // suffix, you must also set the
-// [Config.DangerouslyTolerateSubdomainsOfPublicSuffixes] field.
+// [Config.DangerouslyTolerateSubdomainsOfPublicSuffixes] field:
+//
+//	cors.Config{
+//	  Origins: []string{
+//	    https://*.example.com // permitted
+//		https://*.com         // permitted
+//		https://*.github.io   // permitted
+//	  },
+//	  DangerouslyTolerateSubdomainsOfPublicSuffixes: true,
+//	}
 //
 // # Credentialed
 //
@@ -222,8 +257,11 @@ import (
 // (i.e. when the [Config.Credentialed] field is set),
 // a single asterisk denotes all request-header names:
 //
-//	Credentialed:   true,
-//	RequestHeaders: []string{"*"}, // allows all request-header names
+//	cors.Config{
+//	  // rest of the configuration omitted
+//	  Credentialed:   true,
+//	  RequestHeaders: []string{"*"}, // allows all request-header names
+//	}
 //
 // If you can, you should avoid this conjunction of enabling credentialed access
 // and allowing all request-header names; otherwise, middleware performance may
@@ -233,15 +271,21 @@ import (
 // has a different meaning when credentialed access is disabled;
 // it then denotes all request-header names other than [Authorization]:
 //
-//	Credentialed:   false,
-//	RequestHeaders: []string{"*"}, // allows all request-header names other than Authorization
+//	cors.Config{
+//	  // rest of the configuration omitted
+//	  Credentialed:   false,
+//	  RequestHeaders: []string{"*"}, // allows all request-header names other than Authorization
+//	}
 //
 // When credentialed access is disabled, if you wish to allow Authorization
 // in addition to all other request-header names,
 // you must also explicitly specify that name:
 //
-//	Credentialed:   false,
-//	RequestHeaders: []string{"*", "Authorization"},  // allows all request-header names
+//	cors.Config{
+//	  // rest of the configuration omitted
+//	  Credentialed:   false,
+//	  RequestHeaders: []string{"*", "Authorization"}, // allows all request-header names, including Authorization
+//	}
 //
 // The CORS protocol defines a number of so-called
 // "[forbidden request-header names]";
@@ -284,10 +328,20 @@ import (
 // (i.e. when the [Config.Credentialed] field is unset),
 // a single asterisk denotes all response-header names:
 //
-//	ResponseHeaders: []string{"*"},
+//	cors.Config{
+//	  // rest of the configuration omitted
+//	  Credentialed: false,
+//	  ResponseHeaders: []string{"*"}, // exposes all response-header names
+//	}
 //
 // However, for [technical reasons], this is only permitted if the
-// [Config.Credentialed] field is unset.
+// [Config.Credentialed] field is unset:
+//
+//	cors.Config{
+//	  // rest of the configuration omitted
+//	  Credentialed: true,
+//	  ResponseHeaders: []string{"*"}, // prohibited
+//	}
 //
 // The CORS protocol defines a number of so-called
 // "[CORS-safelisted response-header names]",
