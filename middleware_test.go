@@ -1584,7 +1584,7 @@ func TestReconfigure(t *testing.T) {
 			cfg:        new(cors.Config), // invalid: no origin patterns specified
 			invalid:    true,
 		}, {
-			desc:       "credentialed all req headers",
+			desc:       "credentialed all req headers again",
 			newHandler: newSpyHandler(200, http.Header{headerVary: {"foo"}}, "bar"),
 			cfg: &cors.Config{
 				Origins:         []string{"http://localhost:9090"},

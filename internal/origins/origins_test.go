@@ -62,14 +62,14 @@ var parseTestCases = []struct {
 		input:   "http://[::1:90",
 		failure: true,
 	}, {
-		desc:  "brackets containing non-IPv6 chars",
+		desc:  "IPv6 with extraneous colon",
 		input: "http://[::1:]",
 		want: origins.Origin{
 			Scheme: "http",
 			Host:   "::1:",
 		},
 	}, {
-		desc:  "brackets containing non-IPv6 chars",
+		desc:  "zero IPv6",
 		input: "http://[::]",
 		want: origins.Origin{
 			Scheme: "http",
