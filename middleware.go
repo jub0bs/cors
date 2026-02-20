@@ -134,7 +134,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 
 		// Fetch-compliant browsers send at most one ACRM header;
 		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch (step 3).
-		acrm, acrmSgl, found := headers.First(r.Header, headers.ACRM)
+		method, acrm, found := headers.First(r.Header, headers.ACRM)
 		if isOPTIONS && found {
 			// r is a CORS-preflight request;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
@@ -142,7 +142,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 			// Note that, because h.ServeHTTP is not called in this branch,
 			// we can safely rely, for performance, on some precomputed slices
 			// for adding/setting headers.
-			icfg.handleCORSPreflight(w, r.Header, origin, originSgl, acrm, acrmSgl, debug)
+			icfg.handleCORSPreflight(w, r.Header, origin, originSgl, method, acrm, debug)
 			return
 		}
 		// r is an "actual" (i.e. non-preflight) CORS request.
@@ -228,8 +228,8 @@ func (icfg *internalConfig) handleCORSPreflight(
 	reqHdrs http.Header,
 	origin string,
 	originSgl []string,
-	acrm string,
-	acrmSgl []string,
+	method string,
+	acrm []string,
 	debug bool,
 ) {
 	// Some notes about Vary in the context of CORS preflight:
@@ -280,7 +280,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// if the response status is not an ok status
 	// (see https://fetch.spec.whatwg.org/#ok-status).
 
-	if !icfg.processACRM(buf, acrm, acrmSgl) {
+	if !icfg.processACRM(buf, method, acrm) {
 		if debug {
 			maps.Copy(resHdrs, buf)
 			w.WriteHeader(preflightOKStatus)
@@ -342,8 +342,8 @@ func (icfg *internalConfig) allowsAnyOrigin() bool {
 
 func (icfg *internalConfig) processACRM(
 	buf http.Header,
-	acrm string,
-	acrmSgl []string,
+	method string,
+	acrm []string,
 ) bool {
 	// Note that middleware only ever list a single method in the ACAM header.
 	// One inconvenience of this behavior is that it leads to less than ideal
@@ -355,7 +355,7 @@ func (icfg *internalConfig) processACRM(
 	// required for preflight to succeed.
 
 	switch {
-	case methods.IsSafelisted(acrm):
+	case methods.IsSafelisted(method):
 		// CORS-safelisted methods get a free pass; see
 		// https://fetch.spec.whatwg.org/#ref-for-cors-safelisted-method%E2%91%A2.
 		// Therefore, no ACAM header needs be set in this case.
@@ -363,8 +363,8 @@ func (icfg *internalConfig) processACRM(
 	case icfg.allowAnyMethod && !icfg.credentialed:
 		buf[headers.ACAM] = headers.WildcardSgl
 		return true
-	case icfg.allowAnyMethod || icfg.allowedMethods.Contains(acrm):
-		buf[headers.ACAM] = acrmSgl
+	case icfg.allowAnyMethod || icfg.allowedMethods.Contains(method):
+		buf[headers.ACAM] = acrm
 		return true
 	default:
 		return false
