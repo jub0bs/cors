@@ -442,9 +442,6 @@ func TestHostIsEffectiveTLD(t *testing.T) {
 			pattern: "https://*.github.io",
 			want:    true,
 		}, {
-			pattern: "https://*.github.io",
-			want:    true,
-		}, {
 			pattern: "https://*.example.com",
 			want:    false,
 		},

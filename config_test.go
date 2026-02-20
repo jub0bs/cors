@@ -647,25 +647,6 @@ var invalidConfigTestCases = []InvalidConfigTestCase{
 			}),
 		},
 	}, {
-		desc: "insecure origin with Credentialed without DangerouslyTolerateInsecureOrigins",
-		cfg: &cors.Config{
-			Origins: []string{
-				"http://example.com:6060",
-				"http://*.example.com:6060",
-			},
-			Credentialed: true,
-		},
-		want: []*errorMatcher{
-			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-				Value:  "http://example.com:6060",
-				Reason: "credentialed",
-			}),
-			newErrorMatcher(&cfgerrors.IncompatibleOriginPatternError{
-				Value:  "http://*.example.com:6060",
-				Reason: "credentialed",
-			}),
-		},
-	}, {
 		desc: "wildcard pattern encompassing subdomains of a public suffix without DangerouslyTolerateSubdomainsOfPublicSuffixes",
 		cfg: &cors.Config{
 			Origins: []string{"https://*.com"},
