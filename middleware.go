@@ -125,7 +125,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 		if !found {
 			// r is NOT a CORS request;
 			// see https://fetch.spec.whatwg.org/#cors-request.
-			icfg.handleNonCORS(w.Header(), isOPTIONS)
+			icfg.prehandleActual(w.Header(), "", nil, isOPTIONS)
 			h.ServeHTTP(w, r)
 			return
 		}
@@ -146,12 +146,17 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 			return
 		}
 		// r is an "actual" (i.e. non-preflight) CORS request.
-		icfg.handleCORSActual(w.Header(), origin, originSgl, isOPTIONS)
+		icfg.prehandleActual(w.Header(), origin, originSgl, isOPTIONS)
 		h.ServeHTTP(w, r)
 	})
 }
 
-func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) (allOriginsAllowed bool) {
+func (icfg *internalConfig) prehandleActual(
+	resHdrs http.Header,
+	origin string,
+	originSgl []string,
+	isOPTIONS bool,
+) {
 	// It's tempting to rely (for performance) on some precomputed slices for
 	// the response headers we add/set here, as we do in handleCORSPreflight.
 	// However, doing so here is fraught with peril, because it would provide
@@ -166,7 +171,7 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) (
 			// https://github.com/whatwg/fetch/issues/1601#issuecomment-1420881527.
 			resHdrs.Set(headers.ACEH, icfg.aceh)
 		}
-		return true
+		return
 	}
 	// Not all origins are allowed.
 	if isOPTIONS {
@@ -189,20 +194,10 @@ func (icfg *internalConfig) handleNonCORS(resHdrs http.Header, isOPTIONS bool) (
 		// wouldn't want to clobber.
 		resHdrs.Add(headers.Vary, headers.Origin)
 	}
-	return false
-}
-
-func (icfg *internalConfig) handleCORSActual(
-	resHdrs http.Header,
-	origin string,
-	originSgl []string,
-	isOPTIONS bool,
-) {
-	// The logic for handling non-CORS requests can be re-used here.
-	if icfg.handleNonCORS(resHdrs, isOPTIONS) {
+	if isCORSRequest := origin != ""; !isCORSRequest {
 		return
 	}
-	// Not all origins are allowed.
+	// This is a CORS request.
 	o, ok := origins.Parse(origin)
 	if !ok || !icfg.tree.Contains(&o) {
 		return
