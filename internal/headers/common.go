@@ -53,20 +53,20 @@ func IsValid(name string) bool {
 	return httpguts.ValidHeaderFieldName(name)
 }
 
-// First, if k is present in hdrs, returns the value associated to k in hdrs,
-// a singleton slice containing that value, and true;
-// otherwise, First returns "", nil, false.
-// Precondition: k is in canonical format (see [http.CanonicalHeaderKey]).
+// First, if k is present in hdrs and len(hdrs[k]) > 0, returns
+// (*[1]string)(hdrs[k]) and true; otherwise, it returns nil and false.
 //
-// First is useful because
-//   - contrary to [http.Header.Get], it returns a slice that can be reused,
-//     which saves a heap allocation in client code;
-//   - it returns the value both as a scalar and as a singleton slice,
-//     which saves a bounds check in client code.
-func First(hdrs http.Header, k string) (string, []string, bool) {
+// First is a useful alternative to [http.Header.Get] because it returns a
+// *[1]string result
+//   - which can be converted to a slice without incurring any heap allocation,
+//   - whose single element (if the result is not nil) can be accessed without
+//     incurring any bounds check.
+//
+// Precondition: k is in canonical format (see [http.CanonicalHeaderKey]).
+func First(hdrs http.Header, k string) (*[1]string, bool) {
 	v, found := hdrs[k]
-	if !found || len(v) == 0 {
-		return "", nil, false
+	if !found || len(v) < 1 {
+		return nil, false
 	}
-	return v[0], v[:1], true
+	return (*[1]string)(v), true
 }

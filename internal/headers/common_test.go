@@ -67,14 +67,14 @@ func TestFirst(t *testing.T) {
 		desc string
 		h    http.Header
 		key  string
-		want string
+		want *[1]string
 		ok   bool
 	}{
 		{
 			desc: "nil http.Header",
 			h:    nil,
 			key:  "Foo",
-			want: "",
+			want: nil,
 			ok:   false,
 		}, {
 			desc: "single value",
@@ -82,7 +82,7 @@ func TestFirst(t *testing.T) {
 				"Authorization": []string{"Bearer xxx"},
 			},
 			key:  "Authorization",
-			want: "Bearer xxx",
+			want: &[1]string{"Bearer xxx"},
 			ok:   true,
 		}, {
 			desc: "multiple values",
@@ -90,17 +90,17 @@ func TestFirst(t *testing.T) {
 				"Authorization": []string{"Bearer xxx", "Basic dXNlcjpwYXNz"},
 			},
 			key:  "Authorization",
-			want: "Bearer xxx",
+			want: &[1]string{"Bearer xxx"},
 			ok:   true,
 		},
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			v, s, ok := headers.First(tc.h, tc.key)
-			if ok != tc.ok || v != tc.want || len(s) > 1 || len(s) == 1 && s[0] != v {
-				const tmpl = "got %s, %q, %t; want %s, %q, %t"
-				t.Errorf(tmpl, v, s, ok, tc.want, []string{tc.want}, tc.ok)
+			got, ok := headers.First(tc.h, tc.key)
+			if ok != tc.ok || (got == nil) != (tc.want == nil) || got != nil && got[0] != tc.want[0] {
+				const tmpl = "got %q, %t; want %q, %t"
+				t.Errorf(tmpl, got, ok, tc.want, tc.ok)
 			}
 		}
 		t.Run(tc.desc, f)

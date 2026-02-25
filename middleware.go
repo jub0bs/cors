@@ -121,11 +121,11 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 		// Fetch-compliant browsers send at most one Origin header;
 		// see https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
 		// (step 12).
-		origin, originSgl, found := headers.First(r.Header, headers.Origin)
+		origin, found := headers.First(r.Header, headers.Origin)
 		if !found {
 			// r is NOT a CORS request;
 			// see https://fetch.spec.whatwg.org/#cors-request.
-			icfg.prehandleActual(w.Header(), "", nil, isOPTIONS)
+			icfg.prehandleActual(w.Header(), nil, isOPTIONS)
 			h.ServeHTTP(w, r)
 			return
 		}
@@ -134,7 +134,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 
 		// Fetch-compliant browsers send at most one ACRM header;
 		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch (step 3).
-		method, acrm, found := headers.First(r.Header, headers.ACRM)
+		acrm, found := headers.First(r.Header, headers.ACRM)
 		if isOPTIONS && found {
 			// r is a CORS-preflight request;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
@@ -142,19 +142,18 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 			// Note that, because h.ServeHTTP is not called in this branch,
 			// we can safely rely, for performance, on some precomputed slices
 			// for adding/setting headers.
-			icfg.handleCORSPreflight(w, r.Header, origin, originSgl, method, acrm, debug)
+			icfg.handleCORSPreflight(w, r.Header, origin, acrm, debug)
 			return
 		}
 		// r is an "actual" (i.e. non-preflight) CORS request.
-		icfg.prehandleActual(w.Header(), origin, originSgl, isOPTIONS)
+		icfg.prehandleActual(w.Header(), origin, isOPTIONS)
 		h.ServeHTTP(w, r)
 	})
 }
 
 func (icfg *internalConfig) prehandleActual(
 	resHdrs http.Header,
-	origin string,
-	originSgl []string,
+	origin *[1]string,
 	isOPTIONS bool,
 ) {
 	// It's tempting to rely (for performance) on some precomputed slices for
@@ -194,16 +193,16 @@ func (icfg *internalConfig) prehandleActual(
 		// wouldn't want to clobber.
 		resHdrs.Add(headers.Vary, headers.Origin)
 	}
-	if isCORSRequest := origin != ""; !isCORSRequest {
+	if isCORSRequest := origin != nil; !isCORSRequest {
 		return
 	}
 	// This is a CORS request.
-	o, ok := origins.Parse(origin)
+	o, ok := origins.Parse(origin[0])
 	if !ok || !icfg.tree.Contains(&o) {
 		return
 	}
 	// origin is allowed.
-	resHdrs[headers.ACAO] = originSgl
+	resHdrs[headers.ACAO] = origin[:]
 	if icfg.credentialed {
 		// We make no attempt to infer whether the request is credentialed;
 		// in fact, a request’s credentials mode is not necessarily observable
@@ -221,10 +220,8 @@ func (icfg *internalConfig) prehandleActual(
 func (icfg *internalConfig) handleCORSPreflight(
 	w http.ResponseWriter,
 	reqHdrs http.Header,
-	origin string,
-	originSgl []string,
-	method string,
-	acrm []string,
+	origin *[1]string,
+	acrm *[1]string,
 	debug bool,
 ) {
 	// Some notes about Vary in the context of CORS preflight:
@@ -262,7 +259,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
 
-	if !icfg.performCORSCheckForPreflight(buf, origin, originSgl) {
+	if !icfg.performCORSCheckForPreflight(buf, origin) {
 		if debug {
 			maps.Copy(resHdrs, buf)
 		}
@@ -275,7 +272,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// if the response status is not an ok status
 	// (see https://fetch.spec.whatwg.org/#ok-status).
 
-	if !icfg.processACRM(buf, method, acrm) {
+	if !icfg.processACRM(buf, acrm) {
 		if debug {
 			maps.Copy(resHdrs, buf)
 			w.WriteHeader(preflightOKStatus)
@@ -308,20 +305,19 @@ func (icfg *internalConfig) handleCORSPreflight(
 
 func (icfg *internalConfig) performCORSCheckForPreflight(
 	buf http.Header,
-	origin string,
-	originSgl []string,
+	origin *[1]string,
 ) bool {
 	if icfg.allowsAnyOrigin() {
 		buf[headers.ACAO] = headers.WildcardSgl
 		return true
 	}
 	// Not all origins are allowed.
-	o, ok := origins.Parse(origin)
+	o, ok := origins.Parse(origin[0])
 	if !ok || !icfg.tree.Contains(&o) {
 		return false
 	}
 	// origin is allowed.
-	buf[headers.ACAO] = originSgl
+	buf[headers.ACAO] = origin[:]
 	if icfg.credentialed {
 		// We make no attempt to infer whether the request is credentialed,
 		// simply because preflight requests don't carry credentials;
@@ -337,8 +333,7 @@ func (icfg *internalConfig) allowsAnyOrigin() bool {
 
 func (icfg *internalConfig) processACRM(
 	buf http.Header,
-	method string,
-	acrm []string,
+	acrm *[1]string,
 ) bool {
 	// Note that middleware only ever list a single method in the ACAM header.
 	// One inconvenience of this behavior is that it leads to less than ideal
@@ -349,7 +344,7 @@ func (icfg *internalConfig) processACRM(
 	// CORS-preflight requests disclose no other allowed methods than the one
 	// required for preflight to succeed.
 
-	switch {
+	switch method := acrm[0]; {
 	case methods.IsSafelisted(method):
 		// CORS-safelisted methods get a free pass; see
 		// https://fetch.spec.whatwg.org/#ref-for-cors-safelisted-method%E2%91%A2.
@@ -359,7 +354,7 @@ func (icfg *internalConfig) processACRM(
 		buf[headers.ACAM] = headers.WildcardSgl
 		return true
 	case icfg.allowAnyMethod || icfg.allowedMethods.Contains(method):
-		buf[headers.ACAM] = acrm
+		buf[headers.ACAM] = acrm[:]
 		return true
 	default:
 		return false
