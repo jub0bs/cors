@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.1] (2026-02-25)
+
+### Fixed
+
+- **Bug**: In v0.12.0 to v0.13.0 (included), origin patterns with a `file`
+  scheme would not get rejected by `NewMiddleware` and `(*Config).Reconfigure`
+  but should have been.
+
 ## [0.13.0] (2026-02-20)
 
 ### Changed
@@ -390,6 +398,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[0.13.1]: https://github.com/jub0bs/cors/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/jub0bs/cors/compare/v0.12.2...v0.13.0
 [0.12.2]: https://github.com/jub0bs/cors/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/jub0bs/cors/compare/v0.12.0...v0.12.1
