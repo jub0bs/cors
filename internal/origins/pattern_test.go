@@ -81,6 +81,10 @@ var parsePatternTestCases = []TestCase{
 		input:   "file:///foo",
 		failure: true,
 	}, {
+		desc:    "file scheme with domain",
+		input:   "file://example.com",
+		failure: true,
+	}, {
 		desc:    "invalid first char in scheme",
 		input:   "42-chrome-extension://foo",
 		failure: true,

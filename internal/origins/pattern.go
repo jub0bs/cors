@@ -159,8 +159,9 @@ func parseScheme(str string) (scheme, rest string, ok bool) {
 	// Origins whose scheme is "file" get serialized to "null" (see
 	// https://fetch.spec.whatwg.org/#serializing-a-request-origin)
 	// and we prohibit the null origin.
+	scheme = str[:i]
 	ok = scheme != "file"
-	return str[:i], str[i:], ok
+	return scheme, str[i:], ok
 }
 
 // isLowerAlpha reports whether c is in the 0x61-0x7A ASCII range.
