@@ -136,7 +136,7 @@ func TestConfig(t *testing.T) {
 					"GET",
 				},
 				RequestHeaders:  []string{"*"},
-				MaxAgeInSeconds: 30,
+				MaxAgeInSeconds: 86_400,
 				ResponseHeaders: []string{
 					"x-FOO",
 					"X-baR",
@@ -152,7 +152,7 @@ func TestConfig(t *testing.T) {
 				Credentialed:                       true,
 				Methods:                            []string{"DELETE", "PUT"},
 				RequestHeaders:                     []string{"*"},
-				MaxAgeInSeconds:                    30,
+				MaxAgeInSeconds:                    86_400,
 				ResponseHeaders:                    []string{"x-bar", "x-foo"},
 				DangerouslyTolerateInsecureOrigins: true,
 			},
