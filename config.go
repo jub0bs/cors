@@ -734,18 +734,20 @@ func (icfg *internalConfig) validateMaxAge(errs []error, delta int) []error {
 		// sentinel value for disabling preflight caching
 		disableCaching = -1
 	)
-	switch {
-	case delta < disableCaching || upperBound < delta:
+	if delta < disableCaching || upperBound < delta {
 		err := &cfgerrors.MaxAgeOutOfBoundsError{
 			Value:   delta,
 			Default: defaultMaxAge,
 			Max:     upperBound,
 			Disable: disableCaching,
 		}
-		errs = append(errs, err)
-	case delta == disableCaching:
+		return append(errs, err)
+	}
+	switch delta {
+	case 0:
+		// Do nothing.
+	case disableCaching:
 		icfg.acma = []string{"0"}
-	case delta == 0:
 	default:
 		icfg.acma = []string{strconv.Itoa(delta)}
 	}
