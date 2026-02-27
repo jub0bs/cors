@@ -1,6 +1,8 @@
 package origins_test
 
 import (
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/jub0bs/cors/internal/origins"
@@ -30,6 +32,19 @@ var parsePatternTestCases = []TestCase{
 		want: origins.Pattern{
 			Scheme:      "https",
 			HostPattern: "*." + validHostOf251chars,
+			Kind:        origins.ArbitrarySubdomains,
+		},
+	}, {
+		desc:    "too long by 1",
+		input:   strings.Repeat("a", maxSchemeLen) + "://*.a" + validHostOf251chars + ":" + strconv.Itoa(maxPort),
+		failure: true,
+	}, {
+		desc:  "maximum length and maximum port",
+		input: strings.Repeat("a", maxSchemeLen) + "://*." + validHostOf251chars + ":" + strconv.Itoa(maxPort),
+		want: origins.Pattern{
+			Scheme:      strings.Repeat("a", maxSchemeLen),
+			HostPattern: "*." + validHostOf251chars,
+			Port:        maxPort,
 			Kind:        origins.ArbitrarySubdomains,
 		},
 	}, {
@@ -74,6 +89,38 @@ var parsePatternTestCases = []TestCase{
 		want: origins.Pattern{
 			Scheme:      "connector",
 			HostPattern: "foo",
+			Kind:        origins.Domain,
+		},
+	}, {
+		desc:  `"a" scheme`,
+		input: "a://example.com",
+		want: origins.Pattern{
+			Scheme:      "a",
+			HostPattern: "example.com",
+			Kind:        origins.Domain,
+		},
+	}, {
+		desc:  `"b" scheme`,
+		input: "b://example.com",
+		want: origins.Pattern{
+			Scheme:      "b",
+			HostPattern: "example.com",
+			Kind:        origins.Domain,
+		},
+	}, {
+		desc:  `"y" scheme`,
+		input: "y://example.com",
+		want: origins.Pattern{
+			Scheme:      "y",
+			HostPattern: "example.com",
+			Kind:        origins.Domain,
+		},
+	}, {
+		desc:  `"z" scheme`,
+		input: "z://example.com",
+		want: origins.Pattern{
+			Scheme:      "z",
+			HostPattern: "example.com",
 			Kind:        origins.Domain,
 		},
 	}, {
@@ -357,6 +404,12 @@ var parsePatternTestCases = []TestCase{
 }
 
 const arbitraryPort = -1 // keep in sync with origins.arbitraryPort
+
+const (
+	maxSchemeLen = 64
+	maxHostLen   = 253
+	maxPort      = 1<<16 - 1
+)
 
 func TestParsePattern(t *testing.T) {
 	for _, tc := range parsePatternTestCases {

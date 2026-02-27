@@ -1,6 +1,8 @@
 package origins_test
 
 import (
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/jub0bs/cors/internal/origins"
@@ -58,9 +60,20 @@ var parseTestCases = []struct {
 			Port:   90,
 		},
 	}, {
-		desc:    "unmatched left bracket",
+		desc:    "unmatched left bracket with port",
 		input:   "http://[::1:90",
 		failure: true,
+	}, {
+		desc:    "unmatched left bracket without port",
+		input:   "http://[a",
+		failure: true,
+	}, {
+		desc:  "empty brackets",
+		input: "http://[]",
+		want: origins.Origin{
+			Scheme: "http",
+			Host:   "",
+		},
 	}, {
 		desc:  "IPv6 with extraneous colon",
 		input: "http://[::1:]",
@@ -232,6 +245,22 @@ var parseTestCases = []struct {
 			"foo.bar.baz.qux.quux.corge.grault.garply.waldo.fred." +
 			"foo.bar.baz.qux.quux.corge.grault.garply.waldo.fred." +
 			"example.com:6060",
+		failure: true,
+	}, {
+		desc:    "too long by 1",
+		input:   strings.Repeat("a", maxSchemeLen) + "://" + strings.Repeat("a", maxHostLen+1) + ":" + strconv.Itoa(maxPort),
+		failure: true,
+	}, {
+		desc:  "maximum length and maximum port",
+		input: strings.Repeat("a", maxSchemeLen) + "://" + strings.Repeat("a", maxHostLen) + ":" + strconv.Itoa(maxPort),
+		want: origins.Origin{
+			Scheme: strings.Repeat("a", maxSchemeLen),
+			Host:   strings.Repeat("a", maxHostLen),
+			Port:   maxPort,
+		},
+	}, {
+		desc:    "port overflow by 1",
+		input:   "https://example.com:" + strconv.Itoa(maxPort+1),
 		failure: true,
 	},
 }
