@@ -118,7 +118,7 @@ func scanName(s string, maxLen uint) (name, rest string) {
 	for i := range uint(len(s)) {
 		// As a defense against maliciously long names,
 		// we scan at most maxLen bytes.
-		if isOWS(s[i]) || s[i] == ',' || i > maxLen {
+		if isOWS(s[i]) || s[i] == ',' || i >= maxLen {
 			return s[:i], s[i:]
 		}
 	}
