@@ -144,8 +144,8 @@ func (t *Tree) Contains(o *Origin) bool {
 
 		// host is a strict suffix of n.suf.
 		// Example:
-		// - n.suf: .kin
-		// - host: a.kin
+		// - n.suf: kin
+		// - host: akin
 
 		// Check whether n contains port for arbitrary subdomains.
 		if n.contains(o.Scheme, o.Port, true) {
