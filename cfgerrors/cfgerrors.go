@@ -30,11 +30,13 @@ type UnacceptableOriginPatternError struct {
 }
 
 func (err *UnacceptableOriginPatternError) Error() string {
-	if err.Reason == "missing" {
+	switch err.Reason {
+	case "missing":
 		return "cors: at least one origin must be allowed"
+	default:
+		const tmpl = "cors: %s origin pattern %q"
+		return fmt.Sprintf(tmpl, err.Reason, err.Value)
 	}
-	const tmpl = "cors: %s origin pattern %q"
-	return fmt.Sprintf(tmpl, err.Reason, err.Value)
 }
 
 // An UnacceptableMethodError indicates an unacceptable method.
