@@ -400,19 +400,38 @@ func (p *Pattern) HostIsEffectiveTLD() bool {
 //
 // Precondition: p and p2 are non-nil.
 func (p *Pattern) Compare(p2 *Pattern) int {
-	a, b := p.HostPattern, p2.HostPattern
-	for i, j := len(a)-1, len(b)-1; 0 <= i && 0 <= j; i, j = i-1, j-1 {
+	return cmp.Or(
 		// Conveniently for us, '*' (0x2A) requires no special handling,
 		// since it is less that all other valid host-pattern bytes.
-		if c := cmp.Compare(a[i], b[j]); c != 0 {
-			return c
+		reverseCompare(p.HostPattern, p2.HostPattern),
+		strings.Compare(p.Scheme, p2.Scheme),
+		// We declare arbitraryPort to be less than all other port values.
+		cmp.Compare(p.Port, p2.Port),
+	)
+}
+
+// reverseCompare returns an integer comparing two reversed strings
+// lexicographically. The result will be
+//   - -1 if a is less than y,
+//   - 0 if x == y,
+//   - +1 if x is greater than y.
+//
+// reverseCompare(x, y) is functionally equivalent to
+//
+//	bytes.Compare(slices.Reverse([]byte(x)), slices.Reverse([]byte(y)))
+//
+// but doesn't incur any allocation.
+func reverseCompare(x, y string) int {
+	lx, ly := len(x), len(y)
+	n := min(lx, ly)
+	x, y = x[lx-n:], y[ly-n:]
+	_, _ = x[:n], y[:n] // hoist bounds checks out of the loop
+	for i := n - 1; 0 <= i; i-- {
+		if x[i] != y[i] {
+			return cmp.Compare(x[i], y[i])
 		}
 	}
-	return cmp.Or(
-		cmp.Compare(len(a), len(b)),
-		strings.Compare(p.Scheme, p2.Scheme),
-		cmp.Compare(p.Port, p2.Port), // arbitraryPort < all port values
-	)
+	return cmp.Compare(lx, ly)
 }
 
 // Equal reports whether *p == *p2.
