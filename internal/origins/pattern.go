@@ -249,15 +249,17 @@ func parseHostPattern(str, rawOriginPattern string) (hostPattern string, kind Ki
 // It returns the scanned host pattern, the unconsumed part of str, and reports
 // whether the host pattern starts with the *. sequence.
 func scanHostPattern(str string) (hostPattern, rest string, arbitrarySubs bool) {
-	var start, i int
-	// Skip over "*." if needed.
-	if arbitrarySubs = strings.HasPrefix(str, wildcardSeq); arbitrarySubs {
-		start += len(wildcardSeq)
+	arbitrarySubs = strings.HasPrefix(str, wildcardSeq)
+	for i, c := range []byte(str) {
+		// Skip over "*." if needed.
+		if arbitrarySubs && i < len(wildcardSeq) {
+			continue
+		}
+		if !isDomainByte(c) {
+			return str[:i], str[i:], arbitrarySubs
+		}
 	}
-	for i = start; i < len(str) && isDomainByte(str[i]); i++ {
-		// deliberately empty
-	}
-	return str[:i], str[i:], arbitrarySubs
+	return str, "", arbitrarySubs
 }
 
 // isDomainByte reports whether c is an ASCII lowercase letter, an ASCII digit,
