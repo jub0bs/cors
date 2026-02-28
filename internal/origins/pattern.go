@@ -152,15 +152,13 @@ func parseScheme(str string) (scheme, rest string, ok bool) {
 	}
 	end := min(maxSchemeLen, len(str))
 	i := 1
-	for ; i < end; i++ {
-		if !isSubsequentSchemeByte(str[i]) {
-			break
-		}
+	for ; i < end && isSubsequentSchemeByte(str[i]); i++ {
+		// deliberately empty
 	}
+	scheme = str[:i]
 	// Origins whose scheme is "file" get serialized to "null" (see
 	// https://fetch.spec.whatwg.org/#serializing-a-request-origin)
 	// and we prohibit the null origin.
-	scheme = str[:i]
 	ok = scheme != "file"
 	return scheme, str[i:], ok
 }
