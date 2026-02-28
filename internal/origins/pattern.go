@@ -182,7 +182,7 @@ func isSubsequentSchemeByte(c byte) bool {
 		(1<<10-1)<<'0' |
 		(1<<26-1)<<'a' |
 		1<<'_'
-	return ((uint64(1)<<c)&(mask&(math.MaxUint64)) |
+	return ((uint64(1)<<c)&(mask&math.MaxUint64) |
 		(uint64(1)<<(c-64))&(mask>>64)) != 0
 }
 
