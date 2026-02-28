@@ -98,6 +98,14 @@ func ParsePattern(str string) (p Pattern, err error) {
 		err = invalidOriginPatternError(str)
 		return
 	}
+	if p.Scheme == "file" {
+		// Origins whose scheme is "file" get serialized to "null" (see
+		// https://fetch.spec.whatwg.org/#serializing-a-request-origin)
+		// and we prohibit the null origin.
+		err = prohibitedOriginPatternError(str)
+		return
+	}
+
 	rest, ok = strings.CutPrefix(rest, schemeHostSep)
 	if !ok {
 		err = invalidOriginPatternError(str)
@@ -151,18 +159,12 @@ func parseScheme(str string) (scheme, rest string, ok bool) {
 		return
 	}
 	end := min(maxSchemeLen, len(str))
-	i := 1
-	for ; i < end; i++ {
+	for i := 1; i < end; i++ {
 		if !isSubsequentSchemeByte(str[i]) {
-			break
+			return str[:i], str[i:], true
 		}
 	}
-	// Origins whose scheme is "file" get serialized to "null" (see
-	// https://fetch.spec.whatwg.org/#serializing-a-request-origin)
-	// and we prohibit the null origin.
-	scheme = str[:i]
-	ok = scheme != "file"
-	return scheme, str[i:], ok
+	return str[:end], str[end:], true
 }
 
 // isLowerAlpha reports whether c is in the 0x61-0x7A ASCII range.
