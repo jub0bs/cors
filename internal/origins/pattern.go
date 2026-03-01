@@ -303,9 +303,14 @@ func isDigit(c byte) bool {
 // before and after sep. The found result reports whether sep appears in s.
 // If sep does not appear in s, lastCutByte returns "", s, false.
 func lastCutByte(s string, sep byte) (before, after string, found bool) {
-	if i := strings.LastIndexByte(s, sep); i >= 0 {
-		after = s[i+1:] // eliminate one bounds check below
-		return s[:i], after, true
+	// Relying on strings.LastIndexByte here is tempting but would bring
+	// the function's inlining cost over budget. Instead, let's just manually
+	// inline strings.LastIndexByte; there's no performance downside in doing
+	// so, because strings.LastIndexByte only has a pure-Go implementation.
+	for i := len(s) - 1; i >= 0; i-- {
+		if s[i] == sep {
+			return s[:i], s[i+1:], true
+		}
 	}
 	return "", s, false
 }
