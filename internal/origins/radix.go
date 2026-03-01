@@ -173,10 +173,10 @@ func last[S []T, T any](s S) (T, bool) {
 	return s[len(s)-1], true
 }
 
-// splitAtCommonSuffix finds the longest suffix common to a and b and returns
-// a and b both trimmed of that suffix along with the suffix itself.
-func splitAtCommonSuffix(a, b string) (string, string, string) {
-	s, l := a, b // s for short, l for long
+// splitAtCommonSuffix finds the longest suffix common to x and y and returns
+// x and y both trimmed of that suffix along with the suffix itself.
+func splitAtCommonSuffix(x, y string) (string, string, string) {
+	s, l := x, y // s for short, l for long
 	if len(l) < len(s) {
 		s, l = l, s
 	}
@@ -186,29 +186,29 @@ func splitAtCommonSuffix(a, b string) (string, string, string) {
 	for ; 0 < i && s[i-1] == l[i-1]; i-- {
 		// deliberately empty body
 	}
-	return a[:len(a)-len(s)+i], b[:len(b)-len(s)+i], s[i:]
+	return x[:len(x)-len(s)+i], y[:len(y)-len(s)+i], s[i:]
 }
 
-// trimCommonSuffix finds the longest suffix common to a and b and returns
-// a trimmed of that suffix along with the suffix itself.
+// trimCommonSuffix finds the longest suffix common to x and y and returns
+// x trimmed of that suffix along with the suffix itself.
 //
 // Note: trimCommonSuffix is a stripped-down version of splitAtCommonSuffix
 // that is both inlinable and free of bounds checks.
-func trimCommonSuffix(a, b string) (string, string) {
-	i, j := len(a), len(b)
-	// Note: an extra j < len(b) check is currently necessary to hoist the
-	// bounds checks for b[j] out of the loop below; see go.dev/issue/45078.
-	for 0 < i && 0 < j && j <= len(b) {
-		if a[i-1] != b[j-1] {
-			return a[:i], a[i:]
+func trimCommonSuffix(x, y string) (string, string) {
+	i, j := len(x), len(y)
+	// Note: an extra j < len(y) check is currently necessary to hoist the
+	// bounds checks for y[j] out of the loop below; see go.dev/issue/45078.
+	for 0 < i && 0 < j && j <= len(y) {
+		if x[i-1] != y[j-1] {
+			return x[:i], x[i:]
 		}
 		i--
 		j--
 	}
-	if len(b) > len(a) {
-		return "", b[len(b)-len(a):]
+	if len(y) > len(x) {
+		return "", y[len(y)-len(x):]
 	}
-	return a[:len(a)-len(b)], a[len(a)-len(b):]
+	return x[:len(x)-len(y)], x[len(x)-len(y):]
 }
 
 // Elems returns an iterator over textual representations of t's elements.
