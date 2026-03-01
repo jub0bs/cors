@@ -114,6 +114,32 @@ func NewTree(ps ...*Pattern) Tree {
 	return t
 }
 
+// splitAtCommonSuffix finds the longest suffix common to x and y and returns
+// x and y both trimmed of that suffix along with the suffix itself.
+func splitAtCommonSuffix(x, y string) (string, string, string) {
+	s, l := x, y // s for short, l for long
+	if len(l) < len(s) {
+		s, l = l, s
+	}
+	i := len(s)
+	l = l[len(l)-i:]
+	_ = l[:i] // hoist bounds checks on l out of the loop
+	for ; 0 < i && s[i-1] == l[i-1]; i-- {
+		// deliberately empty body
+	}
+	return x[:len(x)-len(s)+i], y[:len(y)-len(s)+i], s[i:]
+}
+
+// last, if s is not empty, returns the last element in s and true;
+// otherwise, it returns the zero value and false.
+func last[S []T, T any](s S) (T, bool) {
+	if len(s) == 0 {
+		var zero T
+		return zero, false
+	}
+	return s[len(s)-1], true
+}
+
 // IsEmpty reports whether t is empty.
 func (t *Tree) IsEmpty() bool {
 	return t.root == nil
@@ -161,32 +187,6 @@ func (t *Tree) Contains(o *Origin) bool {
 		host = prefixOfHost
 		n = n.children[i]
 	}
-}
-
-// last, if s is not empty, returns the last element in s and true;
-// otherwise, it returns the zero value and false.
-func last[S []T, T any](s S) (T, bool) {
-	if len(s) == 0 {
-		var zero T
-		return zero, false
-	}
-	return s[len(s)-1], true
-}
-
-// splitAtCommonSuffix finds the longest suffix common to x and y and returns
-// x and y both trimmed of that suffix along with the suffix itself.
-func splitAtCommonSuffix(x, y string) (string, string, string) {
-	s, l := x, y // s for short, l for long
-	if len(l) < len(s) {
-		s, l = l, s
-	}
-	i := len(s)
-	l = l[len(l)-i:]
-	_ = l[:i] // hoist bounds checks on l out of the loop
-	for ; 0 < i && s[i-1] == l[i-1]; i-- {
-		// deliberately empty body
-	}
-	return x[:len(x)-len(s)+i], y[:len(y)-len(s)+i], s[i:]
 }
 
 // trimCommonSuffix finds the longest suffix common to x and y and returns
