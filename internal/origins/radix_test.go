@@ -574,6 +574,93 @@ func TestTree(t *testing.T) {
 				"https://fooexample.com:8080",
 				"https://fooexample.com",
 			},
+		}, {
+			desc: "many pairs in mapping",
+			patterns: []string{
+				"https://bat",
+				"https://cat",
+				"https://fat",
+				"https://hat",
+				"https://meerkat",
+				"https://mat",
+				"https://oat",
+				"https://pat",
+				"https://rat",
+				"https://sat",
+			},
+			elems: []string{
+				"https://bat",
+				"https://cat",
+				"https://fat",
+				"https://hat",
+				"https://meerkat",
+				"https://mat",
+				"https://oat",
+				"https://pat",
+				"https://rat",
+				"https://sat",
+			},
+			accepts: []string{
+				"https://bat",
+				"https://cat",
+				"https://fat",
+				"https://hat",
+				"https://meerkat",
+				"https://mat",
+				"https://oat",
+				"https://pat",
+				"https://rat",
+				"https://sat",
+			},
+			rejects: []string{
+				// different scheme
+				"http://bat",
+				"http://cat",
+				"http://fat",
+				"http://hat",
+				"http://meerkat",
+				"http://mat",
+				"http://oat",
+				"http://pat",
+				"http://rat",
+				"http://sat",
+				// different port
+				"https://bat:6060",
+				"https://cat:6060",
+				"https://fat:6060",
+				"https://hat:6060",
+				"https://meerkat:6060",
+				"https://mat:6060",
+				"https://oat:6060",
+				"https://pat:6060",
+				"https://rat:6060",
+				"https://sat:6060",
+				// truncated host (at the end)
+				"https://ba",
+				"https://ca",
+				"https://fa",
+				"https://ha",
+				"https://meerka",
+				"https://ma",
+				"https://oa",
+				"https://pa",
+				"https://ra",
+				"https://sa",
+				// truncated host (at the start)
+				"https://at",
+				"https://eerkat",
+				// host prepended with rubbish
+				"https://foobat",
+				"https://foocat",
+				"https://foofat",
+				"https://foohat",
+				"https://foomeerkat",
+				"https://foomat",
+				"https://foooat",
+				"https://foopat",
+				"https://foorat",
+				"https://foosat",
+			},
 		},
 	}
 	for _, tc := range cases {
@@ -612,13 +699,6 @@ func TestTree(t *testing.T) {
 				}
 			}
 			elems := slices.Collect(tree.Elems())
-
-			// exercise iteration cut short
-			allElemsButLast := slices.Collect(take(tree.Elems(), len(elems)-1))
-			if !slices.Equal(allElemsButLast, elems[:len(allElemsButLast)]) {
-				t.Error("tree.Elems(): the order of elements is unstable")
-			}
-
 			// the order is unspecified; sort before asserting equality
 			slices.Sort(elems)
 			slices.Sort(tc.elems)
@@ -627,22 +707,27 @@ func TestTree(t *testing.T) {
 				t.Logf("\tgot  %q", elems)
 				t.Logf("\twant %q", tc.elems)
 			}
+			// exercise iteration cut short
+			if !allIn(elems, tree.Elems(), uint(len(elems)/2)) {
+				t.Error("tree.Elems(): a subsequent call yielded unexpected elements")
+			}
 		}
 		t.Run(tc.desc, f)
 	}
 }
 
-func take[E any](seq iter.Seq[E], count int) iter.Seq[E] {
-	return func(yield func(E) bool) {
-		for e := range seq {
-			if count > 0 {
-				if !yield(e) {
-					return
-				}
-				count--
-				continue
-			}
-			return
+// allIn reports whether the first n elements of seq are in s.
+// Precondition: s is sorted in lexicographical order.
+func allIn(s []string, seq iter.Seq[string], n uint) bool {
+	for e := range seq {
+		if n == 0 {
+			break
 		}
+		_, found := slices.BinarySearch(s, e)
+		if !found {
+			return false
+		}
+		n--
 	}
+	return true
 }

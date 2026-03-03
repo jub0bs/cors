@@ -301,6 +301,36 @@ func TestConfig(t *testing.T) {
 				Origins: []string{"https://*.com"},
 				DangerouslyTolerateSubdomainsOfPublicSuffixes: true,
 			},
+		}, {
+			desc: "many origins",
+			cfg: &cors.Config{
+				Origins: []string{
+					"https://bat",
+					"https://cat",
+					"https://fat",
+					"https://hat",
+					"https://meerkat",
+					"https://mat",
+					"https://oat",
+					"https://pat",
+					"https://rat",
+					"https://sat",
+				},
+			},
+			want: &cors.Config{
+				Origins: []string{
+					"https://bat",
+					"https://cat",
+					"https://fat",
+					"https://hat",
+					"https://meerkat",
+					"https://mat",
+					"https://oat",
+					"https://pat",
+					"https://rat",
+					"https://sat",
+				},
+			},
 		},
 	}
 	for _, tc := range cases {
@@ -337,6 +367,9 @@ func assertConfigEqual(t *testing.T, got, want *cors.Config) {
 		return
 	}
 	// origins
+	// The order is unspecified; sort got and want first before asserting.
+	slices.Sort(got.Origins)
+	slices.Sort(want.Origins)
 	if !slices.Equal(got.Origins, want.Origins) {
 		t.Errorf("Origins: %q; want %q", got.Origins, want.Origins)
 	}

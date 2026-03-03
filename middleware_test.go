@@ -1189,6 +1189,135 @@ func TestMiddleware(t *testing.T) {
 					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				},
 			},
+		}, {
+			desc:       "many origins",
+			newHandler: newSpyHandler(200, http.Header{headerVary: {"foo"}}, "bar"),
+			cfg: &cors.Config{
+				Origins: []string{
+					"https://bat",
+					"https://cat",
+					"https://fat",
+					"https://hat",
+					"https://meerkat",
+					"https://mat",
+					"https://oat",
+					"https://pat",
+					"https://rat",
+					"https://sat",
+				},
+			},
+			cases: []ReqTestCase{
+				{
+					desc:      "actual GET from https://bat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://bat"},
+					},
+					wantRespHeaders: http.Header{
+						headerACAO: {"https://bat"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from https://cat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://cat"},
+					},
+					wantRespHeaders: http.Header{
+						headerACAO: {"https://cat"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from https://fat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://fat"},
+					},
+					wantRespHeaders: http.Header{
+						headerACAO: {"https://fat"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from https://hat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://hat"},
+					},
+					wantRespHeaders: http.Header{
+						headerACAO: {"https://hat"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from https://meerkat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://meerkat"},
+					},
+					wantRespHeaders: http.Header{
+						headerACAO: {"https://meerkat"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from https://mat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://mat"},
+					},
+					wantRespHeaders: http.Header{
+						headerACAO: {"https://mat"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from https://oat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://oat"},
+					},
+					wantRespHeaders: http.Header{
+						headerACAO: {"https://oat"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from https://pat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://pat"},
+					},
+					wantRespHeaders: http.Header{
+						headerACAO: {"https://pat"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from https://rat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://rat"},
+					},
+					wantRespHeaders: http.Header{
+						headerACAO: {"https://rat"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from https://sat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://sat"},
+					},
+					wantRespHeaders: http.Header{
+						headerACAO: {"https://sat"},
+						headerVary: {headerOrigin},
+					},
+				}, {
+					desc:      "actual GET from https://hazmat",
+					reqMethod: "GET",
+					reqHeaders: http.Header{
+						headerOrigin: {"https://hazmat"},
+					},
+					wantRespHeaders: http.Header{
+						headerVary: {headerOrigin},
+					},
+				},
+			},
 		},
 	}
 	for _, mwtc := range cases {
