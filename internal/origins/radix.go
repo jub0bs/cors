@@ -179,7 +179,7 @@ func (t *Tree) Contains(o *Origin) bool {
 		}
 
 		// Look for an edge labeled label stemming from n.
-		i, found := slices.BinarySearch(n.edges, label)
+		i, found := binarySearch(n.edges, label)
 		if !found {
 			return false
 		}
@@ -209,6 +209,21 @@ func trimCommonSuffix(x, y string) (string, string) {
 		return "", y[len(y)-len(x):]
 	}
 	return x[:len(x)-len(y)], x[len(x)-len(y):]
+}
+
+// binarySearch is a stripped-down, inlineable version of slices.BinarySearch.
+func binarySearch[E byte | int | string](s []E, target E) (i int, _ bool) {
+	n := len(s)
+	i, j := 0, n
+	for i < j {
+		h := int(uint(i+j) >> 1)
+		if s[h] < target {
+			i = h + 1
+		} else {
+			j = h
+		}
+	}
+	return i, i < n && s[i] == target
 }
 
 // Elems returns an iterator over textual representations of t's elements.
@@ -256,7 +271,7 @@ func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 		return
 	}
 	ports, _ := last(n.ports) // Since n.schemes is non-empty, so is n.ports.
-	if _, found := slices.BinarySearch(ports, arbitraryPort); found {
+	if _, found := binarySearch(ports, arbitraryPort); found {
 		// Adding (scheme, port) in n would cause redundancy. Let's not.
 		return
 	}
@@ -282,16 +297,16 @@ func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool
 	if arbitrarySubs {
 		port, arbitraryPort = offset(port, arbitraryPort)
 	}
-	i, found := slices.BinarySearch(n.schemes, scheme)
+	i, found := binarySearch(n.schemes, scheme)
 	if !found {
 		return
 	}
 	ports := n.ports[i]
-	_, found = slices.BinarySearch(ports, port)
+	_, found = binarySearch(ports, port)
 	if found {
 		return
 	}
-	_, found = slices.BinarySearch(ports, arbitraryPort)
+	_, found = binarySearch(ports, arbitraryPort)
 	return
 }
 
