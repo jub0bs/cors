@@ -61,9 +61,21 @@ func (set SortedSet) IndexAfter(n int, e string) int {
 	if set.maxLen < uint(len(e)) {
 		return -1
 	}
+	// Let's binary-search for e in set.elems[n+1:]. We eschew
+	// slices.BinarySearch here, so as to keep the method inlineable.
 	n++
-	i, found := slices.BinarySearch(set.elems[n:], e)
-	if !found {
+	s := set.elems[n:]
+	end := len(s)
+	i, j := 0, end
+	for i < j {
+		h := int(uint(i+j) >> 1)
+		if s[h] < e {
+			i = h + 1
+		} else {
+			j = h
+		}
+	}
+	if i >= end || s[i] != e {
 		return -1
 	}
 	return n + i
