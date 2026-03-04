@@ -73,11 +73,11 @@ func TestSortedSet(t *testing.T) {
 					const tmpl = "SortedSet built from %#v: Contains(%q): got true; want false"
 					t.Errorf(tmpl, tc.elems, e)
 				}
-				for n := -1; n < size; n++ {
+				for n := range uint(size + 1) {
 					const want = -1
-					got := set.IndexAfter(n, e)
+					got := set.Index(n, e)
 					if got != want {
-						const tmpl = "SortedSet built from %#v: IndexAfter(%d, %q): got %d; want %d"
+						const tmpl = "SortedSet built from %#v: Index(%d, %q): got %d; want %d"
 						t.Errorf(tmpl, tc.elems, n, e, got, want)
 					}
 				}
@@ -88,14 +88,14 @@ func TestSortedSet(t *testing.T) {
 				t.Errorf(tmpl, tc.elems, s, tc.slice)
 			}
 			for pos, e := range s {
-				for n := -1; n < size; n++ {
+				for n := range uint(size + 1) {
 					want := pos
-					if pos < n+1 {
+					if uint(pos) < n {
 						want = -1
 					}
-					got := set.IndexAfter(n, e)
+					got := set.Index(n, e)
 					if got != want {
-						const tmpl = "SortedSet built from %#v: IndexAfter(%d, %q): got %d; want %d"
+						const tmpl = "SortedSet built from %#v: Index(%d, %q): got %d; want %d"
 						t.Errorf(tmpl, tc.elems, n, e, got, want)
 					}
 				}

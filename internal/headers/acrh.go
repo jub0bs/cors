@@ -42,8 +42,8 @@ import "github.com/jub0bs/cors/internal/util"
 // [the Fetch standard]: https://fetch.spec.whatwg.org
 func Check(set util.SortedSet, acrhs []string) bool {
 	var (
-		// position in set of the last name encountered in the ACRH field value
-		pos = -1
+		// cursor in the overall ACRH value
+		start uint
 		// total number of empty ACRH header lines and empty list elements
 		emptyElements uint
 	)
@@ -91,10 +91,11 @@ func Check(set util.SortedSet, acrhs []string) bool {
 			// Therefore, the positions (in set) of the names that successively
 			// appear in the ACRH header value should form a strictly
 			// increasing sequence. If that's not actually the case, fail.
-			pos = set.IndexAfter(pos, name)
-			if pos < 0 {
+			i := set.Index(start, name)
+			if i < 0 {
 				return false
 			}
+			start = uint(i) + 1
 		}
 	}
 	return true
