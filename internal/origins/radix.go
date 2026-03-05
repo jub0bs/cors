@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unique"
 )
 
 // A Tree is a specialized radix tree that represents a (possibly infinite) set
@@ -212,12 +213,27 @@ func trimCommonSuffix(x, y string) (string, string) {
 }
 
 // binarySearch is a stripped-down, inlineable version of slices.BinarySearch.
-func binarySearch[E byte | int | string](s []E, target E) (i int, _ bool) {
+func binarySearch[E byte | int](s []E, target E) (i int, _ bool) {
 	n := len(s)
 	i, j := 0, n
 	for i < j {
 		h := int(uint(i+j) >> 1)
 		if s[h] < target {
+			i = h + 1
+		} else {
+			j = h
+		}
+	}
+	return i, i < n && s[i] == target
+}
+
+func binarySearchUnique(s []unique.Handle[string], target unique.Handle[string]) (i int, _ bool) {
+	v := target.Value()
+	n := len(s)
+	i, j := 0, n
+	for i < j {
+		h := int(uint(i+j) >> 1)
+		if s[h].Value() < v {
 			i = h + 1
 		} else {
 			j = h
@@ -251,14 +267,14 @@ type node struct {
 	// children are the children of this node ("parallels" edges slice).
 	children []*node
 	// schemes are the schemes of this node.
-	schemes []string
+	schemes []unique.Handle[string]
 	// ports are the ports associated to this node's schemes ("parallels"
 	// schemes slice).
 	ports [][]int
 }
 
 // add adds the pair (scheme, port) in n, possibly with arbitrary subdomains.
-func (n *node) add(scheme string, port int, arbitrarySubs bool) {
+func (n *node) add(scheme unique.Handle[string], port int, arbitrarySubs bool) {
 	arbitraryPort := arbitraryPort // shadows package-level constant
 	if arbitrarySubs {
 		port, arbitraryPort = offset(port, arbitraryPort)
@@ -292,12 +308,12 @@ const portOffset = math.MaxUint16 + 2
 
 // contains reports whether n contains the pair (scheme, port), possibly with
 // arbitrary subdomains.
-func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool) {
+func (n *node) contains(scheme unique.Handle[string], port int, arbitrarySubs bool) (found bool) {
 	arbitraryPort := arbitraryPort // shadows package-level constant
 	if arbitrarySubs {
 		port, arbitraryPort = offset(port, arbitraryPort)
 	}
-	i, found := binarySearch(n.schemes, scheme)
+	i, found := binarySearchUnique(n.schemes, scheme)
 	if !found {
 		return
 	}
@@ -338,11 +354,11 @@ func (n *node) elems(suf string, f func(string) bool) bool {
 			var s string
 			switch port {
 			case absentPort:
-				s = scheme + schemeHostSep + maybeWildcard + suf
+				s = scheme.Value() + schemeHostSep + maybeWildcard + suf
 			case arbitraryPort:
-				s = scheme + schemeHostSep + maybeWildcard + suf + string(hostPortSep) + portWildcard
+				s = scheme.Value() + schemeHostSep + maybeWildcard + suf + string(hostPortSep) + portWildcard
 			default:
-				s = scheme + schemeHostSep + maybeWildcard + suf + string(hostPortSep) + strconv.Itoa(port)
+				s = scheme.Value() + schemeHostSep + maybeWildcard + suf + string(hostPortSep) + strconv.Itoa(port)
 			}
 			if !f(s) {
 				return false

@@ -6,6 +6,7 @@ import (
 	"net/netip"
 	"strings"
 	"sync"
+	"unique"
 
 	"github.com/jub0bs/cors/cfgerrors"
 	"golang.org/x/net/idna"
@@ -57,7 +58,7 @@ const (
 // The zero value does not correspond to a valid pattern.
 type Pattern struct {
 	// Scheme is the scheme of this origin pattern.
-	Scheme string
+	Scheme unique.Handle[string]
 	// HostPattern is the host pattern of this origin pattern.
 	HostPattern string
 	// Port is the positive port number (if any) of this origin pattern.
@@ -90,14 +91,16 @@ func ParsePattern(str string) (p Pattern, err error) {
 		return
 	}
 	var (
-		rest string
-		ok   bool
+		scheme string
+		rest   string
+		ok     bool
 	)
-	p.Scheme, rest, ok = parseScheme(str)
+	scheme, rest, ok = parseScheme(str)
 	if !ok {
 		err = invalidOriginPatternError(str)
 		return
 	}
+	p.Scheme = unique.Make(scheme)
 	rest, ok = strings.CutPrefix(rest, schemeHostSep)
 	if !ok {
 		err = invalidOriginPatternError(str)
@@ -120,7 +123,7 @@ func ParsePattern(str string) (p Pattern, err error) {
 			err = invalidOriginPatternError(str)
 			return
 		}
-		if isDefaultPortForScheme(p.Scheme, p.Port) {
+		if isDefaultPortForScheme(scheme, p.Port) {
 			err = prohibitedOriginPatternError(str)
 			return
 		}
@@ -365,7 +368,7 @@ const schemeHTTPS = "https"
 // Note: protocols using a scheme other than https may well encrypt traffic,
 // but let's be conservative here.
 func (p *Pattern) IsDeemedInsecure() bool {
-	return p.Scheme != schemeHTTPS &&
+	return p.Scheme.Value() != schemeHTTPS &&
 		p.Kind != LoopbackIP &&
 		strings.TrimPrefix(p.HostPattern, wildcardSeq) != "localhost"
 }
@@ -401,7 +404,7 @@ func (p *Pattern) Compare(p2 *Pattern) int {
 		// Conveniently for us, '*' (0x2A) requires no special handling,
 		// since it is less that all other valid host-pattern bytes.
 		reverseCompare(p.HostPattern, p2.HostPattern),
-		strings.Compare(p.Scheme, p2.Scheme),
+		strings.Compare(p.Scheme.Value(), p2.Scheme.Value()),
 		// We declare arbitraryPort to be less than all other port values.
 		cmp.Compare(p.Port, p2.Port),
 	)

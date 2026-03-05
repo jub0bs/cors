@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"unique"
 
 	"github.com/jub0bs/cors/internal/origins"
 )
@@ -30,7 +31,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "wildcard character sequence followed by 251 chars",
 		input: "https://*." + validHostOf251chars,
 		want: origins.Pattern{
-			Scheme:      "https",
+			Scheme:      unique.Make("https"),
 			HostPattern: "*." + validHostOf251chars,
 			Kind:        origins.ArbitrarySubdomains,
 		},
@@ -42,7 +43,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "maximum length and maximum port",
 		input: strings.Repeat("a", maxSchemeLen) + "://*." + validHostOf251chars + ":" + strconv.Itoa(maxPort),
 		want: origins.Pattern{
-			Scheme:      strings.Repeat("a", maxSchemeLen),
+			Scheme:      unique.Make(strings.Repeat("a", maxSchemeLen)),
 			HostPattern: "*." + validHostOf251chars,
 			Port:        maxPort,
 			Kind:        origins.ArbitrarySubdomains,
@@ -87,7 +88,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "non-HTTP scheme",
 		input: "connector://foo",
 		want: origins.Pattern{
-			Scheme:      "connector",
+			Scheme:      unique.Make("connector"),
 			HostPattern: "foo",
 			Kind:        origins.Domain,
 		},
@@ -95,7 +96,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  `"a" scheme`,
 		input: "a://example.com",
 		want: origins.Pattern{
-			Scheme:      "a",
+			Scheme:      unique.Make("a"),
 			HostPattern: "example.com",
 			Kind:        origins.Domain,
 		},
@@ -103,7 +104,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  `"b" scheme`,
 		input: "b://example.com",
 		want: origins.Pattern{
-			Scheme:      "b",
+			Scheme:      unique.Make("b"),
 			HostPattern: "example.com",
 			Kind:        origins.Domain,
 		},
@@ -111,7 +112,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  `"y" scheme`,
 		input: "y://example.com",
 		want: origins.Pattern{
-			Scheme:      "y",
+			Scheme:      unique.Make("y"),
 			HostPattern: "example.com",
 			Kind:        origins.Domain,
 		},
@@ -119,7 +120,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  `"z" scheme`,
 		input: "z://example.com",
 		want: origins.Pattern{
-			Scheme:      "z",
+			Scheme:      unique.Make("z"),
 			HostPattern: "example.com",
 			Kind:        origins.Domain,
 		},
@@ -227,7 +228,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "https scheme with IPv4 host",
 		input: "https://127.0.0.1:90",
 		want: origins.Pattern{
-			Scheme:      "https",
+			Scheme:      unique.Make("https"),
 			HostPattern: "127.0.0.1",
 			Kind:        origins.LoopbackIP,
 			Port:        90,
@@ -244,7 +245,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "non-loopback IPv4",
 		input: "http://69.254.169.254",
 		want: origins.Pattern{
-			Scheme:      "http",
+			Scheme:      unique.Make("http"),
 			HostPattern: "69.254.169.254",
 			Kind:        origins.NonLoopbackIP,
 		},
@@ -252,7 +253,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "loopback IPv4",
 		input: "http://127.0.0.1:90",
 		want: origins.Pattern{
-			Scheme:      "http",
+			Scheme:      unique.Make("http"),
 			HostPattern: "127.0.0.1",
 			Kind:        origins.LoopbackIP,
 			Port:        90,
@@ -261,7 +262,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "https scheme with IPv6 host",
 		input: "https://[::1]:90",
 		want: origins.Pattern{
-			Scheme:      "https",
+			Scheme:      unique.Make("https"),
 			HostPattern: "::1",
 			Kind:        origins.LoopbackIP,
 			Port:        90,
@@ -294,7 +295,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "non-loopback IPv6 with hexadecimal chars",
 		input: "http://[2001:db8:aaaa:1111::100]:9090",
 		want: origins.Pattern{
-			Scheme:      "http",
+			Scheme:      unique.Make("http"),
 			HostPattern: "2001:db8:aaaa:1111::100",
 			Kind:        origins.NonLoopbackIP,
 			Port:        9090,
@@ -303,7 +304,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "loopback IPv6 address with port",
 		input: "http://[::1]:90",
 		want: origins.Pattern{
-			Scheme:      "http",
+			Scheme:      unique.Make("http"),
 			HostPattern: "::1",
 			Kind:        origins.LoopbackIP,
 			Port:        90,
@@ -336,7 +337,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "host contains underscores and hyphens",
 		input: "http://ex_am-ple.com:3999",
 		want: origins.Pattern{
-			Scheme:      "http",
+			Scheme:      unique.Make("http"),
 			HostPattern: "ex_am-ple.com",
 			Kind:        origins.Domain,
 			Port:        3999,
@@ -345,7 +346,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "trailing full stop in host",
 		input: "http://example.com.:3999",
 		want: origins.Pattern{
-			Scheme:      "http",
+			Scheme:      unique.Make("http"),
 			HostPattern: "example.com.",
 			Kind:        origins.Domain,
 			Port:        3999,
@@ -366,7 +367,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "arbitrary subdomains",
 		input: "http://*.example.com:3999",
 		want: origins.Pattern{
-			Scheme:      "http",
+			Scheme:      unique.Make("http"),
 			HostPattern: "*.example.com",
 			Kind:        origins.ArbitrarySubdomains,
 			Port:        3999,
@@ -375,7 +376,7 @@ var parsePatternTestCases = []TestCase{
 		desc:  "arbitrary subdomains and arbitrary ports",
 		input: "http://*.example.com:*",
 		want: origins.Pattern{
-			Scheme:      "http",
+			Scheme:      unique.Make("http"),
 			HostPattern: "*.example.com",
 			Kind:        origins.ArbitrarySubdomains,
 			Port:        arbitraryPort,

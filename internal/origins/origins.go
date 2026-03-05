@@ -3,13 +3,14 @@ package origins
 import (
 	"math"
 	"strings"
+	"unique"
 )
 
 // Origin represents a (tuple) [Web origin].
 //
 // [Web origin]: https://developer.mozilla.org/en-US/docs/Glossary/Origin
 type Origin struct {
-	Scheme string
+	Scheme unique.Handle[string]
 	Host   string
 	// Port is the positive port number (if any) of this origin.
 	// The zero value marks the absence of an explicit port.
@@ -27,11 +28,12 @@ func Parse(str string) (o Origin, ok bool) {
 	if len(str) > maxOriginLen {
 		return
 	}
-	var rest string
-	o.Scheme, rest, ok = strings.Cut(str, schemeHostSep)
+	var scheme, rest string
+	scheme, rest, ok = strings.Cut(str, schemeHostSep)
 	if !ok {
 		return
 	}
+	o.Scheme = unique.Make(scheme)
 	o.Host, rest, ok = splitHostPort(rest)
 	if !ok {
 		return
