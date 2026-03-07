@@ -248,7 +248,7 @@ type node struct {
 	// suf is the suffix of this node (ASCII only).
 	suf    string
 	edges2 mapping[byte, *node]
-	leaves mapping[string, []int]
+	leaves mapping[string, mapping[int, struct{}]]
 }
 
 // add adds the pair (scheme, port) in n, possibly with arbitrary subdomains.
@@ -261,19 +261,15 @@ func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 	// if scheme appears in n.schemes, it has to be at the end.
 	ports, ok := n.leaves.find(scheme)
 	if !ok {
-		ports = []int{port}
+		ports = mapping[int, struct{}]{}
+		ports.upsert(port, struct{}{})
 		n.leaves.upsert(scheme, ports)
 	}
-	if _, found := binarySearch(ports, arbitraryPort); found {
+	if _, found := ports.find(arbitraryPort); found {
 		// Adding (scheme, port) in n would cause redundancy. Let's not.
 		return
 	}
-	if _, found := binarySearch(ports, port); found {
-		// Adding (scheme, port) in n would cause redundancy. Let's not.
-		return
-	}
-	ports = append(ports, port)
-	slices.Sort(ports) //TODO: required?
+	ports.upsert(port, struct{}{})
 	n.leaves.upsert(scheme, ports)
 }
 
@@ -297,11 +293,11 @@ func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool
 	if !found {
 		return
 	}
-	_, found = binarySearch(ports, port)
+	_, found = ports.find(port)
 	if found {
 		return
 	}
-	_, found = binarySearch(ports, arbitraryPort)
+	_, found = ports.find(arbitraryPort)
 	return
 }
 
@@ -318,7 +314,7 @@ func (n *node) addEdge(label byte, child *node) {
 func (n *node) elems(suf string, f func(string) bool) bool {
 	suf = n.suf + suf
 	for scheme, ports := range n.leaves.all() {
-		for _, port := range ports {
+		for port := range ports.all() {
 			var maybeWildcard string
 			if port < arbitraryPort {
 				maybeWildcard = subdomainWildcard
