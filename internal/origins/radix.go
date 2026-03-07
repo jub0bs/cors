@@ -39,8 +39,8 @@ func NewTree(ps ...*Pattern) Tree {
 		n := t.root
 		for {
 			prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
-			label1, ok1 := last([]byte(prefixOfNSuf))
-			label2, ok2 := last([]byte(prefixOfHost))
+			label1, ok1 := last(prefixOfNSuf)
+			label2, ok2 := last(prefixOfHost)
 			if !ok1 {
 				if !ok2 {
 					// n.suf and host are equal.
@@ -58,7 +58,7 @@ func NewTree(ps ...*Pattern) Tree {
 					// Look for an edge labeled label2 stemming from n.
 					// Because of how we sort ps before inserting them into t,
 					// if label2 appears in n.edges, it has to be at the end.
-					child, ok := n.edges2.find(label2)
+					child, ok := n.children.find(label2)
 					if !ok {
 						// No such edge was found.
 						// Create one leading to the new child:
@@ -131,12 +131,11 @@ func splitAtCommonSuffix(x, y string) (string, string, string) {
 	return x[:len(x)-len(s)+i], y[:len(y)-len(s)+i], s[i:]
 }
 
-// last, if s is not empty, returns the last element in s and true;
-// otherwise, it returns the zero value and false.
-func last[S []T, T any](s S) (T, bool) {
+// last, if s is not empty, returns the last byte in s and true;
+// otherwise, it returns zero and false.
+func last(s string) (byte, bool) {
 	if len(s) == 0 {
-		var zero T
-		return zero, false
+		return 0, false
 	}
 	return s[len(s)-1], true
 }
@@ -163,7 +162,7 @@ func (t *Tree) Contains(o *Origin) bool {
 		}
 		// n.suf is a suffix of host.
 
-		label, ok := last([]byte(prefixOfHost))
+		label, ok := last(prefixOfHost)
 		if !ok {
 			// n.suf == host
 			return n.contains(o.Scheme, o.Port, false)
@@ -180,7 +179,7 @@ func (t *Tree) Contains(o *Origin) bool {
 		}
 
 		// Look for an edge labeled label stemming from n.
-		child, found := n.edges2.find(label)
+		child, found := n.children.find(label)
 		if !found {
 			return false
 		}
@@ -212,21 +211,6 @@ func trimCommonSuffix(x, y string) (string, string) {
 	return x[:len(x)-len(y)], x[len(x)-len(y):]
 }
 
-// binarySearch is a stripped-down, inlineable version of slices.BinarySearch.
-func binarySearch[E byte | int | string](s []E, target E) (i int, _ bool) {
-	n := len(s)
-	i, j := 0, n
-	for i < j {
-		h := int(uint(i+j) >> 1)
-		if s[h] < target {
-			i = h + 1
-		} else {
-			j = h
-		}
-	}
-	return i, i < n && s[i] == target
-}
-
 // Elems returns an iterator over textual representations of t's elements.
 // The order is unspecified; however, the order is stable, in the sense that
 // different calls to t.Elems systematically yield the same elements in the
@@ -241,14 +225,11 @@ func (t *Tree) Elems() iter.Seq[string] {
 }
 
 // A node represents a node of a Tree.
-// Invariants:
-//   - len(edges) == len(children)
-//   - len(schemes) == len(ports)
 type node struct {
-	// suf is the suffix of this node (ASCII only).
-	suf    string
-	edges2 mapping[byte, *node]
-	leaves mapping[string, mapping[int, struct{}]]
+	// suf is the suffix of this node.
+	suf      string
+	children mapping[byte, *node]
+	leaves   mapping[string, mapping[int, struct{}]]
 }
 
 // add adds the pair (scheme, port) in n, possibly with arbitrary subdomains.
@@ -261,7 +242,6 @@ func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 	// if scheme appears in n.schemes, it has to be at the end.
 	ports, ok := n.leaves.find(scheme)
 	if !ok {
-		ports = mapping[int, struct{}]{}
 		ports.upsert(port, struct{}{})
 		n.leaves.upsert(scheme, ports)
 	}
@@ -306,7 +286,7 @@ func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool
 //   - n.edges is sorted in increasing order
 //   - n.edges[len(n.edges)-1] < label
 func (n *node) addEdge(label byte, child *node) {
-	n.edges2.upsert(label, child)
+	n.children.upsert(label, child)
 }
 
 // elems reports whether f(x) is true for the textual representation
@@ -334,7 +314,7 @@ func (n *node) elems(suf string, f func(string) bool) bool {
 			}
 		}
 	}
-	for _, child := range n.edges2.all() {
+	for _, child := range n.children.all() {
 		if !child.elems(suf, f) {
 			return false
 		}
