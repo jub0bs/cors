@@ -11,12 +11,12 @@ type mapping[K comparable, V any] struct {
 }
 
 type few[K comparable, V any] struct { // more space-efficient than a slice of struct{K, V}
-	keys   [maxSlice]K
-	values [maxSlice]V
+	keys   [n]K
+	values [n]V
 	size   uint8
 }
 
-const maxSlice = 4
+const n = 4
 
 // upsert inserts or updates a key-value pair in the mapping.
 func (h *mapping[K, V]) upsert(k K, v V) {
@@ -30,8 +30,9 @@ func (h *mapping[K, V]) upsert(k K, v V) {
 		f.size = 1
 		h.few = f
 		return
-	} else if size := f.size; size >= maxSlice { // few to many pairs
+	} else if size := f.size; size == n { // n pairs
 		m := map[K]V{}
+		_ = f.values[:size]
 		for i := range size {
 			m[f.keys[i]] = f.values[i]
 		}
@@ -39,7 +40,8 @@ func (h *mapping[K, V]) upsert(k K, v V) {
 		h.many = m
 		h.few = nil
 		return
-	} else { // few pairs
+	} else { // few (< n) pairs
+		size = size % n // no-op to eliminate bounds checks below
 		for i, key := range f.keys[:size] {
 			if key == k {
 				f.values[i] = v
@@ -56,14 +58,15 @@ func (h *mapping[K, V]) upsert(k K, v V) {
 // The second return value is false if there is no value
 // with that key.
 func (h *mapping[K, V]) find(target K) (v V, found bool) {
-	if h.many != nil {
+	if h.many != nil { // many pairs
 		v, found = h.many[target]
 		return v, found
-	} else if f := h.few; f == nil {
+	} else if f := h.few; f == nil { // empty mapping
 		return v, false
-	} else {
-		for i := range f.size {
-			if f.keys[i] == target {
+	} else { // few (<= n) pairs
+		size := f.size % (n + 1) // no-op to eliminate bounds checks below
+		for i, k := range f.keys[:size] {
+			if k == target {
 				return f.values[i], true
 			}
 		}
@@ -75,16 +78,17 @@ func (h *mapping[K, V]) find(target K) (v V, found bool) {
 // If f returns false, pairs returns immediately.
 func (h *mapping[K, V]) all() iter.Seq2[K, V] {
 	return func(yield func(k K, v V) bool) {
-		if h.many != nil {
+		if h.many != nil { // many pairs
 			for k, v := range h.many {
 				if !yield(k, v) {
 					return
 				}
 			}
-		} else if f := h.few; f == nil {
+		} else if f := h.few; f == nil { // empty mapping
 			return
-		} else {
-			for i := range f.size {
+		} else { // few (<= n) pairs
+			size := f.size % (n + 1) // no-op to eliminate bounds checks below
+			for i := range size {
 				if !yield(f.keys[i], f.values[i]) {
 					return
 				}
