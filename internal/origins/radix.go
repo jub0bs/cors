@@ -58,7 +58,8 @@ func NewTree(ps ...*Pattern) Tree {
 					// Look for an edge labeled label2 stemming from n.
 					// Because of how we sort ps before inserting them into t,
 					// if label2 appears in n.edges, it has to be at the end.
-					if lastLabel, ok := last(n.edges); !ok || lastLabel != label2 {
+					child, ok := n.edges2.find(label2)
+					if !ok {
 						// No such edge was found.
 						// Create one leading to the new child:
 						//
@@ -68,14 +69,14 @@ func NewTree(ps ...*Pattern) Tree {
 						//     \
 						//      pump (child)
 						//
-						child := node{suf: prefixOfHost}
+						child = &node{suf: prefixOfHost}
 						child.add(p.Scheme, p.Port, arbitrarySubs)
-						n.addEdge(label2, &child)
+						n.addEdge(label2, child)
 						break
 					}
 					// Such an edge was found. Follow it and keep searching.
 					host = prefixOfHost
-					n, _ = last(n.children)
+					n = child
 					continue
 				}
 			} else {
@@ -179,13 +180,13 @@ func (t *Tree) Contains(o *Origin) bool {
 		}
 
 		// Look for an edge labeled label stemming from n.
-		i, found := binarySearch(n.edges, label)
+		child, found := n.edges2.find(label)
 		if !found {
 			return false
 		}
 		// Such an edge was found. Follow it and keep searching.
 		host = prefixOfHost
-		n = n.children[i]
+		n = child
 	}
 }
 
@@ -245,16 +246,9 @@ func (t *Tree) Elems() iter.Seq[string] {
 //   - len(schemes) == len(ports)
 type node struct {
 	// suf is the suffix of this node (ASCII only).
-	suf string
-	// edges are the edges to the children of this node.
-	edges []byte
-	// children are the children of this node ("parallels" edges slice).
-	children []*node
-	// schemes are the schemes of this node.
-	schemes []string
-	// ports are the ports associated to this node's schemes ("parallels"
-	// schemes slice).
-	ports [][]int
+	suf    string
+	edges2 mapping[byte, *node]
+	leaves mapping[string, []int]
 }
 
 // add adds the pair (scheme, port) in n, possibly with arbitrary subdomains.
@@ -265,20 +259,22 @@ func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 	}
 	// Because of how we sort patterns before inserting them into the tree,
 	// if scheme appears in n.schemes, it has to be at the end.
-	if lastScheme, ok := last(n.schemes); !ok || lastScheme != scheme {
-		n.schemes = append(n.schemes, scheme)
-		n.ports = append(n.ports, []int{port})
-		return
+	ports, ok := n.leaves.find(scheme)
+	if !ok {
+		ports = []int{port}
+		n.leaves.upsert(scheme, ports)
 	}
-	ports, _ := last(n.ports) // Since n.schemes is non-empty, so is n.ports.
 	if _, found := binarySearch(ports, arbitraryPort); found {
 		// Adding (scheme, port) in n would cause redundancy. Let's not.
 		return
 	}
-	// Because of how we sort and compact patterns before inserting them into
-	// the tree, we know that ports[len(ports)-1] < port.
+	if _, found := binarySearch(ports, port); found {
+		// Adding (scheme, port) in n would cause redundancy. Let's not.
+		return
+	}
 	ports = append(ports, port)
-	n.ports[len(n.ports)-1] = ports
+	slices.Sort(ports) //TODO: required?
+	n.leaves.upsert(scheme, ports)
 }
 
 // offset returns the results of subtracting portOffset from both port and
@@ -297,11 +293,10 @@ func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool
 	if arbitrarySubs {
 		port, arbitraryPort = offset(port, arbitraryPort)
 	}
-	i, found := binarySearch(n.schemes, scheme)
+	ports, found := n.leaves.find(scheme)
 	if !found {
 		return
 	}
-	ports := n.ports[i]
 	_, found = binarySearch(ports, port)
 	if found {
 		return
@@ -315,20 +310,14 @@ func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool
 //   - n.edges is sorted in increasing order
 //   - n.edges[len(n.edges)-1] < label
 func (n *node) addEdge(label byte, child *node) {
-	n.edges = append(n.edges, label)
-	n.children = append(n.children, child)
+	n.edges2.upsert(label, child)
 }
 
 // elems reports whether f(x) is true for the textual representation
 // (using suf as base suffix) of every element x in n.
 func (n *node) elems(suf string, f func(string) bool) bool {
 	suf = n.suf + suf
-	var ( // Hoist bounds checks out of the outer loop.
-		nSchemes = n.schemes
-		nPorts   = n.ports[:len(nSchemes)]
-	)
-	for i, ports := range nPorts {
-		scheme := nSchemes[i]
+	for scheme, ports := range n.leaves.all() {
 		for _, port := range ports {
 			var maybeWildcard string
 			if port < arbitraryPort {
@@ -349,9 +338,8 @@ func (n *node) elems(suf string, f func(string) bool) bool {
 			}
 		}
 	}
-	children := n.children // Hoist bounds checks out of the loop.
-	for i := range children {
-		if !children[i].elems(suf, f) {
+	for _, child := range n.edges2.all() {
+		if !child.elems(suf, f) {
 			return false
 		}
 	}
