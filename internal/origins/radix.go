@@ -74,7 +74,7 @@ func NewTree(ps ...*Pattern) Tree {
 						child := node{suf: prefixOfHost}
 						child.add(p.Scheme, p.Port, arbitrarySubs)
 						t.nodes = slices.Grow(t.nodes, len(t.nodes)+1)
-						t.addEdge(&t.nodes[i], label2, child)
+						t.addEdge(i, label2, child)
 						break
 					}
 					// Such an edge was found. Follow it and keep searching.
@@ -111,10 +111,10 @@ func NewTree(ps ...*Pattern) Tree {
 					children: n.children,
 					leaves:   n.leaves,
 				}
-				t.addEdge(&t.nodes[i], label1, child1)
+				t.addEdge(i, label1, child1)
 				child2 := node{suf: prefixOfHost}
 				child2.add(p.Scheme, p.Port, arbitrarySubs)
-				t.addEdge(&t.nodes[i], label2, child2)
+				t.addEdge(i, label2, child2)
 				break
 			}
 		}
@@ -289,11 +289,11 @@ func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool
 	return
 }
 
-// addEdge adds an edge labeled label and leading to child in node n of t.
+// addEdge adds an edge labeled label and leading to child in node t.nodes[i].
 // Precondition: cap(t.nodes) > len(t.nodes)
-func (t *Tree) addEdge(n *node, label byte, child node) {
+func (t *Tree) addEdge(i uint, label byte, child node) {
 	t.nodes = append(t.nodes, child)
-	n.children.upsert(label, uint(len(t.nodes))-1)
+	t.nodes[i].children.upsert(label, uint(len(t.nodes))-1)
 }
 
 // elems reports whether f(x) is true for the textual representation
