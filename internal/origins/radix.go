@@ -56,8 +56,6 @@ func NewTree(ps ...*Pattern) Tree {
 						break
 					}
 					// Look for an edge labeled label2 stemming from n.
-					// Because of how we sort ps before inserting them into t,
-					// if label2 appears in n.edges, it has to be at the end.
 					child, ok := n.children.find(label2)
 					if !ok {
 						// No such edge was found.
@@ -71,7 +69,7 @@ func NewTree(ps ...*Pattern) Tree {
 						//
 						child = &node{suf: prefixOfHost}
 						child.add(p.Scheme, p.Port, arbitrarySubs)
-						n.addEdge(label2, child)
+						n.children.upsert(label2, child)
 						break
 					}
 					// Such an edge was found. Follow it and keep searching.
@@ -89,8 +87,7 @@ func NewTree(ps ...*Pattern) Tree {
 				// them into t, this case cannot occur.
 				//
 				// If ok2, neither n.suf nor host is a suffix (strict or not)
-				// of the other. Moreover, because of how we sort ps before
-				// inserting them into t, we know that label1 < label2.
+				// of the other.
 				// Example:
 				//  - n.suf:    akin
 				//  - host:  pumpkin
@@ -101,13 +98,16 @@ func NewTree(ps ...*Pattern) Tree {
 				//      \
 				//       pump (child2)
 				//
-				child1 := *n
-				child1.suf = prefixOfNSuf
-				child2 := node{suf: prefixOfHost}
+				child1 := &node{
+					suf:      prefixOfNSuf,
+					children: n.children,
+					leaves:   n.leaves,
+				}
+				child2 := &node{suf: prefixOfHost}
 				child2.add(p.Scheme, p.Port, arbitrarySubs)
 				*n = node{suf: suf}
-				n.addEdge(label1, &child1)
-				n.addEdge(label2, &child2)
+				n.children.upsert(label1, child1)
+				n.children.upsert(label2, child2)
 				break
 			}
 		}
@@ -237,8 +237,6 @@ func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 	if arbitrarySubs {
 		port, arbitraryPort = offset(port, arbitraryPort)
 	}
-	// Because of how we sort patterns before inserting them into the tree,
-	// if scheme appears in n.schemes, it has to be at the end.
 	ports, ok := n.leaves.find(scheme)
 	if !ok {
 		ports.upsert(port, struct{}{})
@@ -278,14 +276,6 @@ func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool
 	}
 	_, found = ports.find(arbitraryPort)
 	return
-}
-
-// addEdge adds an edge labeled label and leading to child in n.
-// Preconditions:
-//   - n.edges is sorted in increasing order
-//   - n.edges[len(n.edges)-1] < label
-func (n *node) addEdge(label byte, child *node) {
-	n.children.upsert(label, child)
 }
 
 // elems reports whether f(x) is true for the textual representation
