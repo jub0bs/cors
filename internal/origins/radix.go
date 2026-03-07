@@ -218,9 +218,8 @@ func trimCommonSuffix(x, y string) (string, string) {
 }
 
 // Elems returns an iterator over textual representations of t's elements.
-// The order is unspecified; however, the order is stable, in the sense that
-// different calls to t.Elems systematically yield the same elements in the
-// same order.
+// The order is unspecified and unstable, in the sense that different calls to
+// t.Elems may yield the elements in a different order.
 func (t *Tree) Elems() iter.Seq[string] {
 	return func(yield func(string) bool) {
 		if t.IsEmpty() {

@@ -873,7 +873,9 @@ func newConfig(icfg *internalConfig) *Config {
 	if icfg.tree.IsEmpty() {
 		cfg.Origins = []string{headers.ValueWildcard}
 	} else {
-		cfg.Origins = slices.Collect(icfg.tree.Elems())
+		origins := slices.Collect(icfg.tree.Elems())
+		slices.Sort(origins)
+		cfg.Origins = origins
 	}
 
 	// response headers
