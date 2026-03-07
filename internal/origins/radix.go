@@ -12,7 +12,7 @@ import (
 // of Web origins. Once built, a Tree is read-only. The zero value corresponds
 // to an empty tree.
 type Tree struct {
-	root *node
+	nodes []node
 }
 
 // NewTree returns a new tree in which all of ps (and no other origin patterns)
@@ -29,22 +29,24 @@ func NewTree(ps ...*Pattern) Tree {
 		// Inserting the first pattern is easy, since t is empty.
 		p := ps[0]
 		host, arbitrarySubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
-		t.root = &node{suf: host}
-		t.root.add(p.Scheme, p.Port, arbitrarySubs)
+		n := node{suf: host}
+		n.add(p.Scheme, p.Port, arbitrarySubs)
+		t.nodes = []node{n}
 		// Now deal with the remaining patterns.
 		ps = ps[1:]
 	}
 	for _, p := range ps {
 		host, arbitrarySubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
-		n := t.root
+		var i uint
 		for {
+			n := t.nodes[i]
 			prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
 			label1, ok1 := last(prefixOfNSuf)
 			label2, ok2 := last(prefixOfHost)
 			if !ok1 {
 				if !ok2 {
 					// n.suf and host are equal.
-					n.add(p.Scheme, p.Port, arbitrarySubs)
+					t.nodes[i].add(p.Scheme, p.Port, arbitrarySubs)
 					break
 				} else {
 					// n.suf is a strict suffix of host.
@@ -58,7 +60,7 @@ func NewTree(ps ...*Pattern) Tree {
 					// Look for an edge labeled label2 stemming from n.
 					// Because of how we sort ps before inserting them into t,
 					// if label2 appears in n.edges, it has to be at the end.
-					child, ok := n.children.find(label2)
+					j, ok := n.children.find(label2)
 					if !ok {
 						// No such edge was found.
 						// Create one leading to the new child:
@@ -69,14 +71,15 @@ func NewTree(ps ...*Pattern) Tree {
 						//     \
 						//      pump (child)
 						//
-						child = &node{suf: prefixOfHost}
+						child := node{suf: prefixOfHost}
 						child.add(p.Scheme, p.Port, arbitrarySubs)
-						n.addEdge(label2, child)
+						t.nodes = append(t.nodes, child)
+						t.nodes[i].addEdge(label2, uint(len(t.nodes))-1) // not n, because
 						break
 					}
 					// Such an edge was found. Follow it and keep searching.
 					host = prefixOfHost
-					n = child
+					i = j
 					continue
 				}
 			} else {
@@ -101,13 +104,18 @@ func NewTree(ps ...*Pattern) Tree {
 				//      \
 				//       pump (child2)
 				//
-				child1 := *n
+				child1 := n
 				child1.suf = prefixOfNSuf
+				t.nodes = append(t.nodes, child1)
+				n = node{suf: suf}
+				n.addEdge(label1, uint(len(t.nodes))-1)
+
 				child2 := node{suf: prefixOfHost}
 				child2.add(p.Scheme, p.Port, arbitrarySubs)
-				*n = node{suf: suf}
-				n.addEdge(label1, &child1)
-				n.addEdge(label2, &child2)
+				t.nodes = append(t.nodes, child2)
+				n.addEdge(label2, uint(len(t.nodes))-1)
+
+				t.nodes[i] = n
 				break
 			}
 		}
@@ -142,7 +150,7 @@ func last(s string) (byte, bool) {
 
 // IsEmpty reports whether t is empty.
 func (t *Tree) IsEmpty() bool {
-	return t.root == nil
+	return len(t.nodes) == 0
 }
 
 // Contains reports whether t contains o.
@@ -151,8 +159,9 @@ func (t *Tree) Contains(o *Origin) bool {
 		return false
 	}
 	host := o.Host
-	n := t.root
+	var i uint
 	for {
+		n := t.nodes[i]
 		prefixOfHost, suf := trimCommonSuffix(host, n.suf)
 		if len(suf) != len(n.suf) {
 			// n.suf is NOT a suffix of host. Example:
@@ -179,13 +188,13 @@ func (t *Tree) Contains(o *Origin) bool {
 		}
 
 		// Look for an edge labeled label stemming from n.
-		child, found := n.children.find(label)
+		var found bool
+		i, found = n.children.find(label)
 		if !found {
 			return false
 		}
 		// Such an edge was found. Follow it and keep searching.
 		host = prefixOfHost
-		n = child
 	}
 }
 
@@ -220,7 +229,7 @@ func (t *Tree) Elems() iter.Seq[string] {
 		if t.IsEmpty() {
 			return
 		}
-		t.root.elems("", yield)
+		t.nodes[0].elems(t.nodes, "", yield)
 	}
 }
 
@@ -228,7 +237,7 @@ func (t *Tree) Elems() iter.Seq[string] {
 type node struct {
 	// suf is the suffix of this node.
 	suf      string
-	children mapping[byte, *node]
+	children mapping[byte, uint]
 	leaves   mapping[string, mapping[int, struct{}]]
 }
 
@@ -285,13 +294,13 @@ func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool
 // Preconditions:
 //   - n.edges is sorted in increasing order
 //   - n.edges[len(n.edges)-1] < label
-func (n *node) addEdge(label byte, child *node) {
-	n.children.upsert(label, child)
+func (n *node) addEdge(label byte, iChild uint) {
+	n.children.upsert(label, iChild)
 }
 
 // elems reports whether f(x) is true for the textual representation
 // (using suf as base suffix) of every element x in n.
-func (n *node) elems(suf string, f func(string) bool) bool {
+func (n *node) elems(nodes []node, suf string, f func(string) bool) bool {
 	suf = n.suf + suf
 	for scheme, ports := range n.leaves.all() {
 		for port := range ports.all() {
@@ -314,8 +323,8 @@ func (n *node) elems(suf string, f func(string) bool) bool {
 			}
 		}
 	}
-	for _, child := range n.children.all() {
-		if !child.elems(suf, f) {
+	for _, i := range n.children.all() {
+		if !nodes[i].elems(nodes, suf, f) {
 			return false
 		}
 	}
