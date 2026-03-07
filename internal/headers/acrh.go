@@ -91,7 +91,7 @@ func Check(set util.SortedSet, acrhs []string) bool {
 			// Therefore, the positions (in set) of the names that successively
 			// appear in the ACRH header value should form a strictly
 			// increasing sequence. If that's not actually the case, fail.
-			pos = set.IndexAfter(pos, name)
+			pos = set.IndexFrom(uint(pos)+1, name)
 			if pos < 0 {
 				return false
 			}

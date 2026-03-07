@@ -48,37 +48,33 @@ func (set SortedSet) MaxLen() uint {
 // Precondition: [*SortedSet.Add] was not called since [*SortedSet.Fix] was
 // last called.
 func (set SortedSet) Contains(e string) bool {
-	return set.IndexAfter(-1, e) >= 0
+	return set.IndexFrom(0, e) >= 0
 }
 
-// IndexAfter returns the position of e in set if it occurs after the first
-// n+1 elements of set, or -1 otherwise.
+// IndexFrom returns the position of e in set if it occurs after the first
+// n elements of set, or -1 otherwise.
 //
 // Preconditions:
-//   - n < set.Size(), and
+//   - n <= set.Size(), and
 //   - [*SortedSet.Add] was not called since [*SortedSet.Fix] was last called.
-func (set SortedSet) IndexAfter(n int, e string) int {
-	if set.maxLen < uint(len(e)) {
+func (set SortedSet) IndexFrom(n uint, e string) int {
+	if set.maxLen < uint(len(e)) || uint(len(set.elems)) < n {
 		return -1
 	}
 	// Let's binary-search for e in set.elems[n+1:]. We eschew
 	// slices.BinarySearch here, so as to keep the method inlineable.
-	n++
 	s := set.elems[n:]
-	end := len(s)
-	i, j := 0, end
-	for i < j {
-		h := int(uint(i+j) >> 1)
-		if s[h] < e {
-			i = h + 1
-		} else {
-			j = h
+	var i uint
+	for j := uint(len(s)); i < j; {
+		j = ((i + j) >> 1) % uint(len(s))
+		if s[j] < e {
+			i = j + 1
 		}
 	}
-	if i >= end || s[i] != e {
+	if i >= uint(len(s)) || s[i] != e {
 		return -1
 	}
-	return n + i
+	return int(n + i)
 }
 
 // ToSlice returns a slice of set's elements sorted in lexicographical order.
