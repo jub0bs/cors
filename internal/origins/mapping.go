@@ -16,7 +16,7 @@ type few[K comparable, V any] struct { // more space-efficient than a slice of s
 	size   uint8
 }
 
-const maxSlice = 8
+const maxSlice = 4
 
 // upsert inserts or updates a key-value pair in the mapping.
 func (h *mapping[K, V]) upsert(k K, v V) {
@@ -30,9 +30,7 @@ func (h *mapping[K, V]) upsert(k K, v V) {
 		f.size = 1
 		h.few = f
 		return
-	} else if size := f.size; size > maxSlice {
-		panic("unreachable")
-	} else if size == maxSlice { // few to many pairs
+	} else if size := f.size; size >= maxSlice { // few to many pairs
 		m := map[K]V{}
 		for i := range size {
 			m[f.keys[i]] = f.values[i]
@@ -63,10 +61,8 @@ func (h *mapping[K, V]) find(target K) (v V, found bool) {
 		return v, found
 	} else if f := h.few; f == nil {
 		return v, false
-	} else if size := f.size; size > maxSlice {
-		panic("unreachable")
 	} else {
-		for i := range size {
+		for i := range f.size {
 			if f.keys[i] == target {
 				return f.values[i], true
 			}
@@ -87,10 +83,8 @@ func (h *mapping[K, V]) all() iter.Seq2[K, V] {
 			}
 		} else if f := h.few; f == nil {
 			return
-		} else if size := f.size; size > maxSlice {
-			panic("unreachable")
 		} else {
-			for i := range size {
+			for i := range f.size {
 				if !yield(f.keys[i], f.values[i]) {
 					return
 				}
