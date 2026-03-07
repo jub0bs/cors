@@ -73,7 +73,6 @@ func NewTree(ps ...*Pattern) Tree {
 						//
 						child := node{suf: prefixOfHost}
 						child.add(p.Scheme, p.Port, arbitrarySubs)
-						t.nodes = slices.Grow(t.nodes, len(t.nodes)+1)
 						t.addEdge(i, label2, child)
 						break
 					}
@@ -104,7 +103,6 @@ func NewTree(ps ...*Pattern) Tree {
 				//      \
 				//       pump (child2)
 				//
-				t.nodes = slices.Grow(t.nodes, len(t.nodes)+2)
 				t.nodes[i] = node{suf: suf}
 				child1 := node{
 					suf:      prefixOfNSuf,
@@ -289,9 +287,9 @@ func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool
 	return
 }
 
-// addEdge adds an edge labeled label and leading to child in node t.nodes[i].
-// Precondition: cap(t.nodes) > len(t.nodes)
+// addEdge adds an edge labeled label and leading to child in t.nodes[i].
 func (t *Tree) addEdge(i uint, label byte, child node) {
+	t.nodes = slices.Grow(t.nodes, len(t.nodes)+1)
 	t.nodes = append(t.nodes, child)
 	t.nodes[i].children.upsert(label, uint(len(t.nodes))-1)
 }
