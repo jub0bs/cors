@@ -475,7 +475,7 @@ func TestIsDeemedInsecure(t *testing.T) {
 			t.Parallel()
 			pattern, err := origins.ParsePattern(tc.pattern)
 			if err != nil {
-				t.Errorf("got %v; want non-nil error", err)
+				t.Errorf("got %v; want nil error", err)
 				return
 			}
 			got := pattern.IsDeemedInsecure()
@@ -508,7 +508,7 @@ func TestHostIsEffectiveTLD(t *testing.T) {
 			t.Parallel()
 			pattern, err := origins.ParsePattern(tc.pattern)
 			if err != nil {
-				t.Errorf("got %v; want non-nil error", err)
+				t.Errorf("got %v; want nil error", err)
 				return
 			}
 			got := pattern.HostIsEffectiveTLD()
