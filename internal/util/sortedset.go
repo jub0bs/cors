@@ -10,7 +10,7 @@ import "slices"
 // The zero value represents an empty set.
 type SortedSet struct {
 	elems  []string
-	maxLen uint
+	maxLen int
 }
 
 // Add adds e to set. Calling Add generally breaks set's invariants.
@@ -23,7 +23,7 @@ func (set *SortedSet) Fix() {
 	slices.Sort(set.elems)
 	set.elems = slices.Compact(set.elems)
 	for _, e := range set.elems {
-		set.maxLen = max(set.maxLen, uint(len(e)))
+		set.maxLen = max(set.maxLen, len(e))
 	}
 }
 
@@ -40,7 +40,7 @@ func (set SortedSet) Size() int {
 // Precondition: [*SortedSet.Add] was not called since [*SortedSet.Fix] was
 // last called.
 func (set SortedSet) MaxLen() uint {
-	return set.maxLen
+	return uint(set.maxLen)
 }
 
 // Contains reports whether e is an element of set.
@@ -57,14 +57,28 @@ func (set SortedSet) Contains(e string) bool {
 // Precondition: [*SortedSet.Add] was not called since [*SortedSet.Fix] was
 // last called.
 func (set SortedSet) Index(n uint, e string) int {
-	if set.maxLen < uint(len(e)) || uint(len(set.elems)) < n {
+	if set.maxLen < len(e) || uint(len(set.elems)) < n {
 		return -1
 	}
-	i, found := slices.BinarySearch(set.elems[n:], e)
-	if !found {
+	// Let's binary-search for e in set.elems[n:]. We eschew
+	// slices.BinarySearch here, so as to keep the method inlineable.
+	s := set.elems[n:]
+	var i uint
+	for j := uint(len(s)); i < j; {
+		// The length check below is redundant, but it's useful because it
+		// eliminates the bounds check for j.
+		j += i
+		j >>= 1
+		if j < uint(len(s)) && s[j] < e {
+			i = j + 1
+		}
+	}
+	if i >= uint(len(s)) || s[i] != e {
 		return -1
 	}
-	return int(n) + i
+	// The following uint-to-int conversion is safe because
+	// n + i < len(set.elems) <= math.MaxInt.
+	return int(n + i)
 }
 
 // ToSlice returns a slice of set's elements sorted in lexicographical order.
