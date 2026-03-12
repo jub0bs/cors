@@ -77,11 +77,37 @@ jobs:
       - name: Run Benchmark (old)
         run: |
           cd old
-          go test -shuffle on -run ^$ -bench '^BenchmarkMiddleware|^BenchmarkAll' -count 10 -benchtime 500ms . ./cfgerrors > bench.out
+          # Run benchmarks several times with different layouts to reduce noise.
+          x=101; while [ $x -le 105 ]; do
+            echo "starting randlayout=$x"
+            go test -shuffle on \
+              -run ^$ \
+              -bench '^BenchmarkMiddleware|^BenchmarkAll' \
+              -count 6 \
+              -benchtime 500ms \
+              -ldflags "-randlayout=$x" \
+              . ./cfgerrors \
+              >> bench.out
+            sleep 1
+            x=$((x+1))
+          done
       - name: Run Benchmark (new)
         run: |
           cd new
-          go test -shuffle on -run ^$ -bench '^BenchmarkMiddleware|^BenchmarkAll' -count 10 -benchtime 500ms . ./cfgerrors > bench.out
+          # Run benchmarks several times with different layouts to reduce noise.
+          x=101; while [ $x -le 105 ]; do
+            echo "starting randlayout=$x"
+            go test -shuffle on \
+              -run ^$ \
+              -bench '^BenchmarkMiddleware|^BenchmarkAll' \
+              -count 6 \
+              -benchtime 500ms \
+              -ldflags "-randlayout=$x" \
+              . ./cfgerrors \
+              >> bench.out
+            sleep 1
+            x=$((x+1))
+          done
       - name: Run benchstat for middleware initialization
         run: |
           benchstat -filter "/type:init" old/bench.out new/bench.out
