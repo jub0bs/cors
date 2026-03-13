@@ -153,8 +153,8 @@ func (t *Tree) Contains(o *Origin) bool {
 	host := o.Host
 	n := t.root
 	for {
-		prefixOfHost, suf := trimCommonSuffix(host, n.suf)
-		if len(suf) != len(n.suf) {
+		prefixOfHost, ok := strings.CutSuffix(host, n.suf)
+		if !ok {
 			// n.suf is NOT a suffix of host. Example:
 			// - n.suf: akin
 			// - host:   kin
@@ -187,28 +187,6 @@ func (t *Tree) Contains(o *Origin) bool {
 		host = prefixOfHost
 		n = child
 	}
-}
-
-// trimCommonSuffix finds the longest suffix common to x and y and returns
-// x trimmed of that suffix along with the suffix itself.
-//
-// Note: trimCommonSuffix is a stripped-down version of splitAtCommonSuffix
-// that is both inlinable and free of bounds checks.
-func trimCommonSuffix(x, y string) (string, string) {
-	i, j := len(x), len(y)
-	// Note: an extra j < len(y) check is currently necessary to hoist the
-	// bounds checks for y[j] out of the loop below; see go.dev/issue/45078.
-	for 0 < i && 0 < j && j <= len(y) {
-		if x[i-1] != y[j-1] {
-			return x[:i], x[i:]
-		}
-		i--
-		j--
-	}
-	if len(y) > len(x) {
-		return "", y[len(y)-len(x):]
-	}
-	return x[:len(x)-len(y)], x[len(x)-len(y):]
 }
 
 // Elems returns an iterator over textual representations of t's elements.
