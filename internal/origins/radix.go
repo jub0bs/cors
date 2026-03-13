@@ -168,7 +168,7 @@ func (t *Tree) Contains(o *Origin) bool {
 			return n.contains(o.Scheme, o.Port, false)
 		}
 
-		// host is a strict suffix of n.suf.
+		// n.suf is a strict suffix of host.
 		// Example:
 		// - n.suf: kin
 		// - host: akin
