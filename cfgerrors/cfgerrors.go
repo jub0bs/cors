@@ -154,22 +154,13 @@ func (*IncompatibleWildcardResponseHeaderNameError) Error() string {
 // any other error value.
 func All(err error) iter.Seq[error] {
 	return func(yield func(error) bool) {
-		every(err, yield)
-	}
-}
-
-func every(err error, f func(error) bool) bool {
-	switch err := err.(type) {
-	// Note that there's no need for any "interface { Unwrap() error }" case
-	// because nowhere do we "wrap" errors; we only ever "join" them.
-	case interface{ Unwrap() []error }:
-		for _, err := range err.Unwrap() {
-			if !every(err, f) {
-				return false
+		// We only ever "join" (not "wrap") errors (if any) and exactly once.
+		if err, ok := err.(interface{ Unwrap() []error }); ok {
+			for _, err := range err.Unwrap() {
+				if !yield(err) {
+					return
+				}
 			}
 		}
-		return true
-	default:
-		return f(err)
 	}
 }

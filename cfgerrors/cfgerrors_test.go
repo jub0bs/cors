@@ -19,48 +19,30 @@ type TestCase struct {
 
 var cases = []TestCase{
 	{
-		desc: "singleton",
-		err:  err0,
-		want: []error{
-			err0,
-		},
+		desc:      "nil error",
+		err:       nil,
+		want:      nil,
 		breakWhen: alwaysFalse,
 	}, {
-		desc: "multi-error no break",
-		err:  err4,
-		want: []error{
-			err2,
-			err3,
-		},
+		desc:      "single joined error, no break",
+		err:       errors.Join(err1),
+		want:      []error{err1},
 		breakWhen: alwaysFalse,
 	}, {
-		desc: "multi-error break early",
-		err:  err4,
-		want: []error{
-			err2,
-		},
+		desc:      "single joined error, break early",
+		err:       errors.Join(err1),
+		want:      nil,
+		breakWhen: equal(err1),
+	}, {
+		desc:      "multiple joined errors, no break",
+		err:       errors.Join(err1, err2, err3),
+		want:      []error{err1, err2, err3},
+		breakWhen: alwaysFalse,
+	}, {
+		desc:      "multiple joined errors, break early",
+		err:       errors.Join(err1, err2, err3),
+		want:      []error{err1, err2},
 		breakWhen: equal(err3),
-	}, {
-		desc: "single joined error no break",
-		err:  err1,
-		want: []error{
-			err0,
-		},
-		breakWhen: alwaysFalse,
-	}, {
-		desc:      "single joined error break early",
-		err:       err1,
-		want:      []error{},
-		breakWhen: equal(err0),
-	}, {
-		desc:      "complex error tree no break",
-		err:       err5,
-		breakWhen: alwaysFalse,
-		want: []error{
-			err0,
-			err2,
-			err3,
-		},
 	},
 }
 
@@ -92,12 +74,9 @@ func BenchmarkAll(b *testing.B) {
 var errSink error
 
 var (
-	err0 = errors.New("err0")
-	err1 = errors.Join(err0)
+	err1 = errors.New("err1")
 	err2 = errors.New("err2")
 	err3 = errors.New("err3")
-	err4 = errors.Join(err2, err3)
-	err5 = errors.Join(err1, err4)
 )
 
 func assertEqual(
