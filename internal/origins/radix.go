@@ -28,29 +28,29 @@ func NewTree(ps ...*Pattern) Tree {
 	if len(ps) > 0 {
 		// Inserting the first pattern is easy, since t is empty.
 		p := ps[0]
-		host, arbitrarySubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
-		t.root = &node{suf: host}
+		s, arbitrarySubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
+		t.root = &node{suf: s}
 		t.root.add(p.Scheme, p.Port, arbitrarySubs)
 		// Now deal with the remaining patterns.
 		ps = ps[1:]
 	}
 	for _, p := range ps {
-		host, arbitrarySubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
+		s, arbitrarySubs := strings.CutPrefix(p.HostPattern, subdomainWildcard)
 		n := t.root
 		for {
-			prefixOfNSuf, prefixOfHost, suf := splitAtCommonSuffix(n.suf, host)
+			prefixOfNSuf, prefixOfS, suf := splitAtCommonSuffix(n.suf, s)
 			label1, ok1 := last(prefixOfNSuf)
-			label2, ok2 := last(prefixOfHost)
+			label2, ok2 := last(prefixOfS)
 			if !ok1 {
 				if !ok2 {
-					// n.suf and host are equal.
+					// n.suf and s are equal.
 					n.add(p.Scheme, p.Port, arbitrarySubs)
 					break
 				} else {
-					// n.suf is a strict suffix of host.
+					// n.suf is a strict suffix of s.
 					// Example:
 					//  - n.suf:     kin
-					//  - host:  pumpkin
+					//  - s:     pumpkin
 					if n.contains(p.Scheme, p.Port, true) {
 						// Inserting p in t would cause redundancy. Let's not.
 						break
@@ -67,30 +67,30 @@ func NewTree(ps ...*Pattern) Tree {
 						//     \
 						//      pump (child)
 						//
-						child = &node{suf: prefixOfHost}
+						child = &node{suf: prefixOfS}
 						child.add(p.Scheme, p.Port, arbitrarySubs)
 						n.children.upsert(label2, child)
 						break
 					}
 					// Such an edge was found. Follow it and keep searching.
-					host = prefixOfHost
+					s = prefixOfS
 					n = child
 					continue
 				}
 			} else {
-				// If !ok2, host is a strict suffix of n.suf.
+				// If !ok2, s is a strict suffix of n.suf.
 				// Example:
 				//  - n.suf: akin
-				//  - host:   kin
+				//  - s:      kin
 				//
 				// However, because of how we sort ps before inserting
 				// them into t, this case cannot occur.
 				//
-				// If ok2, neither n.suf nor host is a suffix (strict or not)
+				// If ok2, neither n.suf nor s is a suffix (strict or not)
 				// of the other.
 				// Example:
 				//  - n.suf:    akin
-				//  - host:  pumpkin
+				//  - s:     pumpkin
 				//
 				// Perform a two-way split of n:
 				//
@@ -103,7 +103,7 @@ func NewTree(ps ...*Pattern) Tree {
 					children: n.children,
 					leaves:   n.leaves,
 				}
-				child2 := &node{suf: prefixOfHost}
+				child2 := &node{suf: prefixOfS}
 				child2.add(p.Scheme, p.Port, arbitrarySubs)
 				*n = node{suf: suf}
 				n.children.upsert(label1, child1)
@@ -150,28 +150,28 @@ func (t *Tree) Contains(o *Origin) bool {
 	if t.IsEmpty() {
 		return false
 	}
-	host := o.Host
+	s := o.Host
 	n := t.root
 	for {
-		prefixOfHost, ok := strings.CutSuffix(host, n.suf)
+		prefixOfS, ok := strings.CutSuffix(s, n.suf)
 		if !ok {
-			// n.suf is NOT a suffix of host. Example:
+			// n.suf is NOT a suffix of s. Example:
 			// - n.suf: akin
-			// - host:   kin
+			// - s:      kin
 			return false
 		}
-		// n.suf is a suffix of host.
+		// n.suf is a suffix of s.
 
-		label, ok := last(prefixOfHost)
+		label, ok := last(prefixOfS)
 		if !ok {
-			// n.suf == host
+			// n.suf == s
 			return n.contains(o.Scheme, o.Port, false)
 		}
 
-		// n.suf is a strict suffix of host.
+		// n.suf is a strict suffix of s.
 		// Example:
 		// - n.suf: kin
-		// - host: akin
+		// - s:    akin
 
 		// Check whether n contains port for arbitrary subdomains.
 		if n.contains(o.Scheme, o.Port, true) {
@@ -184,7 +184,7 @@ func (t *Tree) Contains(o *Origin) bool {
 			return false
 		}
 		// Such an edge was found. Follow it and keep searching.
-		host = prefixOfHost
+		s = prefixOfS
 		n = child
 	}
 }
