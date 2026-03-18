@@ -519,7 +519,7 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 			//  - specify one or more insecure origin patterns.
 			//
 			// If credentialed access isn't enabled, origins like
-			// http://example.com are indeed no less insecure than origin
+			// http://example.com are indeed no less secure than origin
 			// pattern "*" is, which itself doesn't require
 			// DangerouslyTolerateInsecureOrigins to be set.
 			err := &cfgerrors.IncompatibleOriginPatternError{
@@ -540,7 +540,7 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 			//    of a public suffix.
 			//
 			// If credentialed access isn't enabled, origin patterns like
-			// https://*.com are indeed no less insecure than origin pattern
+			// https://*.com are indeed no less secure than origin pattern
 			// "*" is, which itself doesn't require
 			// DangerouslyTolerateSubdomainsOfPublicSuffixes to be set.
 			err := &cfgerrors.IncompatibleOriginPatternError{
