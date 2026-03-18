@@ -86,6 +86,9 @@ func ParsePattern(str string) (p Pattern, err error) {
 		return
 	}
 	if str == "null" {
+		// If credentialed access isn't enabled, the null origin is no less
+		// secure than origin pattern "*" is, but users who wish to allow
+		// any origin can specify that pattern instead of the null origin.
 		err = prohibitedOriginPatternError(str)
 		return
 	}
