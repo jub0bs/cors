@@ -65,10 +65,10 @@ func (set SortedSet) Index(n uint, e string) int {
 	s := set.elems[n:]
 	var i uint
 	for j := uint(len(s)); i < j; {
-		// The length check below is redundant, but it's useful because it
-		// eliminates the bounds check for j.
 		j += i
 		j >>= 1
+		// The length check below is redundant, but it's useful because it
+		// eliminates the bounds check for j.
 		if j < uint(len(s)) && s[j] < e {
 			i = j + 1
 		}
