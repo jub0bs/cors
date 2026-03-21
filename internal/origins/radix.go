@@ -213,10 +213,8 @@ type node struct {
 
 // add adds the pair (scheme, port) in n, possibly with arbitrary subdomains.
 func (n *node) add(scheme string, port int, arbitrarySubs bool) {
-	arbitraryPort := arbitraryPort // shadows package-level constant
-	if arbitrarySubs {
-		port, arbitraryPort = offset(port, arbitraryPort)
-	}
+	port, arbitraryPort := offset(port, arbitraryPort, arbitrarySubs)
+	// arbitraryPort shadows the homonymous package-level constant.
 	ports, ok := n.leaves.find(scheme)
 	if !ok {
 		ports.upsert(port, struct{}{})
@@ -230,22 +228,11 @@ func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 	n.leaves.upsert(scheme, ports)
 }
 
-// offset returns the results of subtracting portOffset from both port and
-// arbitraryPort.
-func offset(port, arbitraryPort int) (int, int) {
-	return port - portOffset, arbitraryPort - portOffset
-}
-
-// An offset used for storing ports corresponding to arbitrary subdomains.
-const portOffset = math.MaxUint16 + 2
-
 // contains reports whether n contains the pair (scheme, port), possibly with
 // arbitrary subdomains.
 func (n *node) contains(scheme string, port int, arbitrarySubs bool) (found bool) {
-	arbitraryPort := arbitraryPort // shadows package-level constant
-	if arbitrarySubs {
-		port, arbitraryPort = offset(port, arbitraryPort)
-	}
+	port, arbitraryPort := offset(port, arbitraryPort, arbitrarySubs)
+	// arbitraryPort shadows the homonymous package-level constant.
 	ports, found := n.leaves.find(scheme)
 	if !found {
 		return
@@ -264,11 +251,7 @@ func (n *node) elems(suf string, f func(string) bool) bool {
 	suf = n.suf + suf
 	for scheme, ports := range n.leaves.all() {
 		for port := range ports.all() {
-			var maybeWildcard string
-			if port < arbitraryPort {
-				maybeWildcard = subdomainWildcard
-				port += portOffset
-			}
+			port, maybeWildcard := undoOffset(port)
 			var s string
 			switch port {
 			case absentPort:
@@ -289,4 +272,24 @@ func (n *node) elems(suf string, f func(string) bool) bool {
 		}
 	}
 	return true
+}
+
+// offset returns the results of subtracting portOffset from both port and
+// arbitraryPort.
+func offset(port, arbitraryPort int, arbitrarySubs bool) (int, int) {
+	if !arbitrarySubs {
+		return port, arbitraryPort
+	}
+	return port - portOffset, arbitraryPort - portOffset
+}
+
+// An offset used for storing ports corresponding to arbitrary subdomains.
+const portOffset = math.MaxUint16 + 2
+
+// undoOffset essentially undoes what offset does.
+func undoOffset(maybeOffsetPort int) (port int, maybeWildcard string) {
+	if maybeOffsetPort < arbitraryPort {
+		return maybeOffsetPort + portOffset, subdomainWildcard
+	}
+	return maybeOffsetPort, ""
 }
