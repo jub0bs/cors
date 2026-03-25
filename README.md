@@ -8,7 +8,7 @@
 [![codecov](https://codecov.io/gh/jub0bs/cors/branch/main/graph/badge.svg?token=N208BHWQTM)](https://app.codecov.io/gh/jub0bs/cors/tree/main)
 [![goreport](https://goreportcard.com/badge/jub0bs/cors)](https://goreportcard.com/report/jub0bs/cors)
 
-A principled [CORS][mdn-cors] middleware library for [Go][golang],
+An opinionated [CORS][mdn-cors] middleware library for [Go][golang],
 designed to be both easier to use and harder to misuse
 than existing alternatives.
 
