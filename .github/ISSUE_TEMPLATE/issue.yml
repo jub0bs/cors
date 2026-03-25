@@ -1,0 +1,38 @@
+name: Issue
+description: File an issue
+body:
+- type: checkboxes
+  id: resources
+  attributes:
+    label: Understanding CORS
+    description: >
+      CORS is a frequent source of confusion.
+      Before submitting your issue, please confirm that you have read and understood
+      [the short section entitled "About CORS" in the README](https://github.com/jub0bs/cors/blob/main/README.md#about-cors)
+      and [the MDN Web Docs page dedicated to CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS).
+    options:
+    - label: I have read and understood those resources.
+      required: true
+- type: input
+  id: go_version
+  attributes:
+    label: Go Version
+    description: Which version of Go are you using?
+    placeholder: 1.26.1
+  validations:
+    required: true
+- type: input
+  id: library_version
+  attributes:
+    label: Library Version
+    description: Which version of this library are you using? If you're using a version other than the latest one, please check whether your issue has since been resolved.
+    placeholder: 0.13.5
+  validations:
+    required: true
+- type: textarea
+  id: description
+  attributes:
+    label: Description
+    description: Please describe your issue.
+  validations:
+    required: true
