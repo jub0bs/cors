@@ -38,19 +38,6 @@ libraries by providing the following features:
 - [on-the-fly, concurrency-safe middleware reconfigurability][reconfigurable];
 - [programmatic handling of configuration errors][reconfigurable].
 
-Despite all of this library's goodness, here are some valid reasons
-for favoring libraries like the more popular [rs/cors][rs-cors]:
-
-- You need more flexibility than that afforded by the
-  [origin patterns supported by this library][origin-patterns];
-  but do bear in mind that
-  [excessive flexibility in this regard implies security risks][danger].
-- You want to log a message for every single request processed
-  by your CORS middleware; [but do you really?][logging]
-- Some of your clients do not comply with the Fetch standard and choke on
-  CORS-preflight responses whose status code is anything other than 200;
-  but such non-compliant clients remain rare.
-
 ## Installation
 
 ```shell
@@ -137,12 +124,77 @@ for CORS as desired.
 If you need to handle CORS-configuration errors programmatically,
 see [package cfgerrors][cfgerrors].
 
-## A note about testing
+## Documentation
 
-Be aware that, for performance reasons, CORS middleware produced by this
-library closely adheres to guarantees (provided by [the Fetch standard][fetch])
-about the format of some CORS headers. In particular, if you wish to write
-tests that exercise CORS middleware via CORS-preflight requests that include an
+The documentation is available on [pkg.go.dev][pkgsite].
+
+## Code coverage
+
+![coverage](https://codecov.io/gh/jub0bs/cors/branch/main/graphs/sunburst.svg?token=N208BHWQTM)
+
+## License
+
+All source code is covered by the [MIT License][license].
+
+## FAQ
+
+### Is this library more performant than [rs/cors][rs-cors] is?
+
+Yes, at least according to
+[recent results of my microbenchmarks][cors-benchmarks].
+
+### Can I use this library in conjunction with a third-party router?
+
+The answer depends on which router you intend to use;
+for guidance, see [jub0bs/cors-examples][cors-examples].
+
+### What if I need more flexibility in how I specify allowed origins?
+
+For security, this library only supports a restricted set of
+[origin patterns][origin-patterns]. If you need more flexibility, either fork
+this library or rely on another CORS middleware library, such as
+[rs/cors][rs-cors]. But do bear in mind that
+[excessive flexibility in this regard implies security risks][danger].
+
+Besides, if you need to update the set of origins allowed by your CORS
+middleware, be aware that
+[you can reconfigure it on the fly][middleware-reconfigure].
+
+### Can I selectively apply CORS on the basis of some URL query parameter(s)?
+
+No.
+
+### Can I configure a CORS middleware to log a message for every single request it processes?
+
+No, [for good reasons][logging]. If you really need to do that, either wrap
+your CORS middleware in a logging middleware, or rely on a different CORS
+middleware library, such as [rs/cors][rs-cors].
+
+Besides, if you need to troubleshoot CORS-preflight failures, you should
+temporarily [activate your CORS middleware's debug mode][middleware-debug].
+
+### Can I specify a custom status code to indicate preflight success?
+
+The [Fetch standard][fetch] stipulates that
+[any status code in the 200-299 range][ok-status]
+is acceptable to indicate preflight success.
+Unfortunately, some (altogether rare) non-compliant clients fail CORS preflight
+if responses to CORS-preflight requests use a status code other than 200.
+
+For simplicity and in compliance with the Fetch standard, this library
+invariably uses status code 204 to indicate preflight success.
+If you need to specify a custom status code to indicate preflight success,
+either fork this library or rely on another CORS middleware library,
+such as [rs/cors][rs-cors].
+
+### I want to write tests that check CORS behavior. What should I know?
+
+You shouldn't need to write such tests, as this library has an extensive test
+suite. But if you insist on writing such tests, be aware that, for performance
+reasons, CORS middleware produced by this library closely adheres to guarantees
+(provided by [the Fetch standard][fetch]) about the format of some CORS
+headers. In particular, if you wish to write tests that exercise CORS
+middleware via CORS-preflight requests that include an
 [`Access-Control-Request-Headers` header][acrh], keep in mind that you should
 specify the comma-separated elements in that header value
 
@@ -152,25 +204,9 @@ specify the comma-separated elements in that header value
 
 Otherwise, the CORS middleware will cause preflight to fail.
 
-## Documentation
+### What should I do if I wish to configure intermediaries so they cache responses to CORS-preflight requests?
 
-The documentation is available on [pkg.go.dev][pkgsite].
-
-Moreover, guidance on how to use this library with popular third-party routers
-can be found in [jub0bs/cors-examples][cors-examples].
-
-## Code coverage
-
-![coverage](https://codecov.io/gh/jub0bs/cors/branch/main/graphs/sunburst.svg?token=N208BHWQTM)
-
-## Benchmarks
-
-Some benchmarks pitting this library against [rs/cors][rs-cors]
-are available in [jub0bs/cors-benchmarks][cors-benchmarks].
-
-## License
-
-All source code is covered by the [MIT License][license].
+See the penultimate bullet point in [the package's doc comment][pkg-comment].
 
 ## Additional resources
 
@@ -199,8 +235,12 @@ All source code is covered by the [MIT License][license].
 [logging]: https://jub0bs.com/posts/2024-04-27-jub0bs-cors-a-better-cors-middleware-library-for-go/#debug-mode
 [mdn-cors]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 [mdn-sop]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
+[middleware-debug]: https://pkg.go.dev/github.com/jub0bs/cors#Middleware.Debug
+[middleware-reconfigure]: https://pkg.go.dev/github.com/jub0bs/cors#Middleware.Reconfigure
 [net-http]: https://pkg.go.dev/net/http
+[ok-status]: https://fetch.spec.whatwg.org/#ok-status
 [origin-patterns]: https://pkg.go.dev/github.com/jub0bs/cors#hdr-Origins-Config
+[pkg-comment]: https://pkg.go.dev/github.com/jub0bs/cors#pkg-overview
 [pkgsite-index]: https://pkg.go.dev/github.com/jub0bs/cors#pkg-index
 [pkgsite]: https://pkg.go.dev/github.com/jub0bs/cors
 [programmatic]: https://jub0bs.com/posts/2025-01-28-programmatic-handling-of-cors-configuration-errors/
