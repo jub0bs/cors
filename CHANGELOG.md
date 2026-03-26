@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.6] (2026-03-26)
+
+### Fixed
+
+- **Bug**: In all versions up to v0.13.5 (included), a middleware wrapping a
+  CORS middleware could compromise middleware's integrity and concurrency
+  safety by mutating some internal package-level slices that were meant to be
+  effectively constant (see https://github.com/jub0bs/cors/issues/14).
+
+### Added
+
+- **Documentation**: code of conduct
+- **Documentation**: issue template
+
+### Changed
+
+- **Performance**: Middleware execution now incurs slightly more heap
+  allocations.
+- **Performance**: minor improvements
+- **Tests**: Also run benchmarks with Go tip during CI.
+- **Documentation**: minor improvements
+
 ## [0.13.5] (2026-03-23)
 
 ### Changed
@@ -430,6 +452,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[0.13.6]: https://github.com/jub0bs/cors/compare/v0.13.5...v0.13.6
 [0.13.5]: https://github.com/jub0bs/cors/compare/v0.13.4...v0.13.5
 [0.13.4]: https://github.com/jub0bs/cors/compare/v0.13.3...v0.13.4
 [0.13.3]: https://github.com/jub0bs/cors/compare/v0.13.2...v0.13.3
