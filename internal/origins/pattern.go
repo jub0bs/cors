@@ -418,30 +418,6 @@ func (p *Pattern) Compare(p2 *Pattern) int {
 	)
 }
 
-// reverseCompare returns an integer comparing two reversed strings
-// lexicographically. The result will be
-//   - -1 if a is less than y,
-//   - 0 if x == y,
-//   - +1 if x is greater than y.
-//
-// reverseCompare(x, y) is functionally equivalent to
-//
-//	bytes.Compare(slices.Reverse([]byte(x)), slices.Reverse([]byte(y)))
-//
-// but doesn't incur any allocation.
-func reverseCompare(x, y string) int {
-	lx, ly := len(x), len(y)
-	n := min(lx, ly)
-	x, y = x[lx-n:], y[ly-n:]
-	_, _ = x[:n], y[:n] // hoist bounds checks out of the loop
-	for i := n - 1; 0 <= i; i-- {
-		if x[i] != y[i] {
-			return cmp.Compare(x[i], y[i])
-		}
-	}
-	return cmp.Compare(lx, ly)
-}
-
 // Equal reports whether *p == *p2.
 // Precondition: p and p2 are non-nil.
 func (p *Pattern) Equal(p2 *Pattern) bool {
