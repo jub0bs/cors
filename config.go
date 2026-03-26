@@ -432,17 +432,17 @@ type Config struct {
 }
 
 type internalConfig struct {
-	tree                         origins.Tree // tree.IsEmpty() <=> any origin allowed
+	tree                         origins.Tree
 	aceh                         string
-	allowedMethods               util.SortedSet // allowedMethods.Size() > 0 => !allowAnyMethod
-	allowedRequestHeaders        util.SortedSet
-	acah                         string
 	credentialed                 bool // tree.IsEmpty() => !credentialed
 	allowAnyMethod               bool
 	wildcardRequestHeaders       bool
 	tolerateSubsOfPublicSuffixes bool
 	tolerateInsecureOrigins      bool
-	preflight                    bool // reports whether preflight may succeed
+	preflight                    bool           // reports whether preflight may succeed
+	allowedMethods               util.SortedSet // allowedMethods.Size() > 0 => !allowAnyMethod
+	allowedRequestHeaders        util.SortedSet
+	acah                         string
 	acma                         string
 }
 
