@@ -157,10 +157,12 @@ func (icfg *internalConfig) prehandleActual(
 	isOPTIONS bool,
 ) {
 	// It's tempting to rely (for performance) on some precomputed slices for
-	// the response headers we add/set here, as we do in handleCORSPreflight.
+	// the response headers we add/set here.
 	// However, doing so here is fraught with peril, because it would provide
-	// the wrapped handler an undesirable affordance: mutation of those slices.
-	// See https://github.com/rs/cors/issues/198.
+	// the wrapped handler and any wrapping middleware an undesirable
+	// affordance: mutation of those slices. See
+	//  - https://github.com/rs/cors/issues/198,
+	//  - https://github.com/jub0bs/cors/issues/14.
 
 	if icfg.allowsAnyOrigin() {
 		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
@@ -224,6 +226,12 @@ func (icfg *internalConfig) handleCORSPreflight(
 	acrm *[1]string,
 	debug bool,
 ) {
+	// It's tempting to rely (for performance) on some precomputed slices for
+	// the response headers we add/set here.
+	// However, doing so here is fraught with peril, because it would provide
+	// any wrapping middleware an undesirable affordance: mutation of those
+	// slices. See https://github.com/jub0bs/cors/issues/14.
+	//
 	// Some notes about Vary in the context of CORS preflight:
 	//  - Contrary to popular belief, the presence of a Vary header in
 	//    responses to preflight requests has no bearing on the behavior of
@@ -297,7 +305,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	maps.Copy(resHdrs, buf)
 
 	if len(icfg.acma) != 0 {
-		resHdrs[headers.ACMA] = icfg.acma
+		resHdrs.Set(headers.ACMA, icfg.acma)
 	}
 
 	w.WriteHeader(preflightOKStatus)
@@ -308,7 +316,7 @@ func (icfg *internalConfig) performCORSCheckForPreflight(
 	origin *[1]string,
 ) bool {
 	if icfg.allowsAnyOrigin() {
-		buf[headers.ACAO] = headers.WildcardSgl
+		buf.Set(headers.ACAO, headers.ValueWildcard)
 		return true
 	}
 	// Not all origins are allowed.
@@ -322,7 +330,7 @@ func (icfg *internalConfig) performCORSCheckForPreflight(
 		// We make no attempt to infer whether the request is credentialed,
 		// simply because preflight requests don't carry credentials;
 		// see https://fetch.spec.whatwg.org/#example-xhr-credentials.
-		buf[headers.ACAC] = headers.TrueSgl
+		buf.Set(headers.ACAC, headers.ValueTrue)
 	}
 	return true
 }
@@ -351,7 +359,7 @@ func (icfg *internalConfig) processACRM(
 		// Therefore, no ACAM header needs be set in this case.
 		return true
 	case icfg.allowAnyMethod && !icfg.credentialed:
-		buf[headers.ACAM] = headers.WildcardSgl
+		buf.Set(headers.ACAM, headers.ValueWildcard)
 		return true
 	case icfg.allowAnyMethod || icfg.allowedMethods.Contains(method):
 		buf[headers.ACAM] = acrm[:]
@@ -409,13 +417,13 @@ func (icfg *internalConfig) processACRH(
 		buf[headers.ACAH] = acrh
 		return true
 	case icfg.wildcardRequestHeaders && !icfg.credentialed:
-		buf[headers.ACAH] = icfg.acah
+		buf.Set(headers.ACAH, icfg.acah)
 		return true
 	case debug:
 		if len(icfg.acah) == 0 {
 			return false
 		}
-		buf[headers.ACAH] = icfg.acah
+		buf.Set(headers.ACAH, icfg.acah)
 		return true
 	case headers.Check(icfg.allowedRequestHeaders, acrh):
 		// We can simply reflect all the ACRH header lines as ACAH header lines

@@ -32,17 +32,10 @@ const ( // header names in canonical format
 const Authorization = "authorization" // note: byte-lowercase
 
 const (
-	ValueTrue     = "true"
-	ValueWildcard = "*"
-)
-
-const ValueSep = ","
-
-var ( // each of them an effective constant wrapped in a (singleton) slice
-	TrueSgl         = []string{ValueTrue}
-	OriginSgl       = []string{Origin}
-	WildcardSgl     = []string{ValueWildcard}
-	WildcardAuthSgl = []string{ValueWildcard + ValueSep + Authorization}
+	ValueTrue         = "true"
+	ValueWildcard     = "*"
+	ValueSep          = ","
+	ValueWildcardAuth = ValueWildcard + ValueSep + Authorization
 )
 
 // IsValid reports whether name is a valid header name,

@@ -436,14 +436,14 @@ type internalConfig struct {
 	aceh                         string
 	allowedMethods               util.SortedSet // allowedMethods.Size() > 0 => !allowAnyMethod
 	allowedRequestHeaders        util.SortedSet
-	acah                         []string
+	acah                         string
 	credentialed                 bool // tree.IsEmpty() => !credentialed
 	allowAnyMethod               bool
 	wildcardRequestHeaders       bool
 	tolerateSubsOfPublicSuffixes bool
 	tolerateInsecureOrigins      bool
 	preflight                    bool // reports whether preflight may succeed
-	acma                         []string
+	acma                         string
 }
 
 func newInternalConfig(cfg *Config) (*internalConfig, error) {
@@ -705,9 +705,9 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 			// this costly execution path and thereby generate undue load
 			// on the server.
 			icfg.allowedRequestHeaders = allowedHeaders
-			icfg.acah = headers.WildcardAuthSgl
+			icfg.acah = headers.ValueWildcardAuth
 		} else {
-			icfg.acah = headers.WildcardSgl
+			icfg.acah = headers.ValueWildcard
 		}
 	case allowedHeaders.Size() > 0:
 		icfg.allowedRequestHeaders = allowedHeaders
@@ -715,7 +715,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 		// The elements of a header-field value may be separated simply by commas;
 		// since whitespace is optional, let's not use any.
 		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
-		icfg.acah = []string{strings.Join(s, headers.ValueSep)}
+		icfg.acah = strings.Join(s, headers.ValueSep)
 	}
 	return errs
 }
@@ -747,9 +747,9 @@ func (icfg *internalConfig) validateMaxAge(errs []error, delta int) []error {
 	case 0:
 		// Do nothing.
 	case disableCaching:
-		icfg.acma = []string{"0"}
+		icfg.acma = "0"
 	default:
-		icfg.acma = []string{strconv.Itoa(delta)}
+		icfg.acma = strconv.Itoa(delta)
 	}
 	return errs
 }
@@ -883,7 +883,7 @@ func newConfig(icfg *internalConfig) *Config {
 
 	// max age (retain it even if no preflight is possible)
 	if len(icfg.acma) > 0 {
-		maxAge, _ := strconv.Atoi(icfg.acma[0]) // safe, by construction
+		maxAge, _ := strconv.Atoi(icfg.acma) // safe, by construction
 		if maxAge != 0 {
 			cfg.MaxAgeInSeconds = maxAge
 		} else {
