@@ -144,8 +144,8 @@ import (
 //
 // No other forms of origin patterns are supported.
 //
-// Origin patterns whose scheme is not https and whose host is neither localhost
-// nor a [loopback IP address] are deemed insecure;
+// Origin patterns whose scheme is not https and whose host is neither a
+// [localhost name] nor a [loopback IP address] are deemed insecure;
 // as such, they are by default prohibited when credentialed access is enabled:
 //
 //	cors.Config{
@@ -367,8 +367,8 @@ import (
 // # DangerouslyTolerateInsecureOrigins
 //
 // DangerouslyTolerateInsecureOrigins enables you to allow insecure origins
-// (i.e. origins whose scheme is not https and whose host is neither localhost
-// nor a [loopback IP address]),
+// (i.e. origins whose scheme is not https and whose host is neither a
+// [localhost name] nor a [loopback IP address]),
 // which are by default prohibited when credentialed access is enabled.
 //
 // Be aware that allowing insecure origins exposes your clients to
@@ -408,6 +408,7 @@ import (
 // [forbidden request-header names]: https://fetch.spec.whatwg.org/#forbidden-request-header
 // [forbidden response-header names]: https://fetch.spec.whatwg.org/#forbidden-response-header-name
 // [fundamentally unsafe]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
+// [localhost name]: https://datatracker.ietf.org/doc/html/rfc6761#section-6.3
 // [loopback IP address]: https://www.rfc-editor.org/rfc/rfc5735#section-3
 // [null origin]: https://fetch.spec.whatwg.org/#append-a-request-origin-header
 // [public suffix]: https://publicsuffix.org/

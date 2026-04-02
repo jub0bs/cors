@@ -371,14 +371,24 @@ const schemeHTTPS = "https"
 // fulfilled:
 //   - p's scheme is not https,
 //   - p's host is not a loopback IP address,
-//   - p's host is not localhost.
+//   - p's host is not a [localhost name].
 //
 // Note: protocols using a scheme other than https may well encrypt traffic,
 // but let's be conservative here.
+//
+// [localhost name]: https://datatracker.ietf.org/doc/html/rfc6761#section-6.3
 func (p *Pattern) IsDeemedInsecure() bool {
-	return p.Scheme != schemeHTTPS &&
-		p.Kind != LoopbackIP &&
-		strings.TrimPrefix(p.HostPattern, wildcardSeq) != "localhost"
+	if p.Scheme == schemeHTTPS || p.Kind == LoopbackIP {
+		return false
+	}
+	// Section 6.3 of RFC 6761 states that "users may assume that
+	// IPv4 and IPv6 address queries for localhost names
+	// will always resolve to the respective IP loopback address".
+	// See https://datatracker.ietf.org/doc/html/rfc6761#section-6.3.
+	const period = string(labelSep)
+	trimmed := strings.TrimSuffix(p.HostPattern, period) // Handle FQDNs also.
+	before, found := strings.CutSuffix(trimmed, "localhost")
+	return !found || (before != "" && !strings.HasSuffix(before, period))
 }
 
 // HostIsEffectiveTLD reports whether p's host is an effective top-level
