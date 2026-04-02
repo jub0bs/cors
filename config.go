@@ -386,6 +386,10 @@ import (
 // is dangerous, because such domains are typically registrable by anyone,
 // including attackers.
 //
+// Also, keep in mind that the [public-suffix list] undergoes continual
+// changes and that even the latest release of this library may not rely on
+// the most recent version of that list.
+//
 // [ASCII serialized form]: https://html.spec.whatwg.org/multipage/browsers.html#ascii-serialisation-of-an-origin
 // [Authorization]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization
 // [Bearer tokens]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#bearer
@@ -412,6 +416,7 @@ import (
 // [loopback IP address]: https://www.rfc-editor.org/rfc/rfc5735#section-3
 // [null origin]: https://fetch.spec.whatwg.org/#append-a-request-origin-header
 // [public suffix]: https://publicsuffix.org/
+// [public-suffix list]: https://publicsuffix.org/list/public_suffix_list.dat
 // [security reasons]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
 // [subdomain takeover]: https://labs.detectify.com/writeups/hostile-subdomain-takeover-using-heroku-github-desk-more/
 // [technical and security reasons]: https://github.com/whatwg/fetch/issues/251#issuecomment-209265586
