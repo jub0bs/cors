@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] (2026-04-03)
+
+### Changed
+
+- **Behavior**: In accordance with [RFC 6761], all [localhost names] (not just
+  "localhost") are now deemed secure. The need for setting field
+  `DangerouslyTolerateInsecureOrigins` has therefore been relaxed: you no
+  longer necessarily need to set that field if you wish to both allow some
+  arbitrary localhost name(s) and enable credentialed access.
+- **Documentation**: minor improvements
+
 ## [0.13.6] (2026-03-26)
 
 ### Fixed
@@ -452,6 +463,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[0.14.0]: https://github.com/jub0bs/cors/compare/v0.13.6...v0.14.0
 [0.13.6]: https://github.com/jub0bs/cors/compare/v0.13.5...v0.13.6
 [0.13.5]: https://github.com/jub0bs/cors/compare/v0.13.4...v0.13.5
 [0.13.4]: https://github.com/jub0bs/cors/compare/v0.13.3...v0.13.4
@@ -491,11 +503,13 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 [204 (No Content)]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/204
 [CORS request headers]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#the_http_request_headers
+[RFC 6761]: https://datatracker.ietf.org/doc/html/rfc6761
 [RFC 8738]: https://datatracker.ietf.org/doc/html/rfc8738
 [RFC 9110]: https://httpwg.org/specs/rfc9110.html
 [Vary]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary
 [cache poisoning]: https://portswigger.net/web-security/web-cache-poisoning
 [issue76766]: https://go.dev/issue/76766
 [lna]: https://developer.chrome.com/blog/local-network-access
+[localhost names]: https://datatracker.ietf.org/doc/html/rfc6761#section-6.3
 [pna-on-hold]: https://developer.chrome.com/blog/pna-on-hold
 [pna]: https://wicg.github.io/private-network-access/
