@@ -1,6 +1,8 @@
-## Reporting security issue
+## Reporting a security issue
 
-Please do **not** open an issue on GitHub.
-Instead, contact jub0bs privately on [Mastodon].
+If you believe that you've identified a security vulnerability in this library,
+do **not** open a public issue. Instead, please privately report it to jub0bs
+by [filing a security advisory][new-advisory].
 
-[Mastodon]: https://infosec.exchange/@jub0bs
+[new-advisory]: https://github.com/jub0bs/cors/security/advisories/new
+
