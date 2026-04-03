@@ -36,7 +36,8 @@ libraries by providing the following features:
 - [strong performance guarantees][benchmark-results];
 - [a useful debug mode][debug];
 - [on-the-fly, concurrency-safe middleware reconfigurability][reconfigurable];
-- [programmatic handling of configuration errors][reconfigurable].
+- [programmatic handling of configuration errors][reconfigurable]
+  (useful for implementing [RFC 9457][rfc9457]).
 
 ## Installation
 
@@ -246,6 +247,7 @@ See the penultimate bullet point in [the package's doc comment][pkg-comment].
 [programmatic]: https://jub0bs.com/posts/2025-01-28-programmatic-handling-of-cors-configuration-errors/
 [reconfigurable]: https://jub0bs.com/posts/2024-05-14-reconfigurable-cors-middleware/
 [release-policy]: https://go.dev/doc/devel/release#policy
+[rfc9457]: https://www.rfc-editor.org/rfc/rfc9457.html
 [rs-cors]: https://github.com/rs/cors
 [safe]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#10-render-insecure-configurations-impossible
 [validation]: https://jub0bs.com/posts/2023-02-08-fearless-cors/#5-validate-configuration-and-fail-fast
