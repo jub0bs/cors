@@ -825,7 +825,7 @@ func BenchmarkConfig_invalid(b *testing.B) {
 	for _, tc := range invalidConfigTestCases {
 		f := func(b *testing.B) {
 			b.ReportAllocs()
-			for range b.N {
+			for b.Loop() {
 				if _, err := cors.NewMiddleware(*tc.cfg); err == nil {
 					b.Fatal("got nil error; want non-nil error")
 				}

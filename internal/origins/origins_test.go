@@ -283,8 +283,7 @@ func BenchmarkParse(b *testing.B) {
 	for _, tc := range parseTestCases {
 		f := func(b *testing.B) {
 			b.ReportAllocs()
-			b.ResetTimer()
-			for range b.N {
+			for b.Loop() {
 				origins.Parse(tc.input)
 			}
 		}

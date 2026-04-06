@@ -61,7 +61,7 @@ func BenchmarkAll(b *testing.B) {
 	for _, bc := range cases {
 		f := func(b *testing.B) {
 			b.ReportAllocs()
-			for range b.N {
+			for b.Loop() {
 				for errSink = range cfgerrors.All(bc.err) {
 					// deliberately empty
 				}

@@ -344,7 +344,7 @@ func BenchmarkMiddleware(b *testing.B) {
 		f := func(b *testing.B) {
 			b.ReportAllocs()
 			var err error
-			for range b.N {
+			for b.Loop() {
 				mw, err = cors.NewMiddleware(*mwbc.cfg)
 				if err != nil {
 					b.Fatal(err)
@@ -364,8 +364,7 @@ func BenchmarkMiddleware(b *testing.B) {
 				}
 			}
 			b.ReportAllocs()
-			b.ResetTimer()
-			for range b.N {
+			for b.Loop() {
 				mw.Config()
 			}
 		}
