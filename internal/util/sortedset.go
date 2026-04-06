@@ -57,28 +57,27 @@ func (set SortedSet) Contains(e string) bool {
 // Precondition: [*SortedSet.Add] was not called since [*SortedSet.Fix] was
 // last called.
 func (set SortedSet) Index(n uint, e string) int {
-	if set.maxLen < len(e) || uint(len(set.elems)) < n {
+	l := uint(len(set.elems))
+	if len(e) > set.maxLen || n >= l {
 		return -1
 	}
 	// Let's binary-search for e in set.elems[n:]. We eschew
 	// slices.BinarySearch here, so as to keep the method inlineable.
-	s := set.elems[n:]
-	var i uint
-	for j := uint(len(s)); i < j; {
-		j += i
+	for j := l; n < j; {
+		j += n
 		j >>= 1
 		// The length check below is redundant, but it's useful because it
 		// eliminates the bounds check for j.
-		if j < uint(len(s)) && s[j] < e {
-			i = j + 1
+		if j < l && set.elems[j] < e {
+			n = j + 1
 		}
 	}
-	if i >= uint(len(s)) || s[i] != e {
+	if n >= l || set.elems[n] != e {
 		return -1
 	}
 	// The following uint-to-int conversion is safe because
-	// n + i < len(set.elems) <= math.MaxInt.
-	return int(n + i)
+	// n < len(set.elems) <= math.MaxInt.
+	return int(n)
 }
 
 // ToSlice returns a slice of set's elements sorted in lexicographical order.
