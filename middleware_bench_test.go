@@ -340,7 +340,7 @@ func BenchmarkMiddleware(b *testing.B) {
 			continue
 		}
 		var mw *cors.Middleware
-		// benchmark initialization
+		// Benchmark middleware initialization.
 		f := func(b *testing.B) {
 			b.ReportAllocs()
 			var err error
@@ -354,9 +354,9 @@ func BenchmarkMiddleware(b *testing.B) {
 		desc := fmt.Sprintf("type=init/cfg=%s", mwbc.desc)
 		b.Run(desc, f)
 
-		// benchmark config
+		// Benchmark (*Middleware).Config.
 		f = func(b *testing.B) {
-			if mw == nil { // in case subbenchmark 'initialization' wasn't run
+			if mw == nil { // in case sub-benchmark 'initialization' wasn't run
 				var err error
 				mw, err = cors.NewMiddleware(*mwbc.cfg)
 				if err != nil {
@@ -372,7 +372,7 @@ func BenchmarkMiddleware(b *testing.B) {
 		b.Run(desc, f)
 	}
 
-	// benchmark execution
+	// Benchmark middleware execution.
 	for _, mwbc := range cases {
 		var handler http.Handler = mwbc.newHandler()
 		var mw *cors.Middleware
@@ -392,8 +392,8 @@ func BenchmarkMiddleware(b *testing.B) {
 				req := newRequest(bc.reqMethod, bc.reqHeaders)
 				b.ReportAllocs()
 				b.ResetTimer()
-				// We run benchmarks in parallel because typical workloads
-				// for HTTP handlers are concurrent.
+				// We run benchmarks in parallel because doing so
+				// mirrors typical workloads for HTTP handlers.
 				b.RunParallel(func(pb *testing.PB) {
 					for pb.Next() {
 						rec := httptest.NewRecorder()
