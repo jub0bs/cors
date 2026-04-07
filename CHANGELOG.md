@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.13.6] (2026-03-26)
 
-### Fixed
+### Security
 
 - **Bug**: In all versions up to v0.13.5 (included), a middleware wrapping a
   CORS middleware could compromise middleware's integrity and concurrency
@@ -374,11 +374,14 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.3.0] (2024-08-28)
 
-### Fixed
+### Security
 
 - **Bug**: Due to a lack of synchronization, invocations of a middleware
   concurrent with calls to that middleware's SetDebug method could previously
   trigger data races.
+
+### Fixed
+
 - **Tests**: Benchmarks now set the debug mode of the middleware under test
   only when intended.
 
@@ -415,7 +418,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.3] (2024-05-02)
 
-### Fixed
+### Security
 
 - **Vulnerability**: Some CORS middleware (more specifically those created by
   specifying two or more origin patterns whose hosts share a proper suffix)
@@ -455,7 +458,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 - **Documentation**: simplify examples
 - **Documentation**: various improvements
 
-### Fixed
+### Security
 
 - **Bug**: A handler wrapped in a CORS middleware could compromise middleware's
   concurrency safety by mutating some internal package-level slices that are
