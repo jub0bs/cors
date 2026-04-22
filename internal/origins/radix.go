@@ -203,6 +203,7 @@ func (n *node) add(scheme string, port int, arbitrarySubs bool) {
 	if !ok {
 		ports.upsert(port, struct{}{})
 		n.leaves.upsert(scheme, ports)
+		return
 	}
 	if _, found := ports.find(arbitraryPort); found {
 		// Adding (scheme, port) in n would cause redundancy. Let's not.
