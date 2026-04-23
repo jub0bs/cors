@@ -484,7 +484,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
-[1.0.0]: https://github.com/jub0bs/cors/compare/v1.0.0...v1.0.1
+[1.0.1]: https://github.com/jub0bs/cors/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/jub0bs/cors/compare/v0.14.0...v1.0.0
 [0.14.0]: https://github.com/jub0bs/cors/compare/v0.13.6...v0.14.0
 [0.13.6]: https://github.com/jub0bs/cors/compare/v0.13.5...v0.13.6
