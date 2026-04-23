@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] (2026-04-23)
+
+### Changed
+
+- **Performance**: minor improvements
+- **Documentation**: The README now correctly lists the two major Go versions
+  supported by this library.
+- **Dependencies**: update to golang.org/x/net v0.53.0
+
 ## [1.0.0] (2026-04-07)
 
 ### Changed
@@ -475,6 +484,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[1.0.0]: https://github.com/jub0bs/cors/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/jub0bs/cors/compare/v0.14.0...v1.0.0
 [0.14.0]: https://github.com/jub0bs/cors/compare/v0.13.6...v0.14.0
 [0.13.6]: https://github.com/jub0bs/cors/compare/v0.13.5...v0.13.6
