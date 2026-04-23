@@ -241,8 +241,7 @@ func parseHostPattern(str, rawOriginPattern string) (hostPattern string, kind Ki
 		err = invalidOriginPatternError(rawOriginPattern)
 		return
 	}
-	profileOnce.Do(initProfile)
-	if _, err = profile.ToASCII(host); err != nil {
+	if _, err = profile().ToASCII(host); err != nil {
 		err = prohibitedOriginPatternError(rawOriginPattern)
 		return
 	}
@@ -318,19 +317,14 @@ func lastCutByte(s string, sep byte) (before, after string, found bool) {
 	return "", s, false
 }
 
-var (
-	profileOnce sync.Once     // guards init of profile via initProfile
-	profile     *idna.Profile // lazily initialized
-)
-
-func initProfile() {
-	profile = idna.New(
+var profile = sync.OnceValue(func() *idna.Profile {
+	return idna.New(
 		idna.BidiRule(),
 		idna.ValidateLabels(true),
 		idna.StrictDomainName(true),
 		idna.VerifyDNSLength(true),
 	)
-}
+})
 
 // parsePortPattern parses a port pattern.
 // It it succeeds, it returns the port number and true;
