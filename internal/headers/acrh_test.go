@@ -168,6 +168,57 @@ func TestCheck(t *testing.T) {
 				append(make([]string, headers.MaxEmptyElements+1), "x-bar", "x-foo"),
 				make([]string, headers.MaxEmptyElements+1),
 			},
+		}, {
+			desc: "regression test for https://github.com/jub0bs/cors/issues/15",
+			elems: []string{
+				"accept",
+				"authorization",
+				"content-type",
+				"user-agent",
+				"x-csrf-token",
+				"x-request-id",
+				"x-custom-header",
+			},
+			accepted: [][]string{
+				{"accept"},
+				{"authorization"},
+				{"content-type"},
+				{"user-agent"},
+				{"x-csrf-token"},
+				{"x-request-id"},
+				{"x-custom-header"},
+				{"accept,authorization,user-agent"},
+				// some OWS
+				{" accept,x-custom-header "},
+				{"  accept,x-custom-header"},
+				{"accept,x-custom-header  "},
+				// some empty elements, possibly with OWS
+				{""},
+				{","},
+				{"\t, , "},
+				{"\tx-custom-header ,"},
+				{" x-custom-header\t,"},
+				{strings.Repeat(",", headers.MaxEmptyElements) + "x-custom-header"},
+				// multiple header lines, some empty elements
+				append(make([]string, headers.MaxEmptyElements), "x-custom-header"),
+				make([]string, headers.MaxEmptyElements),
+			},
+			rejected: [][]string{
+				{"x-bar"},
+				{"user-agent,accept"},
+				// too much OWS
+				{"user-agent   "},
+				{" user-agent  "},
+				{"  user-agent "},
+				{" user-agent\t\t"},
+				{"\tuser-agent\t\t"},
+				{"\t\tuser-agent\t\t"},
+				// too many empty elements
+				{strings.Repeat(",", headers.MaxEmptyElements+1) + "user-agent"},
+				// multiple header lines, too many empty elements
+				append(make([]string, headers.MaxEmptyElements+1), "user-agent"),
+				make([]string, headers.MaxEmptyElements+1),
+			},
 		},
 	}
 	for _, tc := range cases {

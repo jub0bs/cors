@@ -43,6 +43,13 @@ func TestSortedSet(t *testing.T) {
 			maxLen:   5,
 			notElems: []string{"x-baz", "x-qux", "x-quux"},
 			slice:    []string{"x-bar", "x-foo"},
+		}, {
+			desc:     "regression test for https://github.com/jub0bs/cors/issues/15",
+			elems:    []string{"a", "b", "c", "d", "e"},
+			size:     5,
+			maxLen:   1,
+			notElems: []string{"f", "g", "h", "z", "x-foo"},
+			slice:    []string{"a", "b", "c", "d", "e"},
 		},
 	}
 	for _, tc := range cases {
