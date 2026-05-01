@@ -111,3 +111,28 @@ func TestSortedSet(t *testing.T) {
 		t.Run(tc.desc, f)
 	}
 }
+
+func FuzzSortedSet(f *testing.F) {
+	f.Add([]byte("abcd"))
+	f.Add([]byte("az"))
+	f.Add([]byte("xyz"))
+	f.Fuzz(func(t *testing.T, s []byte) {
+		slices.Sort(s)
+		s = slices.Compact(s)
+		var set util.SortedSet
+		for _, b := range s {
+			set.Add(string(b))
+		}
+		set.Fix()
+		for i := range 1 << 8 {
+			b := byte(i)
+			_, found := slices.BinarySearch(s, b)
+			if found && !set.Contains(string(b)) {
+				t.Fatalf("set.Contains(%q): got false; want true", string(b))
+			}
+			if !found && set.Contains(string(b)) {
+				t.Fatalf("set.Contains(%q): got true; want false", string(b))
+			}
+		}
+	})
+}
