@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Bug**: In v0.13.3 to v1.0.1 (included), some middleware would disallow
+- **Bug**: In v0.13.3 to v1.0.1 (inclusive), some middleware would disallow
   request-header names that they should have allowed (see
   https://github.com/jub0bs/cors/issues/15).
 
@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- **Bug**: In all versions up to v0.13.5 (included), a middleware wrapping a
+- **Bug**: In all versions up to v0.13.5 (inclusive), a middleware wrapping a
   CORS middleware could compromise middleware's integrity and concurrency
   safety by mutating some internal package-level slices that were meant to be
   effectively constant (see https://github.com/jub0bs/cors/issues/14).
@@ -100,7 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Bug**: In v0.12.0 to v0.13.0 (included), origin patterns with a `file`
+- **Bug**: In v0.12.0 to v0.13.0 (inclusive), origin patterns with a `file`
   scheme would not get rejected by `NewMiddleware` and `(*Config).Reconfigure`
   but should have been.
 
@@ -125,7 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Bug**: In v0.11.0 to v0.12.1 (included), for some configurations,
+- **Bug**: In v0.11.0 to v0.12.1 (inclusive), for some configurations,
   the result of `*Middleware`'s `Config` method would fail to reflect the
   max-age value that the middleware was configured (or last reconfigured) with.
 
