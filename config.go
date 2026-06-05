@@ -883,12 +883,12 @@ func newConfig(icfg *internalConfig) *Config {
 	}
 
 	// response headers
-	if len(icfg.aceh) > 0 {
+	if icfg.aceh != "" {
 		cfg.ResponseHeaders = strings.Split(icfg.aceh, headers.ValueSep)
 	}
 
 	// max age (retain it even if no preflight is possible)
-	if len(icfg.acma) > 0 {
+	if icfg.acma != "" {
 		maxAge, _ := strconv.Atoi(icfg.acma) // safe, by construction
 		if maxAge != 0 {
 			cfg.MaxAgeInSeconds = maxAge

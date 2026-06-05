@@ -304,7 +304,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 
 	maps.Copy(resHdrs, buf)
 
-	if len(icfg.acma) != 0 {
+	if icfg.acma != "" {
 		resHdrs.Set(headers.ACMA, icfg.acma)
 	}
 
@@ -420,7 +420,7 @@ func (icfg *internalConfig) processACRH(
 		buf.Set(headers.ACAH, icfg.acah)
 		return true
 	case debug:
-		if len(icfg.acah) == 0 {
+		if icfg.acah == "" {
 			return false
 		}
 		buf.Set(headers.ACAH, icfg.acah)
