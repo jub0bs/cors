@@ -179,8 +179,9 @@ temporarily [activate your CORS middleware's debug mode][middleware-debug].
 The [Fetch standard][fetch] stipulates that
 [any status code in the 200-299 range][ok-status]
 is acceptable to indicate preflight success.
-Unfortunately, some (altogether rare) non-compliant clients fail CORS preflight
-if responses to CORS-preflight requests use a status code other than 200.
+Unfortunately, some (altogether rare) non-compliant browsers fail CORS
+preflight if responses to CORS-preflight requests use a status code other than
+200.
 
 For simplicity and in compliance with the Fetch standard, this library
 invariably uses status code 204 to indicate preflight success.
