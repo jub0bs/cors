@@ -6,7 +6,6 @@
 [![license](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](https://github.com/jub0bs/cors/raw/main/LICENSE)
 [![build](https://github.com/jub0bs/cors/actions/workflows/cors.yml/badge.svg)](https://github.com/jub0bs/cors/actions/workflows/cors.yml)
 [![codecov](https://codecov.io/gh/jub0bs/cors/branch/main/graph/badge.svg?token=N208BHWQTM)](https://app.codecov.io/gh/jub0bs/cors/tree/main)
-[![goreport](https://goreportcard.com/badge/jub0bs/cors)](https://goreportcard.com/report/jub0bs/cors)
 
 An opinionated [CORS][mdn-cors] middleware library for [Go][golang],
 designed to be both easier to use and harder to misuse
