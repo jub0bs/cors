@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Documentation**: minor improvements
 - **Dependencies**: update to golang.org/x/net v0.57.0
 
 ## [1.0.4] (2026-06-11)
