@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] (2026-08-19)
+
+### Fixed
+
+- **Bug**: In v0.3.0 to v1.0.5 (inclusive), schemes that contain underscores
+  would incorrectly be deemed valid
+  (see https://github.com/jub0bs/cors/issues/16).
+- **Bug**: In v1.0.3 to v1.0.5 (inclusive), if [go1.27rc1][go1.27rc1] or above
+  is used, some Web origins deemed valid by major browsers (i.e. Web origins
+  that contain an empty root label or labels that contain underscores) would be
+  rejected as invalid (see https://github.com/jub0bs/cors/issues/17).
+
+### Changed
+
+- **Tests**: minor improvements
+- **Dependencies**: Go 1.26 (or above) is now required.
+- **Dependencies**: update to golang.org/x/net v0.58.0
+
 ## [1.0.5] (2026-07-15)
 
 ### Changed
@@ -512,6 +530,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[1.1.0]: https://github.com/jub0bs/cors/compare/v1.0.5...v1.1.0
 [1.0.5]: https://github.com/jub0bs/cors/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/jub0bs/cors/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/jub0bs/cors/compare/v1.0.2...v1.0.3
@@ -563,6 +582,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 [RFC 9110]: https://httpwg.org/specs/rfc9110.html
 [Vary]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary
 [cache poisoning]: https://portswigger.net/web-security/web-cache-poisoning
+[go1.27rc1]: https://groups.google.com/g/golang-announce/c/Cu9HkstbtpA
 [issue76766]: https://go.dev/issue/76766
 [lna]: https://developer.chrome.com/blog/local-network-access
 [localhost names]: https://datatracker.ietf.org/doc/html/rfc6761#section-6.3
