@@ -240,7 +240,7 @@ func parseHostPattern(str, rawOriginPattern string) (hostPattern string, kind Ki
 		err = invalidOriginPatternError(rawOriginPattern)
 		return
 	}
-	if _, err = profile().ToASCII(host); err != nil {
+	if _, err = profile().ToASCII(cleanHost(host)); err != nil {
 		err = prohibitedOriginPatternError(rawOriginPattern)
 		return
 	}

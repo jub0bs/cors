@@ -2,6 +2,8 @@
 
 package origins
 
+import "strings"
+
 // splitAtCommonSuffix finds the longest suffix common to x and y and returns
 // x and y both trimmed of that suffix along with the suffix itself.
 func splitAtCommonSuffix(x, y string) (string, string, string) {
@@ -53,4 +55,21 @@ func reverseCompare(x, y string) int {
 	case len(x) > len(y):
 		return +1
 	}
+}
+
+// Go 1.27 adopted Unicode 17; see
+//   - https://www.unicode.org/reports/tr46/tr46-35.html
+//   - https://go-review.googlesource.com/c/go/+/737420
+//
+// Some calls to (*idna.Profile).ToASCII that succeed with Go versions before
+// 1.27 fail with Go 1.27. See https://go.dev/issue/80476.
+// Without modifying the profile we rely on,
+// let's remain as lenient as we were before Go 1.27.
+func cleanHost(host string) string {
+	// Elide an empty root label (and the preceding period), if any.
+	host = strings.TrimSuffix(host, string(labelSep))
+	// Replace each underscore (0x5F) character with
+	// a character that can occur anywhere in a label.
+	host = strings.ReplaceAll(host, "_", "a")
+	return host
 }

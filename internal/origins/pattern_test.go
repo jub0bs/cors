@@ -341,11 +341,20 @@ var parsePatternTestCases = []TestCase{
 		input:   "http://exAmplE.coM:3999",
 		failure: true,
 	}, {
-		desc:  "host contains underscores and hyphens",
-		input: "http://ex_am-ple.com:3999",
+		desc:  "host contains hyphens",
+		input: "http://ex-am-ple.com:3999",
 		want: origins.Pattern{
 			Scheme:      "http",
-			HostPattern: "ex_am-ple.com",
+			HostPattern: "ex-am-ple.com",
+			Kind:        origins.Domain,
+			Port:        3999,
+		},
+	}, {
+		desc:  "host contains underscores",
+		input: "http://ex_am_ple.com:3999",
+		want: origins.Pattern{
+			Scheme:      "http",
+			HostPattern: "ex_am_ple.com",
 			Kind:        origins.Domain,
 			Port:        3999,
 		},

@@ -54,3 +54,8 @@ func reverseCompare(x, y string) int {
 		return +1
 	}
 }
+
+// This is a no-op; see ./go127.go.
+func cleanHost(host string) string {
+	return host
+}
