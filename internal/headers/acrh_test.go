@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jub0bs/cors/internal/headers"
-	"github.com/jub0bs/cors/internal/util"
+	"github.com/jub0bs/cors/internal/sortedset"
 )
 
 func TestCheck(t *testing.T) {
@@ -223,7 +223,7 @@ func TestCheck(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f := func(t *testing.T) {
-			var set util.SortedSet
+			var set sortedset.Set
 			for _, elem := range tc.elems {
 				set.Add(elem)
 			}

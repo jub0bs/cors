@@ -11,7 +11,7 @@ import (
 	"github.com/jub0bs/cors/internal/headers"
 	"github.com/jub0bs/cors/internal/methods"
 	"github.com/jub0bs/cors/internal/origins"
-	"github.com/jub0bs/cors/internal/util"
+	"github.com/jub0bs/cors/internal/sortedset"
 )
 
 // A Config configures a Middleware. The mechanics of and interplay between
@@ -445,9 +445,9 @@ type internalConfig struct {
 	wildcardRequestHeaders       bool
 	tolerateSubsOfPublicSuffixes bool
 	tolerateInsecureOrigins      bool
-	preflight                    bool           // reports whether preflight may succeed
-	allowedMethods               util.SortedSet // allowedMethods.Size() > 0 => !allowAnyMethod
-	allowedRequestHeaders        util.SortedSet
+	preflight                    bool          // reports whether preflight may succeed
+	allowedMethods               sortedset.Set // allowedMethods.Size() > 0 => !allowAnyMethod
+	allowedRequestHeaders        sortedset.Set
 	acah                         string
 	acma                         string
 }
@@ -573,7 +573,7 @@ func (icfg *internalConfig) validateMethods(errs []error, names []string) []erro
 				continue
 			}
 			// We no longer need to maintain a set of allowed methods.
-			icfg.allowedMethods = util.SortedSet{}
+			icfg.allowedMethods = sortedset.Set{}
 			icfg.allowAnyMethod = true
 			continue
 		}
@@ -612,7 +612,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 		return errs
 	}
 	var (
-		allowedHeaders util.SortedSet
+		allowedHeaders sortedset.Set
 		// useful because we can't query allowedHeaders until we Fix it.
 		allowAuthorizationHeader bool
 		// number of errors accumulated so far
@@ -626,7 +626,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 			icfg.wildcardRequestHeaders = true
 			// We no longer need to maintain a set of allowed request headers
 			// other than Authorization (if we've seen it).
-			allowedHeaders = util.SortedSet{}
+			allowedHeaders = sortedset.Set{}
 			if allowAuthorizationHeader {
 				allowedHeaders.Add(headers.Authorization)
 			}
@@ -765,7 +765,7 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 		return errs
 	}
 	var (
-		exposedHeaders   util.SortedSet
+		exposedHeaders   sortedset.Set
 		exposeAllResHdrs bool
 		nbErrors         = len(errs) // number of errors accumulated so far
 	)
@@ -793,7 +793,7 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 			}
 			exposeAllResHdrs = true
 			// We no longer need to maintain a set of exposed headers.
-			exposedHeaders = util.SortedSet{}
+			exposedHeaders = sortedset.Set{}
 			continue
 		}
 		if !headers.IsValid(name) {

@@ -1,6 +1,6 @@
 package headers
 
-import "github.com/jub0bs/cors/internal/util"
+import "github.com/jub0bs/cors/internal/sortedset"
 
 // Check reports whether acrhs is a sequence of [list-based field values]
 // whose elements are
@@ -40,7 +40,7 @@ import "github.com/jub0bs/cors/internal/util"
 // [section 5.6.1.2]: https://httpwg.org/specs/rfc9110.html#rfc.section.5.6.1.2
 // [some reportedly do]: https://github.com/rs/cors/issues/184
 // [the Fetch standard]: https://fetch.spec.whatwg.org
-func Check(set util.SortedSet, acrhs []string) bool {
+func Check(set sortedset.Set, acrhs []string) bool {
 	var (
 		// cursor in the overall ACRH value
 		start uint

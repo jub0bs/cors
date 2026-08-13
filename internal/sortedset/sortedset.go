@@ -1,25 +1,25 @@
-// Package util provides a data structure that represents a sorted set of
+// Package sortedset provides a data structure that represents a sorted set of
 // strings.
-package util
+package sortedset
 
 import "slices"
 
-// A SortedSet represents a set of strings sorted in lexicographical order.
-// After a call to [*SortedSet.Fix], each element has a unique position ranging
+// A Set represents a set of strings sorted in lexicographical order.
+// After a call to [*Set.Fix], each element has a unique position ranging
 // from 0 (inclusive) to the set's cardinality (exclusive).
 // The zero value represents an empty set.
-type SortedSet struct {
+type Set struct {
 	elems  []string
 	maxLen int
 }
 
 // Add adds e to set. Calling Add generally breaks set's invariants.
-func (set *SortedSet) Add(e string) {
+func (set *Set) Add(e string) {
 	set.elems = append(set.elems, e)
 }
 
 // Fix re-establishes set's invariants.
-func (set *SortedSet) Fix() {
+func (set *Set) Fix() {
 	slices.Sort(set.elems)
 	set.elems = slices.Compact(set.elems)
 	for _, e := range set.elems {
@@ -29,34 +29,34 @@ func (set *SortedSet) Fix() {
 
 // Size returns the cardinality of set.
 //
-// Precondition: [*SortedSet.Add] was not called since [*SortedSet.Fix] was
+// Precondition: [*Set.Add] was not called since [*Set.Fix] was
 // last called.
-func (set SortedSet) Size() int {
+func (set Set) Size() int {
 	return len(set.elems)
 }
 
 // MaxLen returns the length of set's longest element, or 0 if set is empty.
 //
-// Precondition: [*SortedSet.Add] was not called since [*SortedSet.Fix] was
+// Precondition: [*Set.Add] was not called since [*Set.Fix] was
 // last called.
-func (set SortedSet) MaxLen() uint {
+func (set Set) MaxLen() uint {
 	return uint(set.maxLen)
 }
 
 // Contains reports whether e is an element of set.
 //
-// Precondition: [*SortedSet.Add] was not called since [*SortedSet.Fix] was
+// Precondition: [*Set.Add] was not called since [*Set.Fix] was
 // last called.
-func (set SortedSet) Contains(e string) bool {
+func (set Set) Contains(e string) bool {
 	return set.Index(0, e) >= 0
 }
 
 // Index returns the index of e in set if it occurs after the first i elements
 // of set, or -1 otherwise.
 //
-// Precondition: [*SortedSet.Add] was not called since [*SortedSet.Fix] was
+// Precondition: [*Set.Add] was not called since [*Set.Fix] was
 // last called.
-func (set SortedSet) Index(i uint, e string) int {
+func (set Set) Index(i uint, e string) int {
 	l := uint(len(set.elems))
 	if len(e) > set.maxLen || i >= l {
 		return -1
@@ -83,8 +83,8 @@ func (set SortedSet) Index(i uint, e string) int {
 
 // ToSlice returns a slice of set's elements sorted in lexicographical order.
 //
-// Precondition: [*SortedSet.Add] was not called since [*SortedSet.Fix] was
+// Precondition: [*Set.Add] was not called since [*Set.Fix] was
 // last called.
-func (set SortedSet) ToSlice() []string {
+func (set Set) ToSlice() []string {
 	return slices.Clone(set.elems) // defensive copying
 }

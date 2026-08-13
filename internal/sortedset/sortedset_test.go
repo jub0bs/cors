@@ -1,10 +1,10 @@
-package util_test
+package sortedset_test
 
 import (
 	"slices"
 	"testing"
 
-	"github.com/jub0bs/cors/internal/util"
+	"github.com/jub0bs/cors/internal/sortedset"
 )
 
 func TestSortedSet(t *testing.T) {
@@ -55,7 +55,7 @@ func TestSortedSet(t *testing.T) {
 	for _, tc := range cases {
 		f := func(t *testing.T) {
 			t.Parallel()
-			var set util.SortedSet
+			var set sortedset.Set
 			for _, elem := range tc.elems {
 				set.Add(elem)
 			}
@@ -119,7 +119,7 @@ func FuzzSortedSet(f *testing.F) {
 	f.Fuzz(func(t *testing.T, s []byte) {
 		slices.Sort(s)
 		s = slices.Compact(s)
-		var set util.SortedSet
+		var set sortedset.Set
 		for _, b := range s {
 			set.Add(string(b))
 		}
