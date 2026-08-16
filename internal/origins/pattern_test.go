@@ -84,6 +84,10 @@ var parsePatternTestCases = []TestCase{
 		input:   " http://example.com:6060 ",
 		failure: true,
 	}, {
+		desc:    "scheme that contains an underscore",
+		input:   "ht_tp://foo",
+		failure: true,
+	}, {
 		desc:  "non-HTTP scheme",
 		input: "connector://foo",
 		want: origins.Pattern{
@@ -136,8 +140,12 @@ var parsePatternTestCases = []TestCase{
 		input:   "42-chrome-extension://foo",
 		failure: true,
 	}, {
-		desc:    "invalid later char in scheme",
+		desc:    "invalid later char (asterisk) in scheme",
 		input:   "chrome-extension*://foo",
+		failure: true,
+	}, {
+		desc:    "invalid later char (underscore) in scheme",
+		input:   "chrome_extension://foo",
 		failure: true,
 	}, {
 		desc:    "http with explicit port 80",
