@@ -390,8 +390,8 @@ func (p *Pattern) IsDeemedInsecure() bool {
 // [public suffix]: https://publicsuffix.org/list/
 func (p *Pattern) HostIsEffectiveTLD() bool {
 	host := strings.TrimPrefix(p.HostPattern, wildcardSeq)
-	// For cases like of a Web origin that ends with a full stop,
-	// we need to trim the latter for this check.
+	// For cases like of a Web origin whose host contains an empty root label,
+	// we need to elide the latter (and the preceding period) for this check.
 	host = strings.TrimSuffix(host, string(labelSep))
 	// We ignore the second (boolean) result because
 	// it's false for some listed eTLDs (e.g. github.io)

@@ -241,7 +241,7 @@ var parsePatternTestCases = []TestCase{
 			Port:        90,
 		},
 	}, {
-		desc:    "IPv4 host with trailing full stop",
+		desc:    "IPv4 host with trailing period",
 		input:   "https://127.0.0.1.:90",
 		failure: true,
 	}, {
@@ -359,7 +359,7 @@ var parsePatternTestCases = []TestCase{
 			Port:        3999,
 		},
 	}, {
-		desc:  "trailing full stop in host",
+		desc:  "empty root label",
 		input: "http://example.com.:3999",
 		want: origins.Pattern{
 			Scheme:      "http",
@@ -368,7 +368,7 @@ var parsePatternTestCases = []TestCase{
 			Port:        3999,
 		},
 	}, {
-		desc:    "multiple trailing full stops in host",
+		desc:    "multiple trailing periods in host",
 		input:   "http://example.com..:3999",
 		failure: true,
 	}, {
@@ -406,7 +406,7 @@ var parsePatternTestCases = []TestCase{
 		input:   "http://fooo.*.example.com:3999",
 		failure: true,
 	}, {
-		desc:    "wildcard not followed by a full stop",
+		desc:    "wildcard not followed by a period",
 		input:   "http://*example.com:3999",
 		failure: true,
 	}, {

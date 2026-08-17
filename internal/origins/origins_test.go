@@ -97,7 +97,7 @@ var parseTestCases = []struct {
 			Port:   90,
 		},
 	}, {
-		desc:    "valid compressed IPv6 followed by a trailing full stop",
+		desc:    "valid compressed IPv6 followed by a trailing period",
 		input:   "http://[::1].:90",
 		failure: true,
 	}, {
@@ -113,7 +113,7 @@ var parseTestCases = []struct {
 		input:   "https://example.com:0",
 		failure: true,
 	}, {
-		desc:  "domain with a leading full stop",
+		desc:  "domain with a leading period",
 		input: "https://.example.com",
 		want: origins.Origin{
 			Scheme: "https",
@@ -174,7 +174,7 @@ var parseTestCases = []struct {
 			Port:   6060,
 		},
 	}, {
-		desc:  "ipv4 with trailing full stop",
+		desc:  "ipv4 with trailing period",
 		input: "http://127.0.0.1.",
 		want: origins.Origin{
 			Scheme: "http",
@@ -195,7 +195,7 @@ var parseTestCases = []struct {
 			Host:   "256.0.0.1",
 		},
 	}, {
-		desc:  "ipv4 with trailing full stop and port",
+		desc:  "ipv4 with trailing period and port",
 		input: "http://127.0.0.1.:6060",
 		want: origins.Origin{
 			Scheme: "http",
