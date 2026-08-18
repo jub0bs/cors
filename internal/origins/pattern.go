@@ -209,9 +209,16 @@ func parseHostPattern(str, rawOriginPattern string) (hostPattern string, kind Ki
 		// If the last non-empty label starts with a digit,
 		// assume an IPv4 address, since no TLD starts with a digit
 		// (see https://www.iana.org/domains/root/db).
-		var ok bool
-		assumeIP, ok = firstByteOfRightmostLabelIsDigit(hostPattern)
-		if !ok || assumeIP && arbitrarySubs {
+		var (
+			b  byte
+			ok bool
+		)
+		if b, ok = firstByteOfRightmostLabel(hostPattern); !ok {
+			err = invalidOriginPatternError(rawOriginPattern)
+			return
+		}
+		assumeIP = isDigit(b)
+		if assumeIP && arbitrarySubs {
 			err = invalidOriginPatternError(rawOriginPattern)
 			return
 		}
@@ -278,19 +285,23 @@ func isDomainByte(c byte) bool {
 		(uint64(1)<<(c-64))&(mask>>64)) != 0
 }
 
-// firstByteOfRightmostLabelIsDigit reports whether the first byte of the
-// rightmost DNS label in hostPattern is a digit.
-// If it succeeds, it returns the result of that check and true;
-// otherwise, its ok result returns false.
-func firstByteOfRightmostLabelIsDigit(hostPattern string) (_ bool, ok bool) {
+// firstByteOfRightmostLabel returns
+//   - the first byte of the rightmost label in hostPattern and true
+//     if hostPattern contains no empty root label, or
+//   - the first byte of the second rightmost label in hostPattern and true
+//     if hostPattern contains an empty root label.
+//
+// If no such byte is found in hostPattern, firstByteOfRightmostLabel's ok
+// result is false.
+func firstByteOfRightmostLabel(hostPattern string) (_ byte, ok bool) {
 	rest, label, _ := lastCutByte(hostPattern, labelSep)
 	if label != "" {
-		return isDigit(label[0]), true
+		return label[0], true
 	}
-	// hostPattern contains a trailing period ("absolute" domain).
+	// hostPattern contains an empty root label.
 	_, label, _ = lastCutByte(rest, labelSep)
 	if label != "" {
-		return isDigit(label[0]), true
+		return label[0], true
 	}
 	return
 }
