@@ -24,16 +24,12 @@ func Test_incomparability_of_Config(t *testing.T) {
 // of cors.Config.
 func Test_that_unkeyed_Config_struct_literals_are_illegal(t *testing.T) {
 	typ := reflect.TypeFor[cors.Config]()
-	var unexportedFields bool
-	for i := range typ.NumField() {
-		if !typ.Field(i).IsExported() {
-			unexportedFields = true
-			break
+	for field := range typ.Fields() {
+		if !field.IsExported() {
+			return
 		}
 	}
-	if !unexportedFields {
-		t.Errorf("type %v has no unexported fields, but should have at least one", typ)
-	}
+	t.Errorf("type %v has no unexported fields, but should have at least one", typ)
 }
 
 // Some clients rely on the ability to marshal configuration to JSON;
