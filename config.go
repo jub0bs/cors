@@ -750,7 +750,7 @@ func (icfg *internalConfig) validateMaxAge(errs []error, delta int) []error {
 		return append(errs, err)
 	}
 	switch delta {
-	case 0:
+	case 0, defaultMaxAge:
 		// Do nothing.
 	case disableCaching:
 		icfg.acma = "0"
