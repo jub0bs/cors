@@ -138,8 +138,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 		if isOPTIONS && found {
 			// r is a CORS-preflight request;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
-			debug := m.debug.Load()
-			icfg.handleCORSPreflight(w, r.Header, origin, acrm, debug)
+			icfg.handleCORSPreflight(w, r.Header, origin, acrm, m.debug.Load())
 			return
 		}
 		// r is an "actual" (i.e. non-preflight) CORS request.
