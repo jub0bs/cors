@@ -153,14 +153,6 @@ func (icfg *internalConfig) prehandleActual(
 	origin *[1]string,
 	isOPTIONS bool,
 ) {
-	// It's tempting to rely (for performance) on some precomputed slices for
-	// the response headers we add/set here.
-	// However, doing so here is fraught with peril, because it would provide
-	// the wrapped handler and any wrapping middleware an undesirable
-	// affordance: mutation of those slices. See
-	//  - https://github.com/rs/cors/issues/198,
-	//  - https://github.com/jub0bs/cors/issues/14.
-
 	if icfg.allowsAnyOrigin() {
 		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
 		if icfg.aceh != "" {
@@ -223,12 +215,6 @@ func (icfg *internalConfig) handleCORSPreflight(
 	acrm *[1]string,
 	debug bool,
 ) {
-	// It's tempting to rely (for performance) on some precomputed slices for
-	// the response headers we add/set here.
-	// However, doing so here is fraught with peril, because it would provide
-	// any wrapping middleware an undesirable affordance: mutation of those
-	// slices. See https://github.com/jub0bs/cors/issues/14.
-	//
 	// Some notes about Vary in the context of CORS preflight:
 	//  - Contrary to popular belief, the presence of a Vary header in
 	//    responses to preflight requests has no bearing on the behavior of
