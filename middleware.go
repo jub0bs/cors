@@ -139,9 +139,6 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 			// r is a CORS-preflight request;
 			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
 			debug := m.debug.Load()
-			// Note that, because h.ServeHTTP is not called in this branch,
-			// we can safely rely, for performance, on some precomputed slices
-			// for adding/setting headers.
 			icfg.handleCORSPreflight(w, r.Header, origin, acrm, debug)
 			return
 		}
