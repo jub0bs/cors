@@ -422,14 +422,16 @@ func (p *Pattern) HostIsEffectiveTLD() bool {
 //
 // Precondition: p and p2 are non-nil.
 func (p *Pattern) Compare(p2 *Pattern) int {
-	return cmp.Or(
-		// Conveniently for us, '*' (0x2A) requires no special handling,
-		// since it is less that all other valid host-pattern bytes.
-		reverseCompare(p.HostPattern, p2.HostPattern),
-		strings.Compare(p.Scheme, p2.Scheme),
-		// We declare arbitraryPort to be less than all other port values.
-		cmp.Compare(p.Port, p2.Port),
-	)
+	// Conveniently for us, '*' (0x2A) requires no special handling,
+	// since it is less that all other valid host-pattern bytes.
+	if c := reverseCompare(p.HostPattern, p2.HostPattern); c != 0 {
+		return c
+	}
+	if c := strings.Compare(p.Scheme, p2.Scheme); c != 0 {
+		return c
+	}
+	// We declare arbitraryPort to be less than all other port values.
+	return cmp.Compare(p.Port, p2.Port)
 }
 
 // Equal reports whether *p == *p2.

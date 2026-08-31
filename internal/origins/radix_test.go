@@ -661,6 +661,25 @@ func TestTree(t *testing.T) {
 				"https://foorat",
 				"https://foosat",
 			},
+		}, {
+			desc: "different schemes",
+			patterns: []string{
+				"https://cat",
+				"http://cat",
+			},
+			elems: []string{
+				"http://cat",
+				"https://cat",
+			},
+			accepts: []string{
+				"http://cat",
+				"https://cat",
+			},
+			rejects: []string{
+				"https://concat",
+				"https://kin",
+				"https://pin",
+			},
 		},
 	}
 	for _, tc := range cases {
