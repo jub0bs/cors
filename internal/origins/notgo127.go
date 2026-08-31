@@ -45,14 +45,7 @@ func reverseCompare(x, y string) int {
 			return +1
 		}
 	}
-	switch {
-	case lx < ly:
-		return -1
-	default:
-		return 0
-	case lx > ly:
-		return +1
-	}
+	return intsCompare(lx, ly)
 }
 
 // This is a no-op; see ./go127.go.

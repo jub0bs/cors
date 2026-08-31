@@ -47,14 +47,7 @@ func reverseCompare(x, y string) int {
 			return +1
 		}
 	}
-	switch {
-	case len(x) < len(y):
-		return -1
-	default:
-		return 0
-	case len(x) > len(y):
-		return +1
-	}
+	return intsCompare(len(x), len(y))
 }
 
 // Go 1.27 adopted Unicode 17; see

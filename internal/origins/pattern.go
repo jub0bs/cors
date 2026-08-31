@@ -1,7 +1,6 @@
 package origins
 
 import (
-	"cmp"
 	"math"
 	"net/netip"
 	"strings"
@@ -431,7 +430,18 @@ func (p *Pattern) Compare(p2 *Pattern) int {
 		return c
 	}
 	// We declare arbitraryPort to be less than all other port values.
-	return cmp.Compare(p.Port, p2.Port)
+	return intsCompare(p.Port, p2.Port)
+}
+
+func intsCompare(x, y int) int {
+	switch {
+	case x < y:
+		return -1
+	default:
+		return 0
+	case x > y:
+		return +1
+	}
 }
 
 // Equal reports whether *p == *p2.
