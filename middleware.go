@@ -1,7 +1,6 @@
 package cors
 
 import (
-	"maps"
 	"net/http"
 	"sync/atomic"
 
@@ -240,18 +239,16 @@ func (icfg *internalConfig) handleCORSPreflight(
 		return
 	}
 
-	// Populating a local map of modest size (8 keys or fewer) incurs 0 heap
-	// allocations on average; see https://go.dev/play/p/RQdNE-pPCQq.
-	buf := make(http.Header)
+	var buf preflightBuffer
 
 	resHdrs := w.Header()
 
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
 
-	if !icfg.performCORSCheckForPreflight(buf, origin) {
+	if !icfg.performCORSCheckForPreflight(&buf, origin) {
 		if debug {
-			maps.Copy(resHdrs, buf)
+			buf.flushTo(resHdrs)
 		}
 		w.WriteHeader(preflightFailStatus)
 		return
@@ -262,9 +259,9 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// if the response status is not an ok status
 	// (see https://fetch.spec.whatwg.org/#ok-status).
 
-	if !icfg.processACRM(buf, acrm) {
+	if !icfg.processACRM(&buf, acrm) {
 		if debug {
-			maps.Copy(resHdrs, buf)
+			buf.flushTo(resHdrs)
 			w.WriteHeader(preflightOKStatus)
 			return
 		}
@@ -272,9 +269,9 @@ func (icfg *internalConfig) handleCORSPreflight(
 		return
 	}
 
-	if !icfg.processACRH(buf, reqHdrs, debug) {
+	if !icfg.processACRH(&buf, reqHdrs, debug) {
 		if debug {
-			maps.Copy(resHdrs, buf)
+			buf.flushTo(resHdrs)
 			w.WriteHeader(preflightOKStatus)
 			return
 		}
@@ -284,7 +281,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 
 	// Preflight was successful.
 
-	maps.Copy(resHdrs, buf)
+	buf.flushTo(resHdrs)
 
 	if icfg.acma != "" {
 		resHdrs.Set(headers.ACMA, icfg.acma)
@@ -294,11 +291,11 @@ func (icfg *internalConfig) handleCORSPreflight(
 }
 
 func (icfg *internalConfig) performCORSCheckForPreflight(
-	buf http.Header,
+	buf *preflightBuffer,
 	origin *[1]string,
 ) bool {
 	if icfg.allowsAnyOrigin() {
-		buf.Set(headers.ACAO, headers.ValueWildcard)
+		buf.add(headers.ACAO, []string{headers.ValueWildcard})
 		return true
 	}
 	// Not all origins are allowed.
@@ -307,12 +304,12 @@ func (icfg *internalConfig) performCORSCheckForPreflight(
 		return false
 	}
 	// origin is allowed.
-	buf[headers.ACAO] = origin[:]
+	buf.add(headers.ACAO, origin[:])
 	if icfg.credentialed {
 		// We make no attempt to infer whether the request is credentialed,
 		// simply because preflight requests don't carry credentials;
 		// see https://fetch.spec.whatwg.org/#example-xhr-credentials.
-		buf.Set(headers.ACAC, headers.ValueTrue)
+		buf.add(headers.ACAC, []string{headers.ValueTrue})
 	}
 	return true
 }
@@ -322,7 +319,7 @@ func (icfg *internalConfig) allowsAnyOrigin() bool {
 }
 
 func (icfg *internalConfig) processACRM(
-	buf http.Header,
+	buf *preflightBuffer,
 	acrm *[1]string,
 ) bool {
 	// Note that middleware only ever list a single method in the ACAM header.
@@ -341,10 +338,10 @@ func (icfg *internalConfig) processACRM(
 		// Therefore, no ACAM header needs be set in this case.
 		return true
 	case icfg.allowAnyMethod && !icfg.credentialed:
-		buf.Set(headers.ACAM, headers.ValueWildcard)
+		buf.add(headers.ACAM, []string{headers.ValueWildcard})
 		return true
 	case icfg.allowAnyMethod || icfg.allowedMethods.Contains(method):
-		buf[headers.ACAM] = acrm[:]
+		buf.add(headers.ACAM, acrm[:])
 		return true
 	default:
 		return false
@@ -352,7 +349,7 @@ func (icfg *internalConfig) processACRM(
 }
 
 func (icfg *internalConfig) processACRH(
-	buf http.Header,
+	buf *preflightBuffer,
 	reqHdrs http.Header,
 	debug bool,
 ) bool {
@@ -396,26 +393,59 @@ func (icfg *internalConfig) processACRH(
 		// because the Fetch standard requires browsers to handle multiple ACAH
 		// header lines;
 		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
-		buf[headers.ACAH] = acrh
+		buf.add(headers.ACAH, acrh)
 		return true
 	case icfg.wildcardRequestHeaders && !icfg.credentialed:
-		buf.Set(headers.ACAH, icfg.acah)
+		buf.add(headers.ACAH, []string{icfg.acah})
 		return true
 	case debug:
 		if icfg.acah == "" {
 			return false
 		}
-		buf.Set(headers.ACAH, icfg.acah)
+		buf.add(headers.ACAH, []string{icfg.acah})
 		return true
 	case headers.Check(icfg.allowedRequestHeaders, acrh):
 		// We can simply reflect all the ACRH header lines as ACAH header lines
 		// because the Fetch standard requires browsers to handle multiple ACAH
 		// header lines;
 		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0.
-		buf[headers.ACAH] = acrh
+		buf.add(headers.ACAH, acrh)
 		return true
 	default:
 		return false
+	}
+}
+
+// A preflightBuffer accumulates up to four header name-value pairs destined to
+// later be flushed to a preflight response's headers.
+//
+// Benchmark results indicate that this is faster than a buffer simply
+// consisting in a http.Header (or even a slice).
+type preflightBuffer struct {
+	pairs [4]pair // enough to hold ACAO, ACAC, ACAM, and ACAH
+	len   uint
+}
+
+type pair struct {
+	name string
+	val  []string
+}
+
+// add adds a header name-value pair to buf. Caution: it
+//   - doesn't check for duplicate names, and
+//   - must not be called more than four times.
+func (buf *preflightBuffer) add(name string, val []string) {
+	i := buf.len % 4 // Eliminate bounds check below.
+	buf.pairs[i] = pair{name: name, val: val}
+	buf.len++
+}
+
+// flushTo iterates over the header name-value pairs stored in buf
+// and upserts each one of them in hdrs.
+func (buf preflightBuffer) flushTo(hdrs http.Header) {
+	hi := min(buf.len, 4) // Eliminate bounds check below.
+	for _, pair := range buf.pairs[:hi] {
+		hdrs[pair.name] = pair.val
 	}
 }
 
