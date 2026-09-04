@@ -22,7 +22,7 @@ import (
 // You should turn debug mode on whenever you're struggling to troubleshoot
 // some [CORS-preflight] issue:
 //   - When debug mode is off, the information that the middleware includes in
-//     preflight responses is minimal, for efficiency and confidentiality reasons;
+//     preflight responses is minimal, for better performance;
 //     however, when preflight fails, the browser then lacks enough contextual
 //     information about the failure to produce a helpful CORS error message.
 //   - When debug mode is on and preflight fails,
@@ -33,6 +33,11 @@ import (
 // However, be aware that keeping debug mode on may lead to observably poorer
 // middleware performance, especially in the face of some adversarial preflight
 // requests.
+//
+// Note that, even when debug mode is off, a middleware's configuration is not
+// considered confidential; in particular, any endpoint configured for CORS can
+// be abused as an oracle in order to reveal, perhaps at the cost of spoofing
+// many CORS requests, which origins its CORS configuration allows.
 //
 // A Middleware must not be copied after first use.
 //
