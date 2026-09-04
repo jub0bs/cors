@@ -157,12 +157,12 @@ func (icfg *internalConfig) prehandleActual(
 	isOPTIONS bool,
 ) {
 	if icfg.allowsAnyOrigin() {
-		resHdrs.Set(headers.ACAO, headers.ValueWildcard)
+		resHdrs[headers.ACAO] = []string{headers.ValueWildcard}
 		if icfg.aceh != "" {
 			// If any origin is allowed, do include ACEH even in responses to
 			// non-CORS requests; see
 			// https://github.com/whatwg/fetch/issues/1601#issuecomment-1420881527.
-			resHdrs.Set(headers.ACEH, icfg.aceh)
+			resHdrs[headers.ACEH] = []string{icfg.aceh}
 		}
 		return
 	}
@@ -204,10 +204,10 @@ func (icfg *internalConfig) prehandleActual(
 		// Instead, we systematically include "ACAC: true" if credentialed
 		// access is enabled and request's origin is allowed.
 		// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
-		resHdrs.Set(headers.ACAC, headers.ValueTrue)
+		resHdrs[headers.ACAC] = []string{headers.ValueTrue}
 	}
 	if icfg.aceh != "" {
-		resHdrs.Set(headers.ACEH, icfg.aceh)
+		resHdrs[headers.ACEH] = []string{icfg.aceh}
 	}
 }
 
@@ -289,7 +289,7 @@ func (icfg *internalConfig) handleCORSPreflight(
 	buf.flushTo(resHdrs)
 
 	if icfg.acma != "" {
-		resHdrs.Set(headers.ACMA, icfg.acma)
+		resHdrs[headers.ACMA] = []string{icfg.acma}
 	}
 
 	w.WriteHeader(preflightOKStatus)
