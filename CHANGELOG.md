@@ -11,9 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Documentation**: Clarify that middleware configuration cannot be considered
   confidential.
-- **Behavior**: Middleware that have been configured with a max-age value of
-  five seconds (the default max-age value, per the Fetch standard) no longer
-  include any Access-Control-Max-Age header in responses to preflight requests.
+- **Behavior**: Middleware that are configured with a max-age value of five
+  seconds (the default max-age value, per the Fetch standard) no longer include
+  any Access-Control-Max-Age header in responses to preflight requests.
 - **Performance**: Middleware initialization and reconfiguration is now a bit
   faster.
 - **Performance**: Middleware execution during preflight is now faster.
