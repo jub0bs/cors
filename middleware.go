@@ -185,7 +185,9 @@ func (icfg *internalConfig) prehandleActual(
 		// Note that we must add (rather than set) a Vary header here, because
 		// outer middleware may have already added/set a Vary header, which we
 		// wouldn't want to clobber.
-		resHdrs.Add(headers.Vary, headers.Origin)
+		// We eschew http.Header.Add in order to bypass name canonicalization
+		// (headers.Vary is already canonicalized.)
+		resHdrs[headers.Vary] = append(resHdrs[headers.Vary], headers.Origin)
 	}
 	if isCORSRequest := origin != nil; !isCORSRequest {
 		return
