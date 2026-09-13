@@ -13,8 +13,10 @@ type mapping[K comparable, V any] struct {
 }
 
 type entry[K comparable, V any] struct {
-	k K
+	// V may be struct{}, in which case v is zero-sized. Make v the first field
+	// of entry so as to minimize entry's memory footprint.
 	v V
+	k K
 }
 
 const maxSlice = 8
@@ -25,7 +27,7 @@ func (m *mapping[K, V]) upsert(k K, v V) {
 	case m.many != nil: // many pairs
 		m.many[k] = v
 	case m.few == nil: // empty mapping
-		m.few = []entry[K, V]{{k, v}}
+		m.few = []entry[K, V]{{v, k}}
 	case len(m.few) >= maxSlice: // switch from few to many
 		many := map[K]V{}
 		for _, e := range m.few {
@@ -42,7 +44,7 @@ func (m *mapping[K, V]) upsert(k K, v V) {
 				return
 			}
 		}
-		m.few = append(few, entry[K, V]{k, v})
+		m.few = append(few, entry[K, V]{v, k})
 	}
 }
 
