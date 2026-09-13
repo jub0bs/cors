@@ -13,8 +13,15 @@ type mapping[K comparable, V any] struct {
 }
 
 type entry[K comparable, V any] struct {
-	k K
+	// The order of entry's fields perhaps warrants an explanation.
+	// With the Go compiler (gc), a zero-size field that is the first field in
+	// a struct type's declaration doesn't consume any memory; see
+	// https://go.dev/play/p/agU03OUQAJ9.
+	// In our use cases for entry, V sometimes is zero-size (when V is the
+	// empty struct), but K never is; therefore, to minimize entry's memory
+	// footprint in such cases, let's put the V-typed field in first position.
 	v V
+	k K
 }
 
 const maxSlice = 8
@@ -25,7 +32,7 @@ func (m *mapping[K, V]) upsert(k K, v V) {
 	case m.many != nil: // many pairs
 		m.many[k] = v
 	case m.few == nil: // empty mapping
-		m.few = []entry[K, V]{{k, v}}
+		m.few = []entry[K, V]{{v, k}}
 	case len(m.few) >= maxSlice: // switch from few to many
 		many := map[K]V{}
 		for _, e := range m.few {
@@ -42,7 +49,7 @@ func (m *mapping[K, V]) upsert(k K, v V) {
 				return
 			}
 		}
-		m.few = append(few, entry[K, V]{k, v})
+		m.few = append(few, entry[K, V]{v, k})
 	}
 }
 
