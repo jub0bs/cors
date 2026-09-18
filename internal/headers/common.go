@@ -34,8 +34,8 @@ const Authorization = "authorization" // note: byte-lowercase
 const (
 	ValueTrue         = "true"
 	ValueWildcard     = "*"
-	ValueSep          = ","
-	ValueWildcardAuth = ValueWildcard + ValueSep + Authorization
+	ValueSep          = ','
+	ValueWildcardAuth = ValueWildcard + string(ValueSep) + Authorization
 )
 
 // IsValid reports whether name is a valid header name,

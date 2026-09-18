@@ -2,7 +2,10 @@
 // strings.
 package sortedset
 
-import "slices"
+import (
+	"iter"
+	"slices"
+)
 
 // A Set represents a set of strings sorted in lexicographical order.
 // After a call to [*Set.Fix], each element has a unique position ranging
@@ -77,9 +80,11 @@ func (s Set) Index(i uint, e string) int {
 	return int(i)
 }
 
-// ToSlice returns a slice of s's elements sorted in lexicographical order.
+// All returns a [pure iterator] over s's elements sorted in lexicographical order.
 //
 // Precondition: [*Set.Add] was not called since [*Set.Fix] was last called.
-func (s Set) ToSlice() []string {
-	return slices.Clone(s.elems) // defensive copying
+//
+// [pure iterator]: https://jub0bs.com/posts/2025-05-29-pure-vs-impure-iterators-in-go/
+func (s Set) All() iter.Seq[string] {
+	return slices.Values(s.elems)
 }

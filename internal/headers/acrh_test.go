@@ -1,6 +1,7 @@
 package headers_test
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -228,7 +229,7 @@ func TestCheck(t *testing.T) {
 				set.Add(elem)
 			}
 			set.Fix()
-			slice := set.ToSlice()
+			slice := slices.Collect(set.All())
 			for _, a := range tc.accepted {
 				allocs := testing.AllocsPerRun(10, func() { headers.Check(set, a) })
 				if allocs > 0 {

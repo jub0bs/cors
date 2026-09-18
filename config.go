@@ -717,11 +717,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 		}
 	case allowedHeaders.Size() > 0:
 		icfg.allowedRequestHeaders = allowedHeaders
-		s := allowedHeaders.ToSlice()
-		// The elements of a header-field value may be separated simply by commas;
-		// since whitespace is optional, let's not use any.
-		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
-		icfg.acah = strings.Join(s, headers.ValueSep)
+		icfg.acah = joinWithCommas(allowedHeaders)
 	}
 	return errs
 }
@@ -840,12 +836,33 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 	case exposeAllResHdrs:
 		icfg.aceh = headers.ValueWildcard
 	case exposedHeaders.Size() > 0:
-		// The elements of a header-field value may be separated simply by commas;
-		// since whitespace is optional, let's not use any.
-		// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
-		icfg.aceh = strings.Join(exposedHeaders.ToSlice(), headers.ValueSep)
+		icfg.aceh = joinWithCommas(exposedHeaders)
 	}
 	return errs
+}
+
+// joinWithCommas joins the elements of s with commas.
+// The elements of a list-based header-field value may indeed simply be
+// separated by commas; since whitespace is optional, let's not use any.
+// See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
+func joinWithCommas(names sortedset.Set) string {
+	// Precompute the length of the result.
+	var length int
+	seq := names.All()
+	for name := range seq {
+		length += len(name)
+	}
+	length += max(0, names.Size()-1) // Count commas as well.
+	// Now build the result.
+	var sb strings.Builder
+	sb.Grow(length)
+	for name := range seq { // seq, being a pure iterator, can be reused.
+		if sb.Len() > 0 {
+			sb.WriteByte(headers.ValueSep)
+		}
+		sb.WriteString(name)
+	}
+	return sb.String()
 }
 
 const (
@@ -884,7 +901,7 @@ func newConfig(icfg *internalConfig) *Config {
 
 	// response headers
 	if icfg.aceh != "" {
-		cfg.ResponseHeaders = strings.Split(icfg.aceh, headers.ValueSep)
+		cfg.ResponseHeaders = strings.Split(icfg.aceh, string(headers.ValueSep))
 	}
 
 	// max age (retain it even if no preflight is possible)
@@ -906,7 +923,7 @@ func newConfig(icfg *internalConfig) *Config {
 	case icfg.allowAnyMethod:
 		cfg.Methods = []string{headers.ValueWildcard}
 	case icfg.allowedMethods.Size() > 0:
-		cfg.Methods = icfg.allowedMethods.ToSlice()
+		cfg.Methods = toSlice(icfg.allowedMethods)
 	}
 
 	// request headers
@@ -919,8 +936,12 @@ func newConfig(icfg *internalConfig) *Config {
 			cfg.RequestHeaders = []string{headers.ValueWildcard}
 		}
 	case icfg.allowedRequestHeaders.Size() > 0:
-		cfg.RequestHeaders = icfg.allowedRequestHeaders.ToSlice()
+		cfg.RequestHeaders = toSlice(icfg.allowedRequestHeaders)
 	}
 
 	return &cfg
+}
+
+func toSlice(s sortedset.Set) []string {
+	return slices.AppendSeq(make([]string, 0, s.Size()), s.All())
 }

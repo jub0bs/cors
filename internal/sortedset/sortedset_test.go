@@ -89,7 +89,7 @@ func TestSortedSet(t *testing.T) {
 					}
 				}
 			}
-			s := set.ToSlice()
+			s := slices.Collect(set.All())
 			if !slices.Equal(s, tc.slice) {
 				const tmpl = "SortedSet built from %#v: ToSlice(): got %q; want %q"
 				t.Errorf(tmpl, tc.elems, s, tc.slice)
