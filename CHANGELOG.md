@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] (2026-09-18)
+
+### Changed
+
+- **Performance**: Middleware initialization and reconfiguration now incurs
+  fewer heap allocations.
+- **Dependencies**: update to golang.org/x/net v0.59.0
+
 ## [1.1.1] (2026-09-04)
 
 ### Changed
@@ -543,6 +551,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[1.1.2]: https://github.com/jub0bs/cors/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/jub0bs/cors/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/jub0bs/cors/compare/v1.0.5...v1.1.0
 [1.0.5]: https://github.com/jub0bs/cors/compare/v1.0.4...v1.0.5
