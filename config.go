@@ -489,27 +489,18 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 		}
 		return []error{err}
 	}
-	var (
-		ps             []*origins.Pattern
-		allowAnyOrigin bool
-		errs           []error
-	)
+	var errs []error
+	allowAnyOrigin := slices.Contains(rawPatterns, headers.ValueWildcard)
+	if allowAnyOrigin && icfg.credentialed {
+		err := &cfgerrors.IncompatibleOriginPatternError{
+			Value:  headers.ValueWildcard,
+			Reason: "wildcard",
+		}
+		errs = append(errs, err)
+	}
+	var ps []*origins.Pattern
 	for _, raw := range rawPatterns {
 		if raw == headers.ValueWildcard {
-			if icfg.credentialed {
-				err := &cfgerrors.IncompatibleOriginPatternError{
-					Value:  headers.ValueWildcard,
-					Reason: "wildcard",
-				}
-				errs = append(errs, err)
-				continue
-			}
-			if allowAnyOrigin {
-				continue
-			}
-			allowAnyOrigin = true
-			// We no longer need to maintain a set of allowed origins.
-			icfg.tree = origins.Tree{}
 			continue
 		}
 		pattern, err := origins.ParsePattern(raw)
@@ -568,14 +559,9 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 }
 
 func (icfg *internalConfig) validateMethods(errs []error, names []string) []error {
+	icfg.allowAnyMethod = slices.Contains(names, headers.ValueWildcard)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
-			if icfg.allowAnyMethod {
-				continue
-			}
-			// We no longer need to maintain a set of allowed methods.
-			icfg.allowedMethods = sortedset.Set{}
-			icfg.allowAnyMethod = true
 			continue
 		}
 		if !methods.IsValid(name) {
@@ -612,6 +598,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 	if len(names) == 0 { // micro-optimization
 		return errs
 	}
+	icfg.wildcardRequestHeaders = slices.Contains(names, headers.ValueWildcard)
 	var (
 		allowedHeaders sortedset.Set
 		// useful because we can't query allowedHeaders until we Fix it.
@@ -621,16 +608,6 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
-			if icfg.wildcardRequestHeaders {
-				continue
-			}
-			icfg.wildcardRequestHeaders = true
-			// We no longer need to maintain a set of allowed request headers
-			// other than Authorization (if we've seen it).
-			allowedHeaders = sortedset.Set{}
-			if allowAuthorizationHeader {
-				allowedHeaders.Add(headers.Authorization)
-			}
 			continue
 		}
 		if !headers.IsValid(name) {
@@ -761,36 +738,27 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 	if len(names) == 0 { // micro-optimization
 		return errs
 	}
-	var (
-		exposedHeaders   sortedset.Set
-		exposeAllResHdrs bool
-		nbErrors         = len(errs) // number of errors accumulated so far
-	)
+	nbErrors := len(errs) // number of errors accumulated so far
+	exposeAllResHdrs := slices.Contains(names, headers.ValueWildcard)
+	if exposeAllResHdrs && icfg.credentialed {
+		// Exposing response headers while also allowing credentialed
+		// access requires listing all those response headers' names in
+		// the ACEH header. To do so, middleware would first have to
+		// somehow compile a list of those names, including the ones
+		// (if any) added by the wrapped handler. Compiling such a list
+		// would require wrapping the http.ResponseWriter type, which
+		// would have the undesirable effect of masking any of that
+		// type's "optional interfaces" (i.e. its interface subtypes);
+		// see https://blog.merovius.de/posts/2017-07-30-the-trouble-with-optional-interfaces/.
+		//
+		// Therefore, exposing all response headers while also allowing
+		// credentialed access isn't viable.
+		err := new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)
+		errs = append(errs, err)
+	}
+	var exposedHeaders sortedset.Set
 	for _, name := range names {
 		if name == headers.ValueWildcard {
-			if icfg.credentialed {
-				// Exposing response headers while also allowing credentialed
-				// access requires listing all those response headers' names in
-				// the ACEH header. To do so, middleware would first have to
-				// somehow compile a list of those names, including the ones
-				// (if any) added by the wrapped handler. Compiling such a list
-				// would require wrapping the http.ResponseWriter type, which
-				// would have the undesirable effect of masking any of that
-				// type's "optional interfaces" (i.e. its interface subtypes);
-				// see https://blog.merovius.de/posts/2017-07-30-the-trouble-with-optional-interfaces/.
-				//
-				// Therefore, exposing all response headers while also allowing
-				// credentialed access isn't viable.
-				err := new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)
-				errs = append(errs, err)
-				continue
-			}
-			if exposeAllResHdrs {
-				continue
-			}
-			exposeAllResHdrs = true
-			// We no longer need to maintain a set of exposed headers.
-			exposedHeaders = sortedset.Set{}
 			continue
 		}
 		if !headers.IsValid(name) {
