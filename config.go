@@ -445,7 +445,6 @@ type internalConfig struct {
 	wildcardRequestHeaders       bool
 	tolerateSubsOfPublicSuffixes bool
 	tolerateInsecureOrigins      bool
-	preflight                    bool          // reports whether preflight may succeed
 	allowedMethods               sortedset.Set // allowedMethods.Size() > 0 => !allowAnyMethod
 	allowedRequestHeaders        sortedset.Set
 	acah                         string
@@ -472,12 +471,6 @@ func newInternalConfig(cfg *Config) (*internalConfig, error) {
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}
-
-	icfg.preflight = icfg.allowAnyMethod ||
-		icfg.allowedMethods.Size() > 0 ||
-		icfg.wildcardRequestHeaders ||
-		icfg.allowedRequestHeaders.Size() > 0
-
 	return &icfg, nil
 }
 
@@ -912,10 +905,6 @@ func newConfig(icfg *internalConfig) *Config {
 		} else {
 			cfg.MaxAgeInSeconds = -1
 		}
-	}
-
-	if !icfg.preflight {
-		return &cfg
 	}
 
 	// methods

@@ -241,11 +241,6 @@ func (icfg *internalConfig) handleCORSPreflight(
 	// When debug is off and preflight fails,
 	// we omit all CORS headers from the preflight response.
 
-	if !icfg.preflight && !debug {
-		w.WriteHeader(preflightFailStatus)
-		return
-	}
-
 	var buf preflightBuffer
 
 	resHdrs := w.Header()

@@ -54,7 +54,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from allowed",
+					desc:      "preflight with CORS-safelisted method from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -76,14 +76,14 @@ func TestMiddleware(t *testing.T) {
 						headerACRH:   {"content-type"},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from disallowed",
+					desc:      "preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
 						headerACRM:   {"GET"},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from invalid",
+					desc:      "preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
@@ -190,7 +190,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from allowed",
+					desc:      "preflight with CORS-safelisted method from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -292,7 +292,7 @@ func TestMiddleware(t *testing.T) {
 					},
 					wantOutcome: isPreflightAndFailsAfterCORSCheck,
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from disallowed",
+					desc:      "preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
@@ -300,7 +300,7 @@ func TestMiddleware(t *testing.T) {
 					},
 					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from invalid",
+					desc:      "preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
@@ -633,7 +633,7 @@ func TestMiddleware(t *testing.T) {
 						headerACEH: {wildcard},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method",
+					desc:      "preflight with CORS-safelisted method",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -673,7 +673,7 @@ func TestMiddleware(t *testing.T) {
 						headerACMA: {"30"},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from invalid",
+					desc:      "preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
@@ -876,13 +876,16 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from allowed",
+					desc:      "preflight with CORS-safelisted method from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
 						headerACRM:   {"GET"},
 					},
-					wantOutcome: isPreflightAndFailsDuringCORSCheck,
+					wantOutcome: isPreflightAndSucceeds,
+					wantRespHeaders: http.Header{
+						headerACAO: {"http://localhost:9090"},
+					},
 				}, {
 					desc:      "preflight with PURGE from allowed",
 					reqMethod: "OPTIONS",
@@ -901,7 +904,7 @@ func TestMiddleware(t *testing.T) {
 					},
 					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from disallowed",
+					desc:      "preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
@@ -909,7 +912,7 @@ func TestMiddleware(t *testing.T) {
 					},
 					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from invalid",
+					desc:      "preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
@@ -993,7 +996,7 @@ func TestMiddleware(t *testing.T) {
 						headerOrigin: {"https://foobar.com"},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from disallowed",
+					desc:      "preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://barfoo.com"},
@@ -1001,7 +1004,7 @@ func TestMiddleware(t *testing.T) {
 					},
 					wantOutcome: isPreflightAndFailsDuringCORSCheck,
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from disallowed 2",
+					desc:      "preflight with CORS-safelisted method from disallowed 2",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://foobar.com"},
@@ -1436,7 +1439,7 @@ func TestReconfigure(t *testing.T) {
 						headerOrigin: {"https://example.com"},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from allowed",
+					desc:      "preflight with CORS-safelisted method from allowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"http://localhost:9090"},
@@ -1458,14 +1461,14 @@ func TestReconfigure(t *testing.T) {
 						headerACRH:   {"content-type"},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from disallowed",
+					desc:      "preflight with CORS-safelisted method from disallowed",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"https://example.com"},
 						headerACRM:   {"GET"},
 					},
 				}, {
-					desc:      "fake preflight with CORS-safelisted method from invalid",
+					desc:      "preflight with CORS-safelisted method from invalid",
 					reqMethod: "OPTIONS",
 					reqHeaders: http.Header{
 						headerOrigin: {"invalid_origin"},
