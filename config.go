@@ -2,6 +2,7 @@ package cors
 
 import (
 	"errors"
+	"math"
 	"net/http"
 	"slices"
 	"strconv"
@@ -710,7 +711,7 @@ func (icfg *internalConfig) validateRequestHeaders(errs []error, names []string)
 		}
 	case allowedHeaders.Size() > 0:
 		icfg.allowedRequestHeaders = allowedHeaders
-		icfg.acah = joinWithCommas(allowedHeaders)
+		icfg.acah = joinWithCommas(allowedHeaders, math.MaxInt)
 	}
 	return errs
 }
@@ -829,7 +830,7 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 	case exposeAllResHdrs:
 		icfg.aceh = headers.ValueWildcard
 	case exposedHeaders.Size() > 0:
-		icfg.aceh = joinWithCommas(exposedHeaders)
+		icfg.aceh = joinWithCommas(exposedHeaders, math.MaxInt)
 	}
 	return errs
 }
@@ -838,14 +839,18 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 // The elements of a list-based header-field value may indeed simply be
 // separated by commas; since whitespace is optional, let's not use any.
 // See https://httpwg.org/http-core/draft-ietf-httpbis-semantics-latest.html#abnf.extension.recipient
-func joinWithCommas(names sortedset.Set) string {
+// If the length of the resulting string would exceed maxInt, joinWithCommas
+// panics.
+func joinWithCommas(names sortedset.Set, maxInt int) string {
 	// Precompute the length of the result.
-	var length int
+	length := max(0, names.Size()-1) // Count commas.
 	seq := names.All()
 	for name := range seq {
+		if len(name) > maxInt-length {
+			panic("cors: joinWithCommas output length overflow")
+		}
 		length += len(name)
 	}
-	length += max(0, names.Size()-1) // Count commas as well.
 	// Now build the result.
 	var sb strings.Builder
 	sb.Grow(length)
