@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] (2026-09-28)
+
+### Fixed
+
+- **Bug**: In v0.11.0 to v1.1.2 (inclusive), middleware that allowed no methods
+  (other than CORS-safelisted ones) and no request headers (other than
+  CORS-safelisted ones) would incorrectly fail preflight for client requests
+  that use a CORS-safelisted method and carry no CORS-unsafe request headers
+  (see https://github.com/jub0bs/cors/issues/18).
+- **Bug**: In v1.1.2, unlikely configurations that allowed many request headers
+  and/or expose many response headers could cause some string-length overflow
+  (see https://github.com/jub0bs/cors/issues/19).
+
+### Changed
+
+- **Performance**: Because of the changes required to fix
+  https://github.com/jub0bs/cors/issues/18, the performance gains from v0.11.0
+  for middleware execution during preflight have been lost.
+
 ## [1.1.2] (2026-09-18)
 
 ### Changed
@@ -551,6 +570,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[1.1.3]: https://github.com/jub0bs/cors/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/jub0bs/cors/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/jub0bs/cors/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/jub0bs/cors/compare/v1.0.5...v1.1.0
