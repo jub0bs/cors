@@ -555,7 +555,7 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 		}
 	}
 	if !allowAnyOrigin {
-		icfg.tree = origins.NewTree(ps...)
+		icfg.tree = origins.NewTree(ps)
 	}
 	return errs
 }

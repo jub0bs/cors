@@ -693,7 +693,7 @@ func TestTree(t *testing.T) {
 				}
 				ps = append(ps, &pattern)
 			}
-			tree := origins.NewTree(ps...)
+			tree := origins.NewTree(ps)
 			wantEmpty := len(tc.patterns) == 0
 			gotEmpty := tree.IsEmpty()
 			if gotEmpty != wantEmpty {

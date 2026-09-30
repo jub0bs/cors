@@ -17,7 +17,7 @@ type Tree struct {
 
 // NewTree returns a new tree in which all of ps (and no other origin patterns)
 // have been inserted.
-func NewTree(ps ...*Pattern) Tree {
+func NewTree(ps []*Pattern) Tree {
 	// Sorting patterns with (*Pattern).Compare before inserting them in an
 	// empty tree guarantees that the resulting tree be free of redundant
 	// elements, thereby obviating any need to subsequently prune the tree.
