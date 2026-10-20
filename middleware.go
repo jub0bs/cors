@@ -253,12 +253,23 @@ func (icfg *internalConfig) handlePreflight(
 	// For details about the order in which we perform the following checks,
 	// see https://fetch.spec.whatwg.org/#cors-preflight-fetch, item 7.
 
-	if !icfg.performCORSCheckForPreflight(&buf, origin) {
+	if icfg.allowsAnyOrigin() {
+		buf.add(headers.ACAO, []string{headers.ValueWildcard})
+	} else if o, ok := origins.Parse(origin[0]); !ok || !icfg.tree.Contains(&o) {
 		if debug {
 			buf.flushTo(resHdrs)
 		}
 		w.WriteHeader(preflightFailStatus)
 		return
+	} else {
+		// origin is allowed.
+		buf.add(headers.ACAO, origin[:])
+		if icfg.credentialed {
+			// We make no attempt to infer whether the request is credentialed,
+			// simply because preflight requests don't carry credentials;
+			// see https://fetch.spec.whatwg.org/#example-xhr-credentials.
+			buf.add(headers.ACAC, []string{headers.ValueTrue})
+		}
 	}
 
 	// At this stage, browsers fail the CORS-preflight check
@@ -295,30 +306,6 @@ func (icfg *internalConfig) handlePreflight(
 	}
 
 	w.WriteHeader(preflightOKStatus)
-}
-
-func (icfg *internalConfig) performCORSCheckForPreflight(
-	buf *preflightBuffer,
-	origin *[1]string,
-) bool {
-	if icfg.allowsAnyOrigin() {
-		buf.add(headers.ACAO, []string{headers.ValueWildcard})
-		return true
-	}
-	// Not all origins are allowed.
-	o, ok := origins.Parse(origin[0])
-	if !ok || !icfg.tree.Contains(&o) {
-		return false
-	}
-	// origin is allowed.
-	buf.add(headers.ACAO, origin[:])
-	if icfg.credentialed {
-		// We make no attempt to infer whether the request is credentialed,
-		// simply because preflight requests don't carry credentials;
-		// see https://fetch.spec.whatwg.org/#example-xhr-credentials.
-		buf.add(headers.ACAC, []string{headers.ValueTrue})
-	}
-	return true
 }
 
 func (icfg *internalConfig) allowsAnyOrigin() bool {
