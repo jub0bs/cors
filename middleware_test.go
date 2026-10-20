@@ -3,12 +3,67 @@ package cors_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jub0bs/cors"
 	"github.com/jub0bs/cors/internal/headers"
 )
+
+func TestMiddleware_methods_panic_if_their_receiver_is_nil(t *testing.T) {
+	var m *cors.Middleware
+	var ( // dummy values
+		h   http.Handler
+		cfg *cors.Config
+		b   bool
+	)
+	cases := []struct {
+		name string
+		f    func()
+	}{
+		{
+			name: "Wrap",
+			f:    func() { m.Wrap(h) },
+		}, {
+			name: "Reconfigure",
+			f:    func() { m.Reconfigure(cfg) },
+		}, {
+			name: "SetDebug",
+			f:    func() { m.SetDebug(b) },
+		}, {
+			name: "Debug",
+			f:    func() { m.Debug() },
+		}, {
+			name: "Config",
+			f:    func() { m.Config() },
+		},
+	}
+	msgs := make([]string, 0, len(cases))
+	for _, tc := range cases {
+		f := func(t *testing.T) {
+			defer func() {
+				got := recover()
+				if got == nil {
+					t.Fatal("got no panic; want panic")
+				}
+				msg, ok := got.(string)
+				if !ok {
+					t.Fatal("got a panic value of type other than string")
+				}
+				msgs = append(msgs, msg)
+			}()
+			tc.f()
+		}
+		t.Run("(*Middleware)."+tc.name, f)
+	}
+	slices.Sort(msgs)
+	msgs = slices.Compact(msgs)
+	if len(msgs) > 1 {
+		const tmpl = "panic message not consistent across all methods: %q"
+		t.Fatalf(tmpl, msgs)
+	}
+}
 
 func TestMiddleware(t *testing.T) {
 	cases := []MiddlewareTestCase{

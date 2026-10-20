@@ -9,6 +9,8 @@ import (
 	"github.com/jub0bs/cors/internal/origins"
 )
 
+const panicMsg = "nil *Middleware"
+
 // A Middleware is a CORS middleware.
 // Call [*Middleware.Wrap] to apply a middleware to a [http.Handler].
 //
@@ -102,6 +104,9 @@ func NewMiddleware(cfg Config) (*Middleware, error) {
 // If you need to programmatically handle the configuration errors constitutive
 // of the resulting error, rely on package [github.com/jub0bs/cors/cfgerrors].
 func (m *Middleware) Reconfigure(cfg *Config) error {
+	if m == nil {
+		panic(panicMsg)
+	}
 	// Rather than attempt to diff the new config against the current one,
 	// we simply start from scratch; for common configurations, doing so indeed
 	// is performant enough.
@@ -115,6 +120,9 @@ func (m *Middleware) Reconfigure(cfg *Config) error {
 
 // Wrap applies the CORS middleware to the specified handler.
 func (m *Middleware) Wrap(h http.Handler) http.Handler {
+	if m == nil {
+		panic(panicMsg)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		icfg := m.icfg.Load()
 		if icfg == nil { // passthrough middleware
@@ -450,11 +458,17 @@ func (buf preflightBuffer) flushTo(hdrs http.Header) {
 
 // SetDebug turns debug mode on (if b is true) or off (otherwise).
 func (m *Middleware) SetDebug(b bool) {
+	if m == nil {
+		panic(panicMsg)
+	}
 	m.debug.Store(b)
 }
 
 // Debug reports whether m's debug mode is on.
 func (m *Middleware) Debug() bool {
+	if m == nil {
+		panic(panicMsg)
+	}
 	return m.debug.Load()
 }
 
@@ -470,5 +484,8 @@ func (m *Middleware) Debug() bool {
 // However, you can reconfigure a [Middleware] via its
 // [*Middleware.Reconfigure] method.
 func (m *Middleware) Config() *Config {
+	if m == nil {
+		panic(panicMsg)
+	}
 	return newConfig(m.icfg.Load())
 }
