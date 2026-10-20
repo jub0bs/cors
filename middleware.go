@@ -239,15 +239,6 @@ func (icfg *internalConfig) handlePreflight(
 	//    Some CORS middleware libraries (such as github.com/rs/cors) do cater
 	//    for such non-compliant behavior; let's not.
 
-	// When debug is on and a preflight step fails,
-	// we omit the remaining CORS response headers
-	// and let the browser fail the CORS-preflight fetch;
-	// however, for easier troubleshooting on the client side,
-	// we do respond with an ok status.
-	//
-	// When debug is off and preflight fails,
-	// we omit all CORS headers from the preflight response.
-
 	var (
 		buf     preflightBuffer
 		resHdrs = w.Header()
@@ -278,6 +269,14 @@ func (icfg *internalConfig) handlePreflight(
 	// (see https://fetch.spec.whatwg.org/#ok-status).
 
 	debug := mDebug.Load()
+	// When debug is true and a subsequent step fails,
+	// we omit the remaining CORS response headers
+	// and let the browser fail CORS-preflight fetch;
+	// however, for easier troubleshooting on the client side,
+	// we do respond with an ok status.
+	//
+	// When debug is false and preflight fails,
+	// we omit all CORS headers from the preflight response.
 
 	if !icfg.processACRM(&buf, acrm) {
 		if debug {
