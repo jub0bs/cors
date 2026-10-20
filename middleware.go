@@ -442,7 +442,7 @@ type pair struct {
 //   - doesn't check for duplicate names, and
 //   - must not be called more than four times.
 func (buf *preflightBuffer) add(name string, val []string) {
-	i := buf.len % 4 // Eliminate bounds check below.
+	i := buf.len % uint(len(buf.pairs)) // Eliminate bounds check below.
 	buf.pairs[i] = pair{name: name, val: val}
 	buf.len++
 }
