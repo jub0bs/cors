@@ -126,26 +126,22 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 		// see https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
 		// (step 12).
 		origin, found := headers.First(r.Header, headers.Origin)
-		if !found {
-			// r is NOT a CORS request;
+		if found {
+			// r is a CORS request (and possibly a CORS-preflight request);
 			// see https://fetch.spec.whatwg.org/#cors-request.
-			icfg.prehandleActual(w.Header(), nil, isOPTIONS)
-			h.ServeHTTP(w, r)
-			return
-		}
-		// r is a CORS request (and possibly a CORS-preflight request);
-		// see https://fetch.spec.whatwg.org/#cors-request.
 
-		// Fetch-compliant browsers send at most one ACRM header;
-		// see https://fetch.spec.whatwg.org/#cors-preflight-fetch (step 3).
-		acrm, found := headers.First(r.Header, headers.ACRM)
-		if isOPTIONS && found {
-			// r is a CORS-preflight request;
-			// see https://fetch.spec.whatwg.org/#cors-preflight-request.
-			icfg.handleCORSPreflight(w, r.Header, origin, acrm, m.debug.Load())
-			return
+			// Fetch-compliant browsers send at most one ACRM header; see
+			// https://fetch.spec.whatwg.org/#cors-preflight-fetch (step 3).
+			acrm, found := headers.First(r.Header, headers.ACRM)
+			if isOPTIONS && found {
+				// r is a CORS-preflight request;
+				// see https://fetch.spec.whatwg.org/#cors-preflight-request.
+				icfg.handleCORSPreflight(w, r.Header, origin, acrm, m.debug.Load())
+				return
+			}
 		}
-		// r is an "actual" (i.e. non-preflight) CORS request.
+		// r is an "actual" (i.e. non-preflight) CORS request
+		// or is simply NOT a CORS request.
 		icfg.prehandleActual(w.Header(), origin, isOPTIONS)
 		h.ServeHTTP(w, r)
 	})
