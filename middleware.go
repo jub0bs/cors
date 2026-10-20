@@ -301,6 +301,10 @@ func (icfg *internalConfig) handlePreflight(
 
 	buf.flushTo(resHdrs)
 
+	// Note that we don't include an ACMA header in the response before we know
+	// that CORS-preflight fetch succeeds. Doing otherwise would be pointless
+	// because responses are not cached if CORS-preflight fetch fails.
+	// See note in step 4.1 of https://fetch.spec.whatwg.org/#http-fetch.
 	if icfg.acma != "" {
 		resHdrs[headers.ACMA] = []string{icfg.acma}
 	}
