@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] (2026-10-21)
+
+### Changed
+
+- **Behavior**: All `*Middleware` methods now immediately panic if their
+  receiver is `nil` (see https://github.com/jub0bs/cors/issues/20).
+- **Performance**: Middleware execution is now a bit faster.
+- **Dependencies**: update to golang.org/x/net v0.61.0
+
 ## [1.1.3] (2026-09-28)
 
 ### Fixed
@@ -570,6 +579,7 @@ Private-Network Access was never fully implemented by browsers and has been put
 
 ## [0.1.0] (2024-03-23)
 
+[1.2.0]: https://github.com/jub0bs/cors/compare/v1.1.3...v1.2.0
 [1.1.3]: https://github.com/jub0bs/cors/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/jub0bs/cors/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/jub0bs/cors/compare/v1.1.0...v1.1.1
