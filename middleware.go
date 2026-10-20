@@ -136,7 +136,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 			if isOPTIONS && found {
 				// r is a CORS-preflight request;
 				// see https://fetch.spec.whatwg.org/#cors-preflight-request.
-				icfg.handleCORSPreflight(w, r.Header, origin, acrm, m.debug.Load())
+				icfg.handlePreflight(w, r.Header, origin, acrm, m.debug.Load())
 				return
 			}
 		}
@@ -209,7 +209,7 @@ func (icfg *internalConfig) prehandleActual(
 	}
 }
 
-func (icfg *internalConfig) handleCORSPreflight(
+func (icfg *internalConfig) handlePreflight(
 	w http.ResponseWriter,
 	reqHdrs http.Header,
 	origin *[1]string,
