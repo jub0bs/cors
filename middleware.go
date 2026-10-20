@@ -256,9 +256,6 @@ func (icfg *internalConfig) handlePreflight(
 	if icfg.allowsAnyOrigin() {
 		buf.add(headers.ACAO, []string{headers.ValueWildcard})
 	} else if o, ok := origins.Parse(origin[0]); !ok || !icfg.tree.Contains(&o) {
-		if debug {
-			buf.flushTo(resHdrs)
-		}
 		w.WriteHeader(preflightFailStatus)
 		return
 	} else {
