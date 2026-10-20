@@ -272,7 +272,7 @@ func (icfg *internalConfig) handlePreflight(
 		}
 	}
 
-	// At this stage, browsers fail the CORS-preflight check
+	// At this stage, browsers fail CORS-preflight fetch
 	// (see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7)
 	// if the response status is not an ok status
 	// (see https://fetch.spec.whatwg.org/#ok-status).
