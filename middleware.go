@@ -129,7 +129,12 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 			return
 		}
-		isOPTIONS := r.Method == http.MethodOptions
+
+		var (
+			isOPTIONS = r.Method == http.MethodOptions
+			resHdrs   = w.Header()
+		)
+
 		// Fetch-compliant browsers send at most one Origin header;
 		// see https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
 		// (step 12).
@@ -148,73 +153,71 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 				return
 			}
 		}
+
 		// r is an "actual" (i.e. non-preflight) CORS request
 		// or is simply NOT a CORS request.
-		icfg.prehandleActual(w.Header(), origin, isOPTIONS)
-		h.ServeHTTP(w, r)
-	})
-}
+		if icfg.allowsAnyOrigin() {
+			resHdrs[headers.ACAO] = []string{headers.ValueWildcard}
+			if icfg.aceh != "" {
+				// If any origin is allowed, do include ACEH even in responses
+				// to non-CORS requests; see
+				// https://github.com/whatwg/fetch/issues/1601#issuecomment-1420881527.
+				resHdrs[headers.ACEH] = []string{icfg.aceh}
+			}
+			h.ServeHTTP(w, r)
+			return
+		}
+		// Not all origins are allowed.
+		if isOPTIONS {
+			// Even though some caching intermediaries can be configured to
+			// cache responses to OPTIONS requests, such caching contravenes
+			// RFC 9110; see
+			// https://httpwg.org/specs/rfc9110.html#rfc.section.9.3.7.
+			// Some CORS middleware libraries (such as github.com/rs/cors) do
+			// cater for such non-compliant behavior; let's not.
+		} else {
+			// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
+			// Note that we deliberately list "Origin" in the Vary header of
+			// responses to actual requests even in cases where a single origin
+			// is allowed, because doing so is simpler to implement and
+			// unlikely to be detrimental to Web caches. Moreover, official
+			// guidance about this special case is likely to change; see
+			// https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
+			//
+			// Note that we must add (rather than set) a Vary header here,
+			// because outer middleware may have already added/set a Vary header,
+			// which we wouldn't want to clobber.
+			// We eschew http.Header.Add in order to bypass name
+			// canonicalization (headers.Vary is already canonicalized.)
+			resHdrs[headers.Vary] = append(resHdrs[headers.Vary], headers.Origin)
+		}
+		if isCORSRequest := origin != nil; !isCORSRequest {
+			h.ServeHTTP(w, r)
+			return
+		}
+		// This is a CORS request.
+		o, ok := origins.Parse(origin[0])
+		if !ok || !icfg.tree.Contains(&o) {
+			h.ServeHTTP(w, r)
+			return
+		}
+		// origin is allowed.
+		resHdrs[headers.ACAO] = origin[:]
+		if icfg.credentialed {
+			// We make no attempt to infer whether the request is credentialed;
+			// in fact, a request’s credentials mode is not necessarily
+			// observable on the server.
+			// Instead, we systematically include "ACAC: true" if credentialed
+			// access is enabled and request's origin is allowed.
+			// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
+			resHdrs[headers.ACAC] = []string{headers.ValueTrue}
+		}
 
-func (icfg *internalConfig) prehandleActual(
-	resHdrs http.Header,
-	origin *[1]string,
-	isOPTIONS bool,
-) {
-	if icfg.allowsAnyOrigin() {
-		resHdrs[headers.ACAO] = []string{headers.ValueWildcard}
 		if icfg.aceh != "" {
-			// If any origin is allowed, do include ACEH even in responses to
-			// non-CORS requests; see
-			// https://github.com/whatwg/fetch/issues/1601#issuecomment-1420881527.
 			resHdrs[headers.ACEH] = []string{icfg.aceh}
 		}
-		return
-	}
-	// Not all origins are allowed.
-	if isOPTIONS {
-		// Even though some caching intermediaries can be configured to cache
-		// responses to OPTIONS requests, such caching contravenes RFC 9110;
-		// see https://httpwg.org/specs/rfc9110.html#rfc.section.9.3.7.
-		// Some CORS middleware libraries (such as github.com/rs/cors) do cater
-		// for such non-compliant behavior; let's not.
-	} else {
-		// See https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches.
-		// Note that we deliberately list "Origin" in the Vary header of
-		// responses to actual requests even in cases where a single origin is
-		// allowed, because doing so is simpler to implement and unlikely to
-		// be detrimental to Web caches. Moreover, official guidance about this
-		// special case is likely to change; see
-		// https://github.com/whatwg/fetch/issues/1601#issuecomment-1418899997.
-		//
-		// Note that we must add (rather than set) a Vary header here, because
-		// outer middleware may have already added/set a Vary header, which we
-		// wouldn't want to clobber.
-		// We eschew http.Header.Add in order to bypass name canonicalization
-		// (headers.Vary is already canonicalized.)
-		resHdrs[headers.Vary] = append(resHdrs[headers.Vary], headers.Origin)
-	}
-	if isCORSRequest := origin != nil; !isCORSRequest {
-		return
-	}
-	// This is a CORS request.
-	o, ok := origins.Parse(origin[0])
-	if !ok || !icfg.tree.Contains(&o) {
-		return
-	}
-	// origin is allowed.
-	resHdrs[headers.ACAO] = origin[:]
-	if icfg.credentialed {
-		// We make no attempt to infer whether the request is credentialed;
-		// in fact, a request’s credentials mode is not necessarily observable
-		// on the server.
-		// Instead, we systematically include "ACAC: true" if credentialed
-		// access is enabled and request's origin is allowed.
-		// See https://fetch.spec.whatwg.org/#example-xhr-credentials.
-		resHdrs[headers.ACAC] = []string{headers.ValueTrue}
-	}
-	if icfg.aceh != "" {
-		resHdrs[headers.ACEH] = []string{icfg.aceh}
-	}
+		h.ServeHTTP(w, r)
+	})
 }
 
 func (icfg *internalConfig) handlePreflight(
