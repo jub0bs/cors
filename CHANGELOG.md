@@ -179,8 +179,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Bug**: In v0.12.0 to v0.13.0 (inclusive), origin patterns with a `file`
-  scheme would not get rejected by `NewMiddleware` and `(*Config).Reconfigure`
-  but should have been.
+  scheme would not get rejected by `NewMiddleware` and
+  `(*Middleware).Reconfigure` but should have been.
 
 ## [0.13.0] (2026-02-20)
 
