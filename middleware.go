@@ -149,7 +149,7 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 			if isOPTIONS && found {
 				// r is a CORS-preflight request;
 				// see https://fetch.spec.whatwg.org/#cors-preflight-request.
-				icfg.handlePreflight(w, r.Header, origin, acrm, m.debug.Load())
+				icfg.handlePreflight(w, r.Header, origin, acrm, &m.debug)
 				return
 			}
 		}
@@ -225,7 +225,7 @@ func (icfg *internalConfig) handlePreflight(
 	reqHdrs http.Header,
 	origin *[1]string,
 	acrm *[1]string,
-	debug bool,
+	mDebug *atomic.Bool,
 ) {
 	// Some notes about Vary in the context of CORS preflight:
 	//  - Contrary to popular belief, the presence of a Vary header in
@@ -276,6 +276,8 @@ func (icfg *internalConfig) handlePreflight(
 	// (see https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, step 7)
 	// if the response status is not an ok status
 	// (see https://fetch.spec.whatwg.org/#ok-status).
+
+	debug := mDebug.Load()
 
 	if !icfg.processACRM(&buf, acrm) {
 		if debug {
