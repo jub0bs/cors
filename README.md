@@ -34,7 +34,7 @@ libraries by providing the following features:
 - [safe-by-default middleware][safe];
 - [strong performance guarantees][benchmark-results];
 - [a useful debug mode][debug];
-- [on-the-fly, concurrency-safe middleware reconfigurability][reconfigurable];
+- [on-the-fly, concurrency-safe, lock-free middleware reconfigurability][reconfigurable];
 - [programmatic handling of configuration errors][reconfigurable]
   (useful for implementing [RFC 9457][rfc9457]).
 
