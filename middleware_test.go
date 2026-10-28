@@ -65,6 +65,17 @@ func TestMiddleware_methods_panic_if_their_receiver_is_nil(t *testing.T) {
 	}
 }
 
+func TestMiddleware_Wrap_panics_if_its_argument_is_nil(t *testing.T) {
+	var m cors.Middleware
+	defer func() {
+		got := recover()
+		if got == nil {
+			t.Fatal("got no panic; want panic")
+		}
+	}()
+	m.Wrap(nil)
+}
+
 func TestMiddleware(t *testing.T) {
 	cases := []MiddlewareTestCase{
 		{

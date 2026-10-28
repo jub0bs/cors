@@ -123,6 +123,9 @@ func (m *Middleware) Wrap(h http.Handler) http.Handler {
 	if m == nil {
 		panic(panicMsg)
 	}
+	if h == nil {
+		panic("nil handler")
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		icfg := m.icfg.Load()
 		if icfg == nil { // passthrough middleware
