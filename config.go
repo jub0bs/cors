@@ -497,12 +497,7 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 				errs = append(errs, err)
 				continue
 			}
-			if allowAnyOrigin {
-				continue
-			}
 			allowAnyOrigin = true
-			// We no longer need to maintain a set of allowed origins.
-			icfg.tree = origins.Tree{}
 			continue
 		}
 		pattern, err := origins.ParsePattern(raw)
