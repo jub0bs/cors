@@ -757,14 +757,17 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 		if name == headers.ValueWildcard {
 			if !exposeAllResHdrs && icfg.credentialed {
 				// Exposing response headers while also allowing credentialed
-				// access requires listing all those response headers' names in
-				// the ACEH header. To do so, middleware would first have to
+				// access requires listing all those response headers' names
+				// (other than CORS-safelisted response-header names, at least)
+				// in the ACEH header. To do so, middleware would first have to
 				// somehow compile a list of those names, including the ones
 				// (if any) added by the wrapped handler. Compiling such a list
 				// would require wrapping the http.ResponseWriter type, which
 				// would have the undesirable effect of masking any of that
 				// type's "optional interfaces" (i.e. its interface subtypes);
 				// see https://blog.merovius.de/posts/2017-07-30-the-trouble-with-optional-interfaces/.
+				// Moreover, the CORS middleware has no way of knowing about
+				// response headers added by middleware (if any) that wrap it.
 				//
 				// Therefore, exposing all response headers while also allowing
 				// credentialed access isn't viable.
