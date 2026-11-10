@@ -647,7 +647,7 @@ var invalidConfigTestCases = []InvalidConfigTestCase{
 	}, {
 		desc: "wildcard origin with Credentialed",
 		cfg: &cors.Config{
-			Origins:      []string{"*"},
+			Origins:      []string{"*", "*"},
 			Credentialed: true,
 		},
 		want: []*errorMatcher{
@@ -692,7 +692,7 @@ var invalidConfigTestCases = []InvalidConfigTestCase{
 		cfg: &cors.Config{
 			Origins:         []string{"https://example.com"},
 			Credentialed:    true,
-			ResponseHeaders: []string{"*"},
+			ResponseHeaders: []string{"*", "*"},
 		},
 		want: []*errorMatcher{
 			newErrorMatcher(new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)),

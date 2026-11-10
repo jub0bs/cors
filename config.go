@@ -489,13 +489,12 @@ func (icfg *internalConfig) validateOriginPatterns(rawPatterns []string) []error
 	)
 	for _, raw := range rawPatterns {
 		if raw == headers.ValueWildcard {
-			if icfg.credentialed {
+			if !allowAnyOrigin && icfg.credentialed {
 				err := &cfgerrors.IncompatibleOriginPatternError{
 					Value:  headers.ValueWildcard,
 					Reason: "wildcard",
 				}
 				errs = append(errs, err)
-				continue
 			}
 			allowAnyOrigin = true
 			continue
@@ -756,7 +755,7 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 	)
 	for _, name := range names {
 		if name == headers.ValueWildcard {
-			if icfg.credentialed {
+			if !exposeAllResHdrs && icfg.credentialed {
 				// Exposing response headers while also allowing credentialed
 				// access requires listing all those response headers' names in
 				// the ACEH header. To do so, middleware would first have to
@@ -771,10 +770,6 @@ func (icfg *internalConfig) validateResponseHeaders(errs []error, names []string
 				// credentialed access isn't viable.
 				err := new(cfgerrors.IncompatibleWildcardResponseHeaderNameError)
 				errs = append(errs, err)
-				continue
-			}
-			if exposeAllResHdrs {
-				continue
 			}
 			exposeAllResHdrs = true
 			// We no longer need to maintain a set of exposed headers.
